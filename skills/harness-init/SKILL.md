@@ -1,27 +1,76 @@
 ---
 name: harness-init
-description: Install and configure the claude-harness governance system in the current project. Sets up hooks, skills, settings.json, evidence system, and Obsidian vault integration. Use when starting a new project or adding the harness to an existing one.
+description: Install and configure the claude-harness governance system in the current project. Sets up hooks, skills, settings.json, evidence system, Obsidian vault integration, and runs enterprise-discover to produce a stack profile. After this, /enterprise is ready to go. Use when starting a new project or adding the harness to an existing one.
 ---
 
 # harness-init
 
-Install the claude-harness governance system into the current project. Detects project type, configures hooks, copies skills, generates settings.json, and wires everything up.
+Install the claude-harness governance system into the current project and get it fully ready for `/enterprise`. After this skill completes, the next command should be `/enterprise <your task>` — no further setup needed.
 
-## Prerequisites
+## Step 0: Preflight — Hard Requirements
 
-The harness repo must be cloned locally. Check for it:
-```
-~/claude-harness/
-```
+Check these before anything else. If any fail, STOP and tell the user how to fix it.
 
-If not found, tell the user to clone it first:
+### Obsidian
+
+Obsidian is the backbone of the harness — every work item, evidence record, and institutional learning lives there. Check in this order:
+
+1. **Check if Obsidian app is installed:**
+   ```bash
+   # macOS
+   ls /Applications/Obsidian.app 2>/dev/null || ls ~/Applications/Obsidian.app 2>/dev/null
+   # Linux
+   which obsidian 2>/dev/null
+   ```
+
+2. **If not installed:**
+   ```
+   BLOCKED: Obsidian is required but not installed.
+
+   Install it:
+     macOS:  brew install --cask obsidian
+     Linux:  snap install obsidian --classic
+     Manual: https://obsidian.md/download
+
+   Then run /harness-init again.
+   ```
+   EXIT HERE. Do not continue without Obsidian.
+
+3. **Check if Obsidian CLI is available** (optional but useful):
+   ```bash
+   which obsidian 2>/dev/null
+   ```
+   If not available, that's fine — we use the Write tool for vault files.
+
+### Harness repo
+
+Check if `~/claude-harness/` exists:
 ```bash
-git clone https://github.com/<your-org>/claude-harness.git ~/claude-harness
+ls ~/claude-harness/hooks/ 2>/dev/null | head -3
 ```
+
+If not found:
+```
+BLOCKED: claude-harness repo not found at ~/claude-harness/
+
+Clone it:
+  git clone https://github.com/<your-org>/claude-harness.git ~/claude-harness
+
+Then run /harness-init again.
+```
+EXIT HERE.
+
+### Python 3
+
+```bash
+python3 --version 2>/dev/null
+```
+
+If not found, tell the user to install it. Hooks depend on it for JSON parsing.
 
 ## Step 1: Detect Project
 
-Auto-detect everything about the current project. Do NOT ask the user — just detect and confirm.
+Auto-detect everything. Do NOT ask the user — detect and confirm.
 
 **Project type** — check for:
 | File | Type | Extensions | Test command | Lint command |
@@ -33,41 +82,50 @@ Auto-detect everything about the current project. Do NOT ask the user — just d
 
 **Project name** — from `git remote get-url origin` (strip .git suffix), or directory basename.
 
-**Test command** — check `package.json` scripts for `test:local` (preferred) or `test`. For monorepos, check subdirectories.
+**Test command** — check `package.json` scripts for `test:local` (preferred) or `test`. For monorepos, check subdirectories (`apps/*/package.json`).
 
 **Vault path** — check these locations in order:
-1. `~/Documents/Product Ideas` (if exists — common Obsidian vault location)
+1. `~/Documents/Product Ideas` (if exists)
 2. `~/Documents/Vault`
 3. `~/Vault`
-4. Ask the user if none found
+4. `~/Documents/Obsidian`
+5. Find any `.obsidian` directory: `find ~/Documents -maxdepth 3 -name ".obsidian" -type d 2>/dev/null | head -1` and use its parent
+6. Ask the user if none found
 
-**Existing .claude/ directory** — check if one exists. If it has settings.json, back it up.
+**Existing .claude/ directory** — check if one exists. If it has settings.json, back it up to settings.json.bak.
 
 Present what you detected:
 ```
-Project: {name} ({type})
-Source extensions: {ext}
-Test command: {test_cmd}
-Lint command: {lint_cmd}
-Vault: {vault_path}
-Existing .claude/: {yes/no, backed up if yes}
+Preflight:
+  Obsidian:     ✓ installed
+  Harness repo: ✓ ~/claude-harness (26 hooks, 27 skills)
+  Python 3:     ✓ {version}
+
+Project:
+  Name:         {name}
+  Type:         {type}
+  Extensions:   {ext}
+  Test command:  {test_cmd}
+  Lint command:  {lint_cmd}
+  Vault:        {vault_path}
+  Existing .claude/: {yes (backed up) / no}
 ```
 
 ## Step 2: Choose Tier
 
 Present the three tiers using AskUserQuestion:
 
-| Tier | What it adds |
-|------|-------------|
-| **Lite** | Obsidian vault + TDD + evidence + lint + merge protocol + enterprise pipeline |
-| **Standard** | + plan-before-edits gate + independent review gate |
-| **Full** | + context injection + jcodemunch + fleet orchestration + prompt refinement + handover hooks |
+| Tier | What you get | Best for |
+|------|-------------|----------|
+| **Lite** | Vault + TDD + evidence + lint + merge protocol + enterprise pipeline | Small projects, solo dev |
+| **Standard** (recommended) | + plan-before-edits + independent review | Team projects, production code |
+| **Full** | + context injection + jcodemunch + fleet + prompt refinement + handover | Large codebases, multi-agent workflows |
 
-Default recommendation: **Standard** for most projects.
+If the user passed a tier as an argument (`/harness-init standard`), skip this step.
 
 ## Step 3: Copy Hooks
 
-Use the Bash tool to copy hooks from `~/claude-harness/hooks/` to `.claude/hooks/`.
+Copy hooks from `~/claude-harness/hooks/` to `.claude/hooks/` based on tier.
 
 **Lite tier hooks** (always installed):
 ```
@@ -107,7 +165,7 @@ post-compact-handover.sh
 ensure-environment.sh
 ```
 
-After copying, run `sed` to replace template variables:
+After copying, templatize:
 ```bash
 cd .claude/hooks
 for f in *.sh; do
@@ -127,50 +185,40 @@ chmod +x *.sh
 
 ## Step 4: Copy Skills
 
-Copy skill directories from `~/claude-harness/skills/` to `.claude/skills/`.
+Copy all skill directories from `~/claude-harness/skills/` to `.claude/skills/`.
 
-**Lite/Standard** — copy all skills EXCEPT `fleet-commander`.
-**Full** — copy all skills INCLUDING `fleet-commander`.
-
-```bash
-for skill in $(ls ~/claude-harness/skills/); do
-  # Skip fleet-commander unless Full tier
-  if [ "$skill" = "fleet-commander" ] && [ "$TIER" != "full" ]; then
-    continue
-  fi
-  cp -r ~/claude-harness/skills/$skill .claude/skills/
-done
-```
+- **Lite/Standard**: skip `fleet-commander`
+- **Full**: copy everything
 
 ## Step 5: Generate settings.json
 
-Write `.claude/settings.json` using the Write tool. Build it based on the tier.
+Write `.claude/settings.json` using the Write tool. Build it based on the tier — follow the structure in `~/claude-harness/install.sh`'s `generate_settings` function.
 
-The structure follows the pattern in `~/claude-harness/install.sh`'s `generate_settings` function. All hooks use the path prefix `"$CLAUDE_PROJECT_DIR"/.claude/hooks/`.
+All hook paths use: `"$CLAUDE_PROJECT_DIR"/.claude/hooks/`
 
-**IMPORTANT**: If an existing settings.json was backed up, merge any existing `enabledPlugins` or custom hooks into the new file.
+**IMPORTANT**: If an existing settings.json was backed up, merge its `enabledPlugins` and any custom hooks into the new file.
 
 ## Step 6: Generate CLAUDE.md Section
 
-If CLAUDE.md exists, append the enforcement section. If not, create one.
+If CLAUDE.md exists, append the enforcement section (wrapped in `<!-- claude-harness -->` comments). If not, create a new CLAUDE.md.
 
 Include:
-- The "Proof-or-STFU" header explaining that all claims require evidence
-- The hook enforcement chain table (rows vary by tier)
-- The "no escape hatches" footer
+- "Proof-or-STFU" header
+- Hook enforcement chain table (rows vary by tier)
+- "No escape hatches" footer
 
 ## Step 7: Set Up Vault Structure
 
-Ensure the vault has the required directories:
 ```bash
 mkdir -p "{vault_path}/_evidence"
 mkdir -p "{vault_path}/00-Inbox"
 mkdir -p "{vault_path}/01-Bugs"
 mkdir -p "{vault_path}/02-Tasks"
 mkdir -p "{vault_path}/03-Ideas"
+mkdir -p "{vault_path}/_standards"
 ```
 
-Create the initial evidence note if it doesn't exist:
+Create the evidence note for this project:
 ```markdown
 ---
 project: {project_name}
@@ -182,29 +230,58 @@ type: evidence
 Auto-updated by `record-test-evidence.sh`. Do not edit manually.
 ```
 
-## Step 8: Verify Installation
+## Step 8: Run enterprise-discover
 
-Run these checks and report results:
+This is what makes `/enterprise` ready to go immediately. Run the discover phase:
 
-1. **JSON valid**: `python3 -c "import json; json.load(open('.claude/settings.json'))"`
-2. **Hooks executable**: `ls -la .claude/hooks/*.sh | head -5`
-3. **Hooks count**: `ls .claude/hooks/*.sh | wc -l`
-4. **Skills count**: `ls -d .claude/skills/*/ | wc -l`
-5. **Vault exists**: `ls {vault_path}/`
-6. **No template vars remaining**: `grep -r '{{' .claude/hooks/ | head -5` (should be empty)
+1. **Invoke the enterprise-discover skill** — this produces:
+   - `.claude/enterprise-state/stack-profile.json` — project structure, commands, conventions
+   - `.claude/enterprise-state/stack-traps.json` — known pitfalls
+   - `.claude/enterprise-state/stack-best-practices.json` — patterns to follow
 
-Present the summary:
+2. If enterprise-discover is not available as a skill (e.g., skill copy failed), do a manual discovery:
+   - Scan project structure (`find . -maxdepth 3 -type f | head -50`)
+   - Read key config files (package.json, tsconfig.json, etc.)
+   - Identify test framework, build tool, deployment target
+   - Write a minimal `stack-profile.json` with the detected info
+
+The goal: after this step, `/enterprise` can start at the brainstorm phase — no "let me learn your codebase" delay.
+
+## Step 9: Readiness Verification
+
+Run ALL of these checks:
+
+| Check | Command | Expected |
+|-------|---------|----------|
+| Settings JSON valid | `python3 -c "import json; json.load(open('.claude/settings.json'))"` | No error |
+| Hooks executable | `ls -la .claude/hooks/*.sh \| head -3` | `-rwxr-xr-x` |
+| Hook count | `ls .claude/hooks/*.sh \| wc -l` | 15+ (Lite), 19+ (Standard), 26+ (Full) |
+| Skill count | `ls -d .claude/skills/*/ \| wc -l` | 26+ |
+| No template vars | `grep -r '{{' .claude/hooks/ \| head -5` | Empty |
+| Vault exists | `ls {vault_path}/00-Inbox` | Exists |
+| Evidence dir | `ls {vault_path}/_evidence/` | Exists |
+| Stack profile | `ls .claude/enterprise-state/stack-profile.json` | Exists |
+| Obsidian running | `pgrep -x Obsidian` | PID (warn if not running) |
+
+### Readiness Report
+
 ```
-claude-harness installed ({tier} tier)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+claude-harness installed ({tier} tier) — READY
 
-  Hooks:  {n} installed in .claude/hooks/
-  Skills: {n} installed in .claude/skills/
-  Config: .claude/settings.json generated
-  Docs:   CLAUDE.md enforcement section added
-  Vault:  {vault_path} verified
+  Hooks:    {n} installed, all executable
+  Skills:   {n} installed
+  Config:   .claude/settings.json ✓
+  Docs:     CLAUDE.md enforcement section ✓
+  Vault:    {vault_path} ✓
+  Profile:  stack-profile.json ✓
+  Obsidian: {running/not running — start it for live sync}
 
-Run /enterprise to start your first enforced development cycle.
+  READY: Run /enterprise <your task> to start.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+If any check fails, report it clearly with fix instructions and do NOT print the READY line.
 
 ## Arguments
 
@@ -212,5 +289,5 @@ Run /enterprise to start your first enforced development cycle.
 - `/harness-init lite` — skip tier selection, install Lite
 - `/harness-init standard` — skip tier selection, install Standard
 - `/harness-init full` — skip tier selection, install Full
-- `/harness-init --verify` — only run Step 8 verification on existing install
-- `/harness-init --update` — pull latest hooks/skills from ~/claude-harness, preserve settings.json config
+- `/harness-init --verify` — only run Step 9 verification on existing install
+- `/harness-init --update` — pull latest hooks/skills from ~/claude-harness, re-templatize, preserve settings.json
