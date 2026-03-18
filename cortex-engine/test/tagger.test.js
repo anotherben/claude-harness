@@ -207,4 +207,31 @@ describe('Tagger', () => {
       expect(tags.get('chargeCard')).not.toContain('sendgrid_mail');
     });
   });
+
+  describe('route_handler at symbol level (factory functions)', () => {
+    it('tags a function containing router.post() as route_handler', () => {
+      const code = [
+        'function createRoutes(router, db) {',
+        '  router.post("/orders", async (req, res) => {',
+        '    const order = await db.query("INSERT INTO orders (tenant_id) VALUES ($1)", [req.tenantId]);',
+        '    res.json(order);',
+        '  });',
+        '  router.get("/orders", async (req, res) => {',
+        '    const orders = await db.query("SELECT * FROM orders WHERE tenant_id = $1", [req.tenantId]);',
+        '    res.json(orders);',
+        '  });',
+        '}',
+      ].join('\n');
+      const symbols = [makeSymbol('createRoutes', 1, 10)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('createRoutes')).toContain('route_handler');
+    });
+
+    it('does not tag functions without route patterns', () => {
+      const code = 'function helper() {\n  return 42;\n}';
+      const symbols = [makeSymbol('helper', 1, 3)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('helper')).not.toContain('route_handler');
+    });
+  });
 });

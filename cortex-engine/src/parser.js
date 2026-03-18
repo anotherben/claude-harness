@@ -634,17 +634,21 @@ class Parser {
   }
 
   _parseCss(content, filePath) {
+    // No cap — extract all top-level class and ID selectors
     const symbols = [];
     const lines = content.split('\n');
 
     lines.forEach((line, i) => {
-      // Class and ID selectors at top level
+      // Top-level class and ID selectors only (no nesting, no pseudo-selectors)
       const selectorMatch = line.match(/^([.#][\w-]+)\s*\{/);
       if (selectorMatch) {
+        const name = selectorMatch[1];
+        // Skip pseudo-selectors and nested selectors
+        if (name.includes(':') || name.includes('>') || name.includes('+') || name.includes('~')) return;
         symbols.push({
-          name: selectorMatch[1],
+          name,
           kind: 'class',
-          signature: selectorMatch[1],
+          signature: name,
           startLine: i + 1,
           endLine: i + 1,
           exported: false,
@@ -677,12 +681,11 @@ class Parser {
   }
 
   _parseJson(content) {
+    // Extract ALL keys at all nesting levels — no cap
     const symbols = [];
-    // Extract top-level keys from JSON objects
     const lines = content.split('\n');
     lines.forEach((line, i) => {
-      // Top-level key: "keyName":
-      const keyMatch = line.match(/^\s{0,4}"([\w$-]+)"\s*:/);
+      const keyMatch = line.match(/^\s*"([\w$-]+)"\s*:/);
       if (keyMatch) {
         symbols.push({
           name: keyMatch[1],
@@ -699,14 +702,15 @@ class Parser {
   }
 
   _parseYaml(content) {
+    // Extract ALL keys at all nesting levels — no cap
     const symbols = [];
     const lines = content.split('\n');
     lines.forEach((line, i) => {
-      // Top-level YAML keys (no leading whitespace)
-      const keyMatch = line.match(/^([\w$_-]+)\s*:/);
-      if (keyMatch && !line.startsWith('#')) {
+      // Any YAML key (at any indentation level)
+      const keyMatch = line.match(/^(\s*)([\w$_-]+)\s*:/);
+      if (keyMatch && !line.trimStart().startsWith('#')) {
         symbols.push({
-          name: keyMatch[1],
+          name: keyMatch[2],
           kind: 'variable',
           signature: line.trim(),
           startLine: i + 1,
@@ -720,6 +724,7 @@ class Parser {
   }
 
   _parseGraphql(content) {
+    // No cap — extract all type/operation definitions
     const symbols = [];
     const lines = content.split('\n');
     lines.forEach((line, i) => {
@@ -754,11 +759,12 @@ class Parser {
   }
 
   _parseMarkdown(content) {
+    // Quality filter: only # and ## headings — not a cap, a relevance filter
     const symbols = [];
     const lines = content.split('\n');
     lines.forEach((line, i) => {
-      // Headings: # Title, ## Section, etc.
-      const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
+      // Only ## headings (level 1 and 2) — skip ###, ####, etc.
+      const headingMatch = line.match(/^(#{1,2})\s+(.+)/);
       if (headingMatch) {
         const level = headingMatch[1].length;
         symbols.push({
@@ -776,6 +782,7 @@ class Parser {
   }
 
   _parseToml(content) {
+    // Extract ALL keys: section headers AND key=value pairs — no cap
     const symbols = [];
     const lines = content.split('\n');
     lines.forEach((line, i) => {
@@ -791,12 +798,13 @@ class Parser {
           exported: false,
           async: false,
         });
+        return;
       }
-      // Top-level key = value
-      const kvMatch = line.match(/^([\w_-]+)\s*=/);
-      if (kvMatch) {
+      // TOML key = value pairs
+      const keyMatch = line.match(/^(\s*)([\w$_-]+)\s*=/);
+      if (keyMatch && !line.trimStart().startsWith('#')) {
         symbols.push({
-          name: kvMatch[1],
+          name: keyMatch[2],
           kind: 'variable',
           signature: line.trim(),
           startLine: i + 1,
@@ -810,14 +818,16 @@ class Parser {
   }
 
   _parseXml(content) {
+    // Quality filter: only <script> and <style> block boundaries
+    // Parsing every <div> as a symbol is genuinely useless
     const symbols = [];
     const lines = content.split('\n');
     lines.forEach((line, i) => {
-      // Opening XML/HTML tags: <tagName or <tagName>
-      const tagMatch = line.match(/<([A-Za-z][\w.-]*)[^>]*>/);
-      if (tagMatch) {
+      // Only <script> and <style> block boundaries — no other tags as symbols
+      const blockMatch = line.match(/<(script|style)\b[^>]*>/i);
+      if (blockMatch) {
         symbols.push({
-          name: tagMatch[1],
+          name: blockMatch[1].toLowerCase(),
           kind: 'class',
           signature: line.trim(),
           startLine: i + 1,
@@ -831,6 +841,7 @@ class Parser {
   }
 
   _parseVueSvelte(content) {
+    // No cap — extract all symbols from script sections
     const symbols = [];
     const lines = content.split('\n');
     // Extract script section symbols using simple regex

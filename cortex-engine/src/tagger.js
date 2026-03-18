@@ -68,6 +68,9 @@ class Tagger {
       // Validation
       if (VALIDATION_PATTERN.test(symSource)) tags.push('validated');
 
+      // Route handler — detect router.get/post/etc inside function bodies
+      if (ROUTE_PATTERN.test(symSource)) tags.push('route_handler');
+
       // Custom rules
       for (const rule of this.customRules) {
         if (rule.pattern.test(symSource)) {

@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS symbols (
   exported INTEGER NOT NULL DEFAULT 0,
   async INTEGER NOT NULL DEFAULT 0,
   parent_class TEXT,
+  source_type TEXT NOT NULL DEFAULT 'code',
   FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS imports (
 
 CREATE INDEX IF NOT EXISTS idx_symbols_file ON symbols(file_id);
 CREATE INDEX IF NOT EXISTS idx_symbols_name ON symbols(name);
+CREATE INDEX IF NOT EXISTS idx_symbols_source_type ON symbols(source_type);
 CREATE INDEX IF NOT EXISTS idx_imports_file ON imports(file_id);
 CREATE INDEX IF NOT EXISTS idx_imports_source ON imports(source);
 CREATE INDEX IF NOT EXISTS idx_files_path ON files(path);

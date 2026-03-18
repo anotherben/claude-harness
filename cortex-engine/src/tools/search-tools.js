@@ -8,6 +8,11 @@ function registerSearchTools(server, engine) {
         kind: { type: 'string', description: 'Filter by kind: function, class, method, variable' },
         exported_only: { type: 'boolean', description: 'Only exported symbols' },
         limit: { type: 'number', description: 'Max results' },
+        source_types: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Filter by source type: code, config, query, docs, markup, style. Defaults to [code, query].',
+        },
       },
       required: ['query'],
     },
@@ -16,6 +21,7 @@ function registerSearchTools(server, engine) {
       kind: params.kind,
       exportedOnly: params.exported_only,
       limit: params.limit,
+      sourceTypes: params.source_types,
     });
     return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
   });

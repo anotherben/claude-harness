@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const Store = require('./store');
+const { getSourceType } = require('./store');
 const Parser = require('./parser');
 const Watcher = require('./watcher');
 const Tagger = require('./tagger');
@@ -82,7 +83,10 @@ class IndexEngine {
     });
 
     const result = this.parser.parse(relPath, content);
-    this.store.upsertSymbols(file.id, result.symbols);
+
+    // Determine source_type from file extension
+    const sourceType = getSourceType(relPath);
+    this.store.upsertSymbols(file.id, result.symbols, sourceType);
     this.store.upsertImports(file.id, result.imports);
 
     // Semantic tagging

@@ -2,6 +2,22 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 
+// Map file extensions to source_type categories
+const EXTENSION_TO_SOURCE_TYPE = {
+  '.ts': 'code', '.tsx': 'code', '.js': 'code', '.jsx': 'code',
+  '.cjs': 'code', '.mjs': 'code', '.py': 'code', '.sh': 'code', '.bash': 'code',
+  '.json': 'config', '.yaml': 'config', '.yml': 'config', '.toml': 'config',
+  '.sql': 'query', '.graphql': 'query', '.gql': 'query',
+  '.md': 'docs',
+  '.html': 'markup', '.xml': 'markup', '.vue': 'markup', '.svelte': 'markup',
+  '.css': 'style', '.scss': 'style', '.less': 'style',
+};
+
+function getSourceType(filePath) {
+  const ext = '.' + filePath.split('.').pop().toLowerCase();
+  return EXTENSION_TO_SOURCE_TYPE[ext] || 'code';
+}
+
 class Store {
   constructor(dbPath) {
     this.db = new Database(dbPath);
@@ -15,6 +31,16 @@ class Store {
       'utf-8'
     );
     this.db.exec(schema);
+
+    // Migration: add source_type column if it doesn't exist (for existing DBs)
+    const cols = this.db.pragma('table_info(symbols)');
+    const hasSourceType = cols.some(c => c.name === 'source_type');
+    if (!hasSourceType) {
+      this.db.exec("ALTER TABLE symbols ADD COLUMN source_type TEXT NOT NULL DEFAULT 'code'");
+      try {
+        this.db.exec("CREATE INDEX IF NOT EXISTS idx_symbols_source_type ON symbols(source_type)");
+      } catch { /* index may already exist */ }
+    }
   }
 
   // --- Files ---
@@ -57,11 +83,11 @@ class Store {
 
   // --- Symbols ---
 
-  upsertSymbols(fileId, symbols) {
+  upsertSymbols(fileId, symbols, sourceType = 'code') {
     const del = this.db.prepare('DELETE FROM symbols WHERE file_id = ?');
     const ins = this.db.prepare(`
-      INSERT INTO symbols (file_id, name, kind, signature, start_line, end_line, exported, async, parent_class)
-      VALUES (@fileId, @name, @kind, @signature, @startLine, @endLine, @exported, @async, @parentClass)
+      INSERT INTO symbols (file_id, name, kind, signature, start_line, end_line, exported, async, parent_class, source_type)
+      VALUES (@fileId, @name, @kind, @signature, @startLine, @endLine, @exported, @async, @parentClass, @sourceType)
     `);
 
     const tx = this.db.transaction(() => {
@@ -77,6 +103,7 @@ class Store {
           exported: sym.exported ? 1 : 0,
           async: sym.async ? 1 : 0,
           parentClass: sym.parentClass || null,
+          sourceType: sym.sourceType || sourceType,
         });
       }
     });
@@ -86,7 +113,8 @@ class Store {
   getSymbolsByFile(fileId) {
     return this.db.prepare(`
       SELECT id, file_id, name, kind, signature, start_line AS startLine,
-             end_line AS endLine, exported, async, parent_class AS parentClass
+             end_line AS endLine, exported, async, parent_class AS parentClass,
+             source_type AS sourceType
       FROM symbols WHERE file_id = ?
     `).all(fileId);
   }
@@ -147,9 +175,12 @@ class Store {
     return topLevel;
   }
 
-  findSymbols({ query, kind, exportedOnly, limit } = {}) {
+  findSymbols({ query, kind, exportedOnly, limit, sourceTypes } = {}) {
+    // Default to code + query source types for search
+    const types = sourceTypes || ['code', 'query'];
+
     let sql = `
-      SELECT s.*, f.path AS filePath,
+      SELECT s.*, s.source_type AS sourceType, f.path AS filePath,
         CASE
           WHEN LOWER(s.name) = LOWER(@exact) THEN 100
           WHEN LOWER(s.name) LIKE LOWER(@prefix) THEN 75
@@ -165,6 +196,13 @@ class Store {
       prefix: `${query}%`,
       exact: query,
     };
+
+    // source_type filter
+    if (types.length > 0) {
+      const placeholders = types.map((_, i) => `@st_${i}`).join(', ');
+      sql += ` AND s.source_type IN (${placeholders})`;
+      types.forEach((t, i) => { params[`st_${i}`] = t; });
+    }
 
     if (kind) {
       sql += ' AND s.kind = @kind';
@@ -183,24 +221,8 @@ class Store {
   }
 
   findImporters(filePath) {
-    // Build a set of candidate suffixes that an import source could end with
-    // to be considered an import of this file.
-    //
-    // Strategy:
-    // 1. Strip all known extensions to get the extensionless base.
-    // 2. Generate suffix variants: with/without extension, and with/without /index.
-    // 3. For each suffix variant, match import sources that end with it
-    //    (allowing for leading ./, ../, or no prefix at all).
-    // 4. Exclude the file itself from results.
-    //
-    // This handles:
-    //   - JS/TS cross-extension imports (import './auth.js' when file is auth.ts)
-    //   - Barrel exports (import from 'services/auth' when file is services/auth/index.ts)
-    //   - Relative paths at different depths (../../foo matches foo.ts)
-
     const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
 
-    // Normalise the input path: remove extension to get extensionless base
     let base = filePath;
     for (const ext of EXTENSIONS) {
       if (base.endsWith(ext)) {
@@ -209,40 +231,20 @@ class Store {
       }
     }
 
-    // If the file is an index file (e.g. services/auth/index), also add the
-    // parent directory as a valid import target (barrel export resolution).
     const isIndex = base.endsWith('/index') || base === 'index';
     const barrelBase = isIndex ? base.slice(0, base.lastIndexOf('/index')) : null;
-
-    // Collect all suffix candidates (what the import source tail could be).
-    // We generate every trailing-segment slice of the extensionless base so that
-    // relative imports at any depth are matched.
-    //
-    // Example: base = 'src/utils/format'
-    //   segments: ['src', 'utils', 'format']
-    //   suffixes: 'format', 'utils/format', 'src/utils/format'
-    //   + all of the above with each known extension appended.
-    //
-    // This lets './utils/format', '../../src/utils/format', './format.js' etc.
-    // all match 'src/utils/format.ts'.
-    //
-    // Trade-off: a short basename like 'index' would be very broad; this is
-    // acceptable because the query also excludes the target file itself.
 
     const suffixes = new Set();
 
     const segments = base.split('/');
     for (let i = segments.length - 1; i >= 0; i--) {
       const suffix = segments.slice(i).join('/');
-      // Extensionless
       suffixes.add(suffix);
-      // With each possible extension
       for (const ext of EXTENSIONS) {
         suffixes.add(suffix + ext);
       }
     }
 
-    // Barrel: parent directory without /index suffix
     if (barrelBase !== null) {
       const barrelSegments = barrelBase.split('/');
       for (let i = barrelSegments.length - 1; i >= 0; i--) {
@@ -254,15 +256,6 @@ class Store {
         }
       }
     }
-
-    // Build SQL conditions. For each suffix we match:
-    //   source = suffix           (exact, e.g. bare module name)
-    //   source LIKE '%/' + suffix  (relative path ending with /suffix)
-    //   source LIKE './' + suffix  (same-directory relative, e.g. './auth')
-    //   source LIKE '../...' forms  (already covered by '%/' + suffix)
-    //
-    // We avoid a plain leading-wildcard LIKE to reduce false-positives on
-    // partial name matches (e.g. 'foo-bar' should not match 'bar.ts').
 
     const conditions = [];
     const params = { filePath };
@@ -296,7 +289,6 @@ class Store {
   // --- Tags ---
 
   upsertTags(fileId, symbolTags) {
-    // symbolTags is a Map<symbolName, string[]>
     const delByFile = this.db.prepare('DELETE FROM tags WHERE file_id = ?');
     const getSymbol = this.db.prepare('SELECT id FROM symbols WHERE file_id = ? AND name = ?');
     const ins = this.db.prepare(
@@ -356,3 +348,4 @@ class Store {
 }
 
 module.exports = Store;
+module.exports.getSourceType = getSourceType;
