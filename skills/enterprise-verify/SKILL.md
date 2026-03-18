@@ -13,6 +13,33 @@ The distinction is simple: **evidence** is command output you can paste. **Belie
 
 ---
 
+## Step 0: Evidence Tier Gate (before any other checks)
+
+Read `.claude/evidence/last-test-run.json`. If the file exists, check the `tier` field:
+
+- If `tier` is `mocked` or `unknown`:
+
+```
+VERIFICATION BLOCKED: Evidence tier is "{tier}" — integration or e2e required.
+Run: cd apps/api && npm run test:local
+Mocked tests are not acceptable verification evidence.
+```
+
+Do NOT proceed with any other verification checks. This is a hard stop.
+
+- If `stale` is `true`:
+
+```
+VERIFICATION BLOCKED: Evidence is stale — re-run tests on current code.
+Run: cd apps/api && npm run test:local
+```
+
+Do NOT proceed. Re-run tests first.
+
+- If the file does not exist: warn but continue (verify.sh will catch missing evidence in its own checks).
+
+---
+
 ## Step 1: Run verify.sh
 
 The verification script runs all 7 checks mechanically and produces structured JSON evidence. Run it — don't run the checks manually.

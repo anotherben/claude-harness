@@ -197,6 +197,7 @@ get_hooks_for_tier() {
     require-vault-update.sh
     enforce-vault-context.sh
     pre-agent-dispatch.sh
+    post-agent-checklist.sh
   )
 
   # Standard adds
@@ -382,6 +383,12 @@ FULL_EDIT_POST
         "matcher": "Skill",
         "hooks": [
           { "type": "command", "command": "${hook_prefix}/mark-skill-invoked.sh", "timeout": 5 }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          { "type": "command", "command": "${hook_prefix}/post-agent-checklist.sh", "timeout": 5 }
         ]
       }$(
   if [ "$tier" = "standard" ] || [ "$tier" = "full" ]; then
