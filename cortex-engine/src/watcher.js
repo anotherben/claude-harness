@@ -2,13 +2,15 @@ const { watch } = require('chokidar');
 const path = require('path');
 const EventEmitter = require('events');
 
-const DEFAULT_IGNORE = [
-  '**/node_modules/**',
-  '**/.git/**',
-  '**/.cortex/**',
-  '**/dist/**',
-  '**/build/**',
-  '**/coverage/**',
+const DEFAULT_IGNORE_DIRS = [
+  'node_modules',
+  '.git',
+  '.cortex',
+  'dist',
+  'build',
+  'coverage',
+  '.worktrees',
+  '.claude',
 ];
 
 class Watcher extends EventEmitter {
@@ -22,9 +24,24 @@ class Watcher extends EventEmitter {
       ? `**/*${extensions[0]}`
       : `**/*{${extensions.join(',')}}`;
 
+    // Build ignore set: default dirs + custom dirs
+    const ignoreDirs = new Set(DEFAULT_IGNORE_DIRS);
+    for (const p of (config.ignorePaths || [])) {
+      // Extract dir name from glob patterns like '**/node_modules/**'
+      const match = p.match(/\*\*\/([^/*]+)\/?\*?\*?/);
+      if (match) ignoreDirs.add(match[1]);
+      else ignoreDirs.add(p);
+    }
+
+    // Function-based ignore is more reliable than glob patterns in chokidar
+    const ignoreFn = (filePath) => {
+      const parts = filePath.split(path.sep);
+      return parts.some((part) => ignoreDirs.has(part));
+    };
+
     this.watcher = watch(extGlob, {
       cwd: this.rootPath,
-      ignored: DEFAULT_IGNORE.concat(config.ignorePaths || []),
+      ignored: ignoreFn,
       persistent: true,
       ignoreInitial: false,
     });

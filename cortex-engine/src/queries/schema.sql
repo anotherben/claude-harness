@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS symbols (
   end_line INTEGER NOT NULL,
   exported INTEGER NOT NULL DEFAULT 0,
   async INTEGER NOT NULL DEFAULT 0,
+  parent_class TEXT,
   FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 

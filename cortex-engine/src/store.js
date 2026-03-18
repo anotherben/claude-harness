@@ -60,8 +60,8 @@ class Store {
   upsertSymbols(fileId, symbols) {
     const del = this.db.prepare('DELETE FROM symbols WHERE file_id = ?');
     const ins = this.db.prepare(`
-      INSERT INTO symbols (file_id, name, kind, signature, start_line, end_line, exported, async)
-      VALUES (@fileId, @name, @kind, @signature, @startLine, @endLine, @exported, @async)
+      INSERT INTO symbols (file_id, name, kind, signature, start_line, end_line, exported, async, parent_class)
+      VALUES (@fileId, @name, @kind, @signature, @startLine, @endLine, @exported, @async, @parentClass)
     `);
 
     const tx = this.db.transaction(() => {
@@ -76,6 +76,7 @@ class Store {
           endLine: sym.endLine,
           exported: sym.exported ? 1 : 0,
           async: sym.async ? 1 : 0,
+          parentClass: sym.parentClass || null,
         });
       }
     });
@@ -85,7 +86,7 @@ class Store {
   getSymbolsByFile(fileId) {
     return this.db.prepare(`
       SELECT id, file_id, name, kind, signature, start_line AS startLine,
-             end_line AS endLine, exported, async
+             end_line AS endLine, exported, async, parent_class AS parentClass
       FROM symbols WHERE file_id = ?
     `).all(fileId);
   }
@@ -119,14 +120,51 @@ class Store {
 
   // --- Search ---
 
+
+  getOutlineNested(fileId) {
+    const all = this.getSymbolsByFile(fileId);
+    const classes = new Map();
+    const topLevel = [];
+
+    // First pass: identify classes
+    for (const sym of all) {
+      if (sym.kind === 'class') {
+        classes.set(sym.name, { ...sym, children: [] });
+      }
+    }
+
+    // Second pass: assign methods to classes, rest to top level
+    for (const sym of all) {
+      if (sym.kind === 'class') {
+        topLevel.push(classes.get(sym.name));
+      } else if (sym.parentClass && classes.has(sym.parentClass)) {
+        classes.get(sym.parentClass).children.push(sym);
+      } else {
+        topLevel.push(sym);
+      }
+    }
+
+    return topLevel;
+  }
+
   findSymbols({ query, kind, exportedOnly, limit } = {}) {
     let sql = `
-      SELECT s.*, f.path AS filePath
+      SELECT s.*, f.path AS filePath,
+        CASE
+          WHEN LOWER(s.name) = LOWER(@exact) THEN 100
+          WHEN LOWER(s.name) LIKE LOWER(@prefix) THEN 75
+          WHEN LOWER(s.name) LIKE LOWER(@pattern) THEN 50
+          ELSE 0
+        END AS score
       FROM symbols s
       JOIN files f ON f.id = s.file_id
       WHERE s.name LIKE @pattern
     `;
-    const params = { pattern: `%${query}%` };
+    const params = {
+      pattern: `%${query}%`,
+      prefix: `${query}%`,
+      exact: query,
+    };
 
     if (kind) {
       sql += ' AND s.kind = @kind';
@@ -135,7 +173,7 @@ class Store {
     if (exportedOnly) {
       sql += ' AND s.exported = 1';
     }
-    sql += ' ORDER BY s.name';
+    sql += ' ORDER BY score DESC, s.name';
     if (limit) {
       sql += ' LIMIT @limit';
       params.limit = limit;
