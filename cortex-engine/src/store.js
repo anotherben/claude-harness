@@ -183,15 +183,113 @@ class Store {
   }
 
   findImporters(filePath) {
-    // Match imports where source ends with the filename (without extension)
-    // e.g., source='./b' matches filePath='b.js'
-    const baseName = filePath.replace(/\.[^.]+$/, '');
-    return this.db.prepare(`
+    // Build a set of candidate suffixes that an import source could end with
+    // to be considered an import of this file.
+    //
+    // Strategy:
+    // 1. Strip all known extensions to get the extensionless base.
+    // 2. Generate suffix variants: with/without extension, and with/without /index.
+    // 3. For each suffix variant, match import sources that end with it
+    //    (allowing for leading ./, ../, or no prefix at all).
+    // 4. Exclude the file itself from results.
+    //
+    // This handles:
+    //   - JS/TS cross-extension imports (import './auth.js' when file is auth.ts)
+    //   - Barrel exports (import from 'services/auth' when file is services/auth/index.ts)
+    //   - Relative paths at different depths (../../foo matches foo.ts)
+
+    const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
+
+    // Normalise the input path: remove extension to get extensionless base
+    let base = filePath;
+    for (const ext of EXTENSIONS) {
+      if (base.endsWith(ext)) {
+        base = base.slice(0, -ext.length);
+        break;
+      }
+    }
+
+    // If the file is an index file (e.g. services/auth/index), also add the
+    // parent directory as a valid import target (barrel export resolution).
+    const isIndex = base.endsWith('/index') || base === 'index';
+    const barrelBase = isIndex ? base.slice(0, base.lastIndexOf('/index')) : null;
+
+    // Collect all suffix candidates (what the import source tail could be).
+    // We generate every trailing-segment slice of the extensionless base so that
+    // relative imports at any depth are matched.
+    //
+    // Example: base = 'src/utils/format'
+    //   segments: ['src', 'utils', 'format']
+    //   suffixes: 'format', 'utils/format', 'src/utils/format'
+    //   + all of the above with each known extension appended.
+    //
+    // This lets './utils/format', '../../src/utils/format', './format.js' etc.
+    // all match 'src/utils/format.ts'.
+    //
+    // Trade-off: a short basename like 'index' would be very broad; this is
+    // acceptable because the query also excludes the target file itself.
+
+    const suffixes = new Set();
+
+    const segments = base.split('/');
+    for (let i = segments.length - 1; i >= 0; i--) {
+      const suffix = segments.slice(i).join('/');
+      // Extensionless
+      suffixes.add(suffix);
+      // With each possible extension
+      for (const ext of EXTENSIONS) {
+        suffixes.add(suffix + ext);
+      }
+    }
+
+    // Barrel: parent directory without /index suffix
+    if (barrelBase !== null) {
+      const barrelSegments = barrelBase.split('/');
+      for (let i = barrelSegments.length - 1; i >= 0; i--) {
+        const suffix = barrelSegments.slice(i).join('/');
+        suffixes.add(suffix);
+        suffixes.add(suffix + '/');
+        for (const ext of EXTENSIONS) {
+          suffixes.add(suffix + ext);
+        }
+      }
+    }
+
+    // Build SQL conditions. For each suffix we match:
+    //   source = suffix           (exact, e.g. bare module name)
+    //   source LIKE '%/' + suffix  (relative path ending with /suffix)
+    //   source LIKE './' + suffix  (same-directory relative, e.g. './auth')
+    //   source LIKE '../...' forms  (already covered by '%/' + suffix)
+    //
+    // We avoid a plain leading-wildcard LIKE to reduce false-positives on
+    // partial name matches (e.g. 'foo-bar' should not match 'bar.ts').
+
+    const conditions = [];
+    const params = { filePath };
+
+    let idx = 0;
+    for (const suffix of suffixes) {
+      const pExact = `p_exact_${idx}`;
+      const pSlash = `p_slash_${idx}`;
+      const pDot   = `p_dot_${idx}`;
+      conditions.push(`(i.source = @${pExact} OR i.source LIKE @${pSlash} OR i.source = @${pDot})`);
+      params[pExact] = suffix;
+      params[pSlash] = '%/' + suffix;
+      params[pDot]   = './' + suffix;
+      idx++;
+    }
+
+    const whereClause = conditions.join(' OR ');
+
+    const sql = `
       SELECT DISTINCT f.path, f.id
       FROM imports i
       JOIN files f ON f.id = i.file_id
-      WHERE i.source LIKE @pattern
-    `).all({ pattern: `%${baseName}` });
+      WHERE (${whereClause})
+        AND f.path != @filePath
+    `;
+
+    return this.db.prepare(sql).all(params);
   }
 
 

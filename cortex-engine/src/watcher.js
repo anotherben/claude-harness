@@ -13,18 +13,25 @@ const DEFAULT_IGNORE_DIRS = [
   '.claude',
 ];
 
+const DEFAULT_EXTENSIONS = [
+  '.js', '.jsx', '.cjs', '.mjs', '.ts', '.tsx',
+  '.json', '.yaml', '.yml', '.graphql', '.gql',
+  '.md', '.toml', '.xml', '.html', '.css', '.scss', '.less',
+  '.vue', '.svelte',
+];
+
 class Watcher extends EventEmitter {
   constructor(rootPath, config = {}) {
     super();
     this.rootPath = path.resolve(rootPath);
     this.config = config;
 
-    const extensions = config.extensions || ['.js', '.jsx', '.cjs', '.mjs', '.ts', '.tsx'];
+    const extensions = config.extensions || DEFAULT_EXTENSIONS;
     const extGlob = extensions.length === 1
       ? `**/*${extensions[0]}`
       : `**/*{${extensions.join(',')}}`;
 
-    // Build ignore set: default dirs + custom dirs
+    // Build ignore set: default dirs + custom dirs from config.ignorePaths
     const ignoreDirs = new Set(DEFAULT_IGNORE_DIRS);
     for (const p of (config.ignorePaths || [])) {
       // Extract dir name from glob patterns like '**/node_modules/**'

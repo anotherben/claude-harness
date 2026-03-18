@@ -217,6 +217,71 @@ describe('Store', () => {
       expect(paths).toContain('c.js');
       expect(paths).not.toContain('b.js');
     });
+
+    it('finds importers of a .ts file when imports use .js extension', () => {
+      // TypeScript ESM: import { foo } from './auth.js' while actual file is auth.ts
+      const fAuth = store.upsertFile({ path: 'src/services/auth.ts', language: 'typescript', hash: 'auth', sizeBytes: 200, lineCount: 20 });
+      const fUser = store.upsertFile({ path: 'src/routes/user.ts', language: 'typescript', hash: 'user', sizeBytes: 150, lineCount: 15 });
+      const fAdmin = store.upsertFile({ path: 'src/routes/admin.ts', language: 'typescript', hash: 'admin', sizeBytes: 120, lineCount: 12 });
+
+      // user.ts imports auth using .js extension (TypeScript ESM convention)
+      store.upsertImports(fUser.id, [{ source: '../services/auth.js', identifiers: ['authenticate'], line: 1 }]);
+      // admin.ts imports auth without extension
+      store.upsertImports(fAdmin.id, [{ source: '../services/auth', identifiers: ['authenticate'], line: 1 }]);
+
+      const importers = store.findImporters('src/services/auth.ts');
+      const paths = importers.map((r) => r.path);
+      expect(paths).toContain('src/routes/user.ts');   // .js extension cross-import
+      expect(paths).toContain('src/routes/admin.ts');  // extensionless import
+      expect(paths).not.toContain('src/services/auth.ts');
+    });
+
+    it('finds importers of an index.ts barrel export', () => {
+      // services/auth/index.ts is a barrel — consumers import from "services/auth"
+      const fIndex = store.upsertFile({ path: 'src/services/auth/index.ts', language: 'typescript', hash: 'idx', sizeBytes: 50, lineCount: 5 });
+      const fApp   = store.upsertFile({ path: 'src/app.ts', language: 'typescript', hash: 'app', sizeBytes: 300, lineCount: 30 });
+      const fTest  = store.upsertFile({ path: 'test/auth.test.ts', language: 'typescript', hash: 'tst', sizeBytes: 100, lineCount: 10 });
+      const fOther = store.upsertFile({ path: 'src/other.ts', language: 'typescript', hash: 'oth', sizeBytes: 80, lineCount: 8 });
+
+      // app.ts imports from the barrel directory (no /index)
+      store.upsertImports(fApp.id, [{ source: './services/auth', identifiers: ['AuthService'], line: 1 }]);
+      // test imports with relative path going up
+      store.upsertImports(fTest.id, [{ source: '../src/services/auth', identifiers: ['AuthService'], line: 1 }]);
+      // other.ts imports the index file explicitly
+      store.upsertImports(fOther.id, [{ source: './services/auth/index', identifiers: ['AuthService'], line: 1 }]);
+
+      const importers = store.findImporters('src/services/auth/index.ts');
+      const paths = importers.map((r) => r.path);
+      expect(paths).toContain('src/app.ts');            // bare directory import
+      expect(paths).toContain('test/auth.test.ts');     // relative path from test dir
+      expect(paths).toContain('src/other.ts');          // explicit /index import
+      expect(paths).not.toContain('src/services/auth/index.ts');
+    });
+
+    it('finds importers with relative paths at different depths', () => {
+      // This test covers imports where the source path contains enough segments
+      // to uniquely identify the target file from its full path.
+      // Note: same-directory imports (e.g. "./format") cannot be resolved without
+      // knowing the importer's directory — those require parser-level resolution.
+      const fUtil = store.upsertFile({ path: 'src/utils/format.ts', language: 'typescript', hash: 'fmt', sizeBytes: 60, lineCount: 6 });
+      const fUp1  = store.upsertFile({ path: 'src/controller.ts', language: 'typescript', hash: 'c1',  sizeBytes: 60, lineCount: 6 });
+      const fUp2  = store.upsertFile({ path: 'root.ts', language: 'typescript', hash: 'r1', sizeBytes: 60, lineCount: 6 });
+      const fDeep = store.upsertFile({ path: 'other/deep/module.ts', language: 'typescript', hash: 'd1', sizeBytes: 60, lineCount: 6 });
+
+      // one level up: import includes the utils/format suffix
+      store.upsertImports(fUp1.id, [{ source: './utils/format', identifiers: ['fmt'], line: 1 }]);
+      // two levels up: import includes src/utils/format suffix with .ts extension
+      store.upsertImports(fUp2.id, [{ source: './src/utils/format.ts', identifiers: ['fmt'], line: 1 }]);
+      // from a completely different subtree, using the full relative path
+      store.upsertImports(fDeep.id, [{ source: '../../src/utils/format', identifiers: ['fmt'], line: 1 }]);
+
+      const importers = store.findImporters('src/utils/format.ts');
+      const paths = importers.map((r) => r.path);
+      expect(paths).toContain('src/controller.ts');    // one-up relative (./utils/format)
+      expect(paths).toContain('root.ts');              // two-up relative with .ts ext
+      expect(paths).toContain('other/deep/module.ts'); // cross-subtree relative path
+      expect(paths).not.toContain('src/utils/format.ts');
+    });
   });
 
   // Stats

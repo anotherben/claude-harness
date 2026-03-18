@@ -102,4 +102,251 @@ describe('Parser', () => {
       expect(result.imports).toEqual([]);
     });
   });
+
+  // Nested symbol extraction
+  describe('nested symbol extraction', () => {
+    describe('factory function with nested helpers', () => {
+      let result;
+      beforeAll(() => {
+        const content = fs.readFileSync(path.join(FIXTURES, 'factory.js'), 'utf-8');
+        result = parser.parse('factory.js', content);
+      });
+
+      it('extracts the factory function itself', () => {
+        const factory = result.symbols.find((s) => s.name === 'createUserService');
+        expect(factory).toBeDefined();
+        expect(factory.kind).toBe('function');
+        expect(factory.parentClass).toBeNull();
+      });
+
+      it('extracts nested function declarations inside factory', () => {
+        const validate = result.symbols.find((s) => s.name === 'validate');
+        expect(validate).toBeDefined();
+        expect(validate.kind).toBe('function');
+        expect(validate.parentClass).toBe('createUserService');
+      });
+
+      it('extracts nested arrow functions inside factory', () => {
+        const formatName = result.symbols.find((s) => s.name === 'formatName');
+        expect(formatName).toBeDefined();
+        expect(formatName.kind).toBe('function');
+        expect(formatName.parentClass).toBe('createUserService');
+      });
+
+      it('extracts nested async functions inside factory', () => {
+        const save = result.symbols.find((s) => s.name === 'save');
+        expect(save).toBeDefined();
+        expect(save.kind).toBe('function');
+        expect(save.async).toBe(true);
+        expect(save.parentClass).toBe('createUserService');
+      });
+
+      it('populates children array on the factory function', () => {
+        const factory = result.symbols.find((s) => s.name === 'createUserService');
+        expect(factory.children).toBeDefined();
+        expect(factory.children.length).toBeGreaterThanOrEqual(3);
+        const childNames = factory.children.map((c) => c.name);
+        expect(childNames).toContain('validate');
+        expect(childNames).toContain('formatName');
+        expect(childNames).toContain('save');
+      });
+    });
+
+    describe('class with nested helper functions', () => {
+      let result;
+      beforeAll(() => {
+        const content = fs.readFileSync(path.join(FIXTURES, 'nested-class.js'), 'utf-8');
+        result = parser.parse('nested-class.js', content);
+      });
+
+      it('extracts the class', () => {
+        const cls = result.symbols.find((s) => s.name === 'OrderProcessor');
+        expect(cls).toBeDefined();
+        expect(cls.kind).toBe('class');
+      });
+
+      it('extracts class methods', () => {
+        const process = result.symbols.find((s) => s.name === 'process' && s.kind === 'method');
+        expect(process).toBeDefined();
+        expect(process.parentClass).toBe('OrderProcessor');
+      });
+
+      it('extracts nested function inside method body', () => {
+        const calcTax = result.symbols.find((s) => s.name === 'calculateTax');
+        expect(calcTax).toBeDefined();
+        expect(calcTax.kind).toBe('function');
+        expect(calcTax.parentClass).toBe('process');
+      });
+
+      it('extracts nested arrow function inside method body', () => {
+        const applyDiscount = result.symbols.find((s) => s.name === 'applyDiscount');
+        expect(applyDiscount).toBeDefined();
+        expect(applyDiscount.kind).toBe('function');
+        expect(applyDiscount.parentClass).toBe('process');
+      });
+
+      it('extracts nested function inside async method body', () => {
+        const serialize = result.symbols.find((s) => s.name === 'serialize');
+        expect(serialize).toBeDefined();
+        expect(serialize.kind).toBe('function');
+        expect(serialize.parentClass).toBe('save');
+      });
+    });
+
+    describe('arrow function with nested helpers', () => {
+      let result;
+      beforeAll(() => {
+        const content = fs.readFileSync(path.join(FIXTURES, 'arrow-nested.js'), 'utf-8');
+        result = parser.parse('arrow-nested.js', content);
+      });
+
+      it('extracts the outer arrow function', () => {
+        const logger = result.symbols.find((s) => s.name === 'createLogger');
+        expect(logger).toBeDefined();
+        expect(logger.kind).toBe('function');
+        expect(logger.parentClass).toBeNull();
+      });
+
+      it('extracts nested arrow inside arrow function', () => {
+        const format = result.symbols.find((s) => s.name === 'format');
+        expect(format).toBeDefined();
+        expect(format.kind).toBe('function');
+        expect(format.parentClass).toBe('createLogger');
+      });
+
+      it('extracts nested function declaration inside arrow function', () => {
+        const timestamp = result.symbols.find((s) => s.name === 'timestamp');
+        expect(timestamp).toBeDefined();
+        expect(timestamp.kind).toBe('function');
+        expect(timestamp.parentClass).toBe('createLogger');
+      });
+
+      it('extracts deeply nested arrow inside arrow function', () => {
+        const log = result.symbols.find((s) => s.name === 'log');
+        expect(log).toBeDefined();
+        expect(log.kind).toBe('function');
+        expect(log.parentClass).toBe('createLogger');
+      });
+
+      it('populates children array on the outer arrow function', () => {
+        const logger = result.symbols.find((s) => s.name === 'createLogger');
+        expect(logger.children.length).toBeGreaterThanOrEqual(3);
+        const childNames = logger.children.map((c) => c.name);
+        expect(childNames).toContain('format');
+        expect(childNames).toContain('timestamp');
+        expect(childNames).toContain('log');
+      });
+    });
+  });
+
+  // TypeScript type extraction
+  describe('TypeScript type extraction', () => {
+    let result;
+    beforeAll(() => {
+      const content = fs.readFileSync(path.join(FIXTURES, 'typescript-types.ts'), 'utf-8');
+      result = parser.parse('typescript-types.ts', content);
+    });
+
+    it('extracts type aliases', () => {
+      const userId = result.symbols.find((s) => s.name === 'UserId');
+      expect(userId).toBeDefined();
+      expect(userId.kind).toBe('type');
+
+      const config = result.symbols.find((s) => s.name === 'Config');
+      expect(config).toBeDefined();
+      expect(config.kind).toBe('type');
+    });
+
+    it('extracts interfaces', () => {
+      const userService = result.symbols.find((s) => s.name === 'UserService');
+      expect(userService).toBeDefined();
+      expect(userService.kind).toBe('interface');
+    });
+
+    it('extracts interface methods', () => {
+      const getUser = result.symbols.find((s) => s.name === 'getUser' && s.parentClass === 'UserService');
+      expect(getUser).toBeDefined();
+      expect(getUser.kind).toBe('method');
+    });
+
+    it('extracts interface properties', () => {
+      const name = result.symbols.find((s) => s.name === 'name' && s.parentClass === 'UserService');
+      expect(name).toBeDefined();
+      expect(name.kind).toBe('property');
+    });
+
+    it('populates children on interface', () => {
+      const userService = result.symbols.find((s) => s.name === 'UserService');
+      expect(userService.children.length).toBeGreaterThanOrEqual(3);
+      const childNames = userService.children.map((c) => c.name);
+      expect(childNames).toContain('getUser');
+      expect(childNames).toContain('createUser');
+      expect(childNames).toContain('name');
+    });
+
+    it('extracts enums', () => {
+      const status = result.symbols.find((s) => s.name === 'Status');
+      expect(status).toBeDefined();
+      expect(status.kind).toBe('enum');
+    });
+
+    it('extracts enum members', () => {
+      const active = result.symbols.find((s) => s.name === 'Active' && s.parentClass === 'Status');
+      expect(active).toBeDefined();
+      expect(active.kind).toBe('enum_member');
+    });
+
+    it('populates children on enum', () => {
+      const status = result.symbols.find((s) => s.name === 'Status');
+      expect(status.children.length).toBe(3);
+      const childNames = status.children.map((c) => c.name);
+      expect(childNames).toContain('Active');
+      expect(childNames).toContain('Inactive');
+      expect(childNames).toContain('Pending');
+    });
+
+    it('extracts nested function inside TypeScript function', () => {
+      const buildUrl = result.symbols.find((s) => s.name === 'buildUrl');
+      expect(buildUrl).toBeDefined();
+      expect(buildUrl.kind).toBe('function');
+      expect(buildUrl.parentClass).toBe('createService');
+    });
+
+    it('extracts multiple interfaces', () => {
+      const logger = result.symbols.find((s) => s.name === 'Logger');
+      expect(logger).toBeDefined();
+      expect(logger.kind).toBe('interface');
+      const infoMethod = result.symbols.find((s) => s.name === 'info' && s.parentClass === 'Logger');
+      expect(infoMethod).toBeDefined();
+      expect(infoMethod.kind).toBe('method');
+    });
+  });
+
+  // Parent-child relationship integrity
+  describe('parent-child relationships', () => {
+    it('top-level symbols have null parentClass', () => {
+      const content = fs.readFileSync(path.join(FIXTURES, 'simple.js'), 'utf-8');
+      const result = parser.parse('simple.js', content);
+      for (const sym of result.symbols) {
+        expect(sym.parentClass).toBeNull();
+      }
+    });
+
+    it('class methods have parentClass pointing to class name', () => {
+      const content = fs.readFileSync(path.join(FIXTURES, 'classes.js'), 'utf-8');
+      const result = parser.parse('classes.js', content);
+      const methods = result.symbols.filter((s) => s.kind === 'method');
+      for (const m of methods) {
+        expect(m.parentClass).toBe('MyClass');
+      }
+    });
+
+    it('all symbols have children array', () => {
+      const content = fs.readFileSync(path.join(FIXTURES, 'factory.js'), 'utf-8');
+      const result = parser.parse('factory.js', content);
+      for (const sym of result.symbols) {
+        expect(Array.isArray(sym.children)).toBe(true);
+      }
+    });
+  });
 });

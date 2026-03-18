@@ -105,4 +105,106 @@ describe('Tagger', () => {
       expect(tags.get('syncInventory')).toContain('rex_soap');
     });
   });
+
+  // ── TypeScript-aware additions ──────────────────────────────────────────────
+
+  describe('TS decorator route_handler detection', () => {
+    it('tags @Get decorator as route_handler', () => {
+      const code = `@Get('/users')\nasync getUsers(@Query() query: ListUsersDto) {\n  return this.usersService.findAll(query);\n}`;
+      const tags = tagger.tagSource(code);
+      expect(tags.some(t => t.tag === 'route_handler')).toBe(true);
+    });
+
+    it('tags @Post decorator as route_handler', () => {
+      const code = `@Post('/users')\nasync createUser(@Body() dto: CreateUserDto) {\n  return this.usersService.create(dto);\n}`;
+      const tags = tagger.tagSource(code);
+      expect(tags.some(t => t.tag === 'route_handler' && t.name === 'POST route')).toBe(true);
+    });
+
+    it('tags @Delete decorator as route_handler', () => {
+      const code = `@Delete('/users/:id')\nasync deleteUser(@Param('id') id: string) {\n  return this.usersService.remove(id);\n}`;
+      const tags = tagger.tagSource(code);
+      expect(tags.some(t => t.tag === 'route_handler')).toBe(true);
+    });
+
+    it('tags mixed JS and TS route patterns in same source', () => {
+      const code = [
+        `router.get('/orders', (req, res) => res.json([]));`,
+        `@Post('/orders')`,
+        `async createOrder(@Body() dto: CreateOrderDto) {}`,
+      ].join('\n');
+      const tags = tagger.tagSource(code);
+      const routeTags = tags.filter(t => t.tag === 'route_handler');
+      expect(routeTags.length).toBe(2);
+    });
+  });
+
+  describe('Prisma ORM db_read detection', () => {
+    it('tags prisma.*.findMany as db_read', () => {
+      const code = `async function listUsers(tenantId) {\n  return prisma.user.findMany({ where: { tenantId } });\n}`;
+      const symbols = [makeSymbol('listUsers', 1, 3, true)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('listUsers')).toContain('db_read');
+    });
+
+    it('tags prisma.*.findFirst as db_read', () => {
+      const code = `async function getUser(id) {\n  return prisma.user.findFirst({ where: { id } });\n}`;
+      const symbols = [makeSymbol('getUser', 1, 3, true)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('getUser')).toContain('db_read');
+    });
+
+    it('tags prisma.*.create as db_write', () => {
+      const code = `async function createUser(data) {\n  return prisma.user.create({ data });\n}`;
+      const symbols = [makeSymbol('createUser', 1, 3, true)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('createUser')).toContain('db_write');
+    });
+
+    it('flags prisma calls missing tenant_id as unscoped_query', () => {
+      const code = `async function allUsers() {\n  return prisma.user.findMany();\n}`;
+      const symbols = [makeSymbol('allUsers', 1, 3, true)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('allUsers')).toContain('unscoped_query');
+    });
+  });
+
+  describe('broader pool/client/db.query detection', () => {
+    it('tags client.query SELECT as db_read', () => {
+      const code = `async function getItems() {\n  return client.query('SELECT * FROM items');\n}`;
+      const symbols = [makeSymbol('getItems', 1, 3, true)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('getItems')).toContain('db_read');
+    });
+
+    it('tags db.query INSERT as db_write', () => {
+      const code = `async function addItem(name) {\n  return db.query('INSERT INTO items (name) VALUES ($1)', [name]);\n}`;
+      const symbols = [makeSymbol('addItem', 1, 3, true)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('addItem')).toContain('db_write');
+    });
+
+    it('tags connection.query SELECT as db_read', () => {
+      const code = `async function fetchRow(id) {\n  return connection.query('SELECT * FROM rows WHERE id=$1', [id]);\n}`;
+      const symbols = [makeSymbol('fetchRow', 1, 3, true)];
+      const tags = tagger.tagSymbols(symbols, code);
+      expect(tags.get('fetchRow')).toContain('db_read');
+    });
+  });
+
+  describe('configurable tagRules.customRules from cortex.config.js', () => {
+    it('accepts customRules array and fires matching tags', () => {
+      const configTagger = new Tagger({
+        customRules: [
+          { tag: 'stripe_call', pattern: /stripe\.\w+\.create/ },
+          { tag: 'sendgrid_mail', pattern: /sgMail\.send\s*\(/ },
+        ],
+      });
+      const code = `async function chargeCard(amount) {\n  return stripe.paymentIntents.create({ amount, currency: 'usd' });\n}`;
+      const symbols = [makeSymbol('chargeCard', 1, 3, true)];
+      const tags = configTagger.tagSymbols(symbols, code);
+      expect(tags.get('chargeCard')).toContain('stripe_call');
+      expect(tags.get('chargeCard')).not.toContain('sendgrid_mail');
+    });
+  });
 });

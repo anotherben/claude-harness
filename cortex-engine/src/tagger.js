@@ -1,11 +1,26 @@
-const DB_READ_PATTERN = /pool\.query\s*\(\s*['"`]SELECT/i;
-const DB_WRITE_PATTERN = /pool\.query\s*\(\s*['"`](INSERT|UPDATE|DELETE)/i;
-const DB_CALL_PATTERN = /pool\.query/;
+// DB read patterns — SQL SELECT via various client styles + ORM finders
+const DB_READ_PATTERN = /(?:pool|client|db|connection)\.query\s*\(\s*['"`]SELECT|\bprisma\.\w+\.(?:findMany|findFirst|findUnique|findOne|count|aggregate|groupBy)\s*\(|\bdb\.(?:select|from)\s*\(|\b(?:knex|db)\s*\(\s*['"`]\w|\bknex\s*\.\s*select\s*\(|\.select\s*\(/i;
+
+// DB write patterns — SQL INSERT/UPDATE/DELETE via various client styles + ORM mutations
+const DB_WRITE_PATTERN = /(?:pool|client|db|connection)\.query\s*\(\s*['"`](?:INSERT|UPDATE|DELETE)|\bprisma\.\w+\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(|\.insert\s*\(|\.update\s*\(|\.delete\s*\(|\.upsert\s*\(/i;
+
+// Any DB call — used for tenant-scope and error-handling checks
+const DB_CALL_PATTERN = /(?:pool|client|db|connection)\.query\s*\(|\bprisma\.\w+\.\w+\s*\(|\b(?:knex|db)\s*\(\s*['"`]\w|\bknex\s*\.\s*(?:select|insert|update|delete|from|where)\s*\(|\.(?:select|insert|update|delete|where)\s*\(/;
+
 const TENANT_SCOPED_PATTERN = /tenant_id/;
 const TRY_CATCH_PATTERN = /\btry\s*\{/;
-const ROUTE_PATTERN = /router\.(get|post|put|delete|patch)\s*\(/;
+
+// Route patterns — Express-style (router/app) + TS decorator style
+const ROUTE_PATTERN = /(?:router|app)\.(get|post|put|delete|patch)\s*\(|@(Get|Post|Put|Delete|Patch)\s*\(/;
+
 const MODULE_EXPORTS_PATTERN = /module\.exports\s*=\s*\{([^}]+)\}/;
 const EXPORTS_PATTERN = /exports\.(\w+)/g;
+
+// Auth patterns — decorators, middleware helpers
+const AUTH_PATTERN = /@(?:Auth|Guard|UseGuards)\s*\(|authenticate\s*[,(]|requireAuth\s*[,(]/;
+
+// Validation patterns — class-validator decorators, zod, joi
+const VALIDATION_PATTERN = /@(?:Body|Param|Query)\s*\(|validate\s*\(|schema\.parse\s*\(|\.safeParse\s*\(/;
 
 class Tagger {
   constructor(config = {}) {
@@ -47,6 +62,12 @@ class Tagger {
         tags.push('no_error_handling');
       }
 
+      // Auth
+      if (AUTH_PATTERN.test(symSource)) tags.push('auth');
+
+      // Validation
+      if (VALIDATION_PATTERN.test(symSource)) tags.push('validated');
+
       // Custom rules
       for (const rule of this.customRules) {
         if (rule.pattern.test(symSource)) {
@@ -72,9 +93,11 @@ class Tagger {
     lines.forEach((line, i) => {
       if (ROUTE_PATTERN.test(line)) {
         const match = line.match(ROUTE_PATTERN);
+        // group 1 = Express-style verb, group 2 = decorator verb
+        const verb = match[1] || match[2];
         tags.push({
           tag: 'route_handler',
-          name: match ? `${match[1].toUpperCase()} route` : 'route',
+          name: verb ? `${verb.toUpperCase()} route` : 'route',
           line: i + 1,
         });
       }

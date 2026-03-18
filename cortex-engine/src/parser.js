@@ -14,13 +14,27 @@ const EXTENSION_TO_LANGUAGE = {
   '.bash': 'bash',
   '.sql': 'sql',
   '.css': 'css',
+  // New text-based extensions
+  '.json': 'text',
+  '.yaml': 'text',
+  '.yml': 'text',
+  '.graphql': 'text',
+  '.gql': 'text',
+  '.md': 'text',
+  '.toml': 'text',
+  '.xml': 'text',
+  '.html': 'text',
+  '.scss': 'css',
+  '.less': 'css',
+  '.vue': 'text',
+  '.svelte': 'text',
 };
 
 // Languages with tree-sitter AST support
 const TREE_SITTER_LANGUAGES = new Set(['javascript', 'typescript', 'tsx']);
 
 // Languages using regex fallback
-const REGEX_LANGUAGES = new Set(['python', 'bash', 'sql', 'css']);
+const REGEX_LANGUAGES = new Set(['python', 'bash', 'sql', 'css', 'text']);
 
 class Parser {
   constructor() {
@@ -76,25 +90,34 @@ class Parser {
     const symbols = [];
     const imports = [];
 
-    this._walk(tree.rootNode, content, symbols, imports);
+    this._walk(tree.rootNode, content, symbols, imports, null);
+
+    // Build parent-child relationships: populate children arrays
+    this._linkChildren(symbols);
 
     return { symbols, imports };
   }
 
-  _walk(node, content, symbols, imports) {
+  _walk(node, content, symbols, imports, parentScope) {
     if (!node) return;
+
+    // Track whether this node defines a new scope for nested children
+    let newScope = parentScope;
+
     switch (node.type) {
       case 'function_declaration':
-        this._extractFunction(node, content, symbols);
+        this._extractFunction(node, content, symbols, parentScope);
+        newScope = this._getNodeName(node) || parentScope;
         break;
 
       case 'lexical_declaration':
       case 'variable_declaration':
-        this._extractVariableDecl(node, content, symbols, imports);
+        this._extractVariableDecl(node, content, symbols, imports, parentScope);
         break;
 
       case 'class_declaration':
-        this._extractClass(node, content, symbols);
+        this._extractClass(node, content, symbols, parentScope);
+        newScope = this._getNodeName(node) || parentScope;
         break;
 
       case 'expression_statement':
@@ -105,20 +128,72 @@ class Parser {
       case 'import_statement':
         this._extractTsImport(node, imports);
         break;
+
+      // TypeScript-specific: type aliases, interfaces, enums
+      case 'type_alias_declaration':
+        this._extractTypeAlias(node, content, symbols, parentScope);
+        break;
+
+      case 'interface_declaration':
+        this._extractInterface(node, content, symbols, parentScope);
+        newScope = this._getNodeName(node) || parentScope;
+        break;
+
+      case 'enum_declaration':
+        this._extractEnum(node, content, symbols, parentScope);
+        newScope = this._getNodeName(node) || parentScope;
+        break;
+
+      case 'method_definition':
+        // Methods inside classes are already extracted by _extractClass.
+        // Set scope for recursion into method bodies.
+        newScope = this._getNodeName(node) || parentScope;
+        break;
+
+      case 'arrow_function':
+      case 'function_expression':
+        // Anonymous arrow functions / function expressions encountered during walk.
+        // Named ones are handled via variable_declaration. Just allow recursion.
+        break;
+
+      case 'variable_declarator': {
+        // When a variable_declarator has an arrow_function or function_expression value,
+        // use the variable name as scope for recursion into the function body.
+        const varName = node.childForFieldName('name');
+        const varValue = node.childForFieldName('value');
+        if (varName && varValue &&
+            (varValue.type === 'arrow_function' || varValue.type === 'function_expression')) {
+          newScope = varName.text || parentScope;
+        }
+        break;
+      }
     }
 
+    // Recurse into children -- we now recurse into ALL node types to find nested symbols.
     for (let i = 0; i < node.childCount; i++) {
       const child = node.child(i);
-      if (node.type !== 'function_declaration' &&
-          node.type !== 'class_declaration' &&
-          node.type !== 'arrow_function' &&
-          node.type !== 'method_definition') {
-        this._walk(child, content, symbols, imports);
+      // For nodes that define a scope, pass the new scope to children
+      if (node.type === 'function_declaration' ||
+          node.type === 'class_declaration' ||
+          node.type === 'arrow_function' ||
+          node.type === 'method_definition' ||
+          node.type === 'function_expression' ||
+          node.type === 'interface_declaration' ||
+          node.type === 'enum_declaration' ||
+          node.type === 'variable_declarator') {
+        this._walk(child, content, symbols, imports, newScope);
+      } else {
+        this._walk(child, content, symbols, imports, parentScope);
       }
     }
   }
 
-  _extractFunction(node, content, symbols) {
+  _getNodeName(node) {
+    const nameNode = node.childForFieldName('name');
+    return nameNode ? nameNode.text : null;
+  }
+
+  _extractFunction(node, content, symbols, parentScope) {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -132,10 +207,12 @@ class Parser {
       endLine: node.endPosition.row + 1,
       exported: false,
       async: isAsync,
+      parentClass: parentScope || null,
+      children: [],
     });
   }
 
-  _extractVariableDecl(node, content, symbols, imports) {
+  _extractVariableDecl(node, content, symbols, imports, parentScope) {
     for (let i = 0; i < node.childCount; i++) {
       const declarator = node.child(i);
       if (declarator.type !== 'variable_declarator') continue;
@@ -157,6 +234,8 @@ class Parser {
             endLine: node.endPosition.row + 1,
             exported: false,
             async: isAsync,
+            parentClass: parentScope || null,
+            children: [],
           });
         }
       }
@@ -238,7 +317,7 @@ class Parser {
     imports.push({ source, identifiers, line: node.startPosition.row + 1 });
   }
 
-  _extractClass(node, content, symbols) {
+  _extractClass(node, content, symbols, parentScope) {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -250,6 +329,8 @@ class Parser {
       endLine: node.endPosition.row + 1,
       exported: false,
       async: false,
+      parentClass: parentScope || null,
+      children: [],
     });
 
     const body = node.childForFieldName('body');
@@ -269,7 +350,145 @@ class Parser {
               exported: false,
               async: isAsync,
               parentClass: nameNode.text,
+              children: [],
             });
+          }
+        }
+      }
+    }
+  }
+
+  // --- TypeScript-specific extractors ---
+
+  _extractTypeAlias(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'type',
+      signature: this._getSignature(node, content),
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractInterface(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'interface',
+      signature: `interface ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    // Extract interface methods/properties
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'method_signature' ||
+            member.type === 'property_signature') {
+          const memberName = member.childForFieldName('name');
+          if (memberName) {
+            const kind = member.type === 'method_signature' ? 'method' : 'property';
+            symbols.push({
+              name: memberName.text,
+              kind,
+              signature: member.text.replace(/;$/, '').trim(),
+              startLine: member.startPosition.row + 1,
+              endLine: member.endPosition.row + 1,
+              exported: false,
+              async: false,
+              parentClass: nameNode.text,
+              children: [],
+            });
+          }
+        }
+      }
+    }
+  }
+
+  _extractEnum(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'enum',
+      signature: `enum ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    // Extract enum members
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'enum_member' || member.type === 'enum_assignment' || member.type === 'property_identifier') {
+          const memberName = member.childForFieldName('name') || member.children?.find(c => c.type === 'property_identifier') || member;
+          const name = memberName.text;
+          if (name && name !== ',' && name !== '{' && name !== '}') {
+            symbols.push({
+              name,
+              kind: 'enum_member',
+              signature: member.text.trim(),
+              startLine: member.startPosition.row + 1,
+              endLine: member.endPosition.row + 1,
+              exported: false,
+              async: false,
+              parentClass: nameNode.text,
+              children: [],
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // --- Parent-child linking ---
+
+  _linkChildren(symbols) {
+    const byName = new Map();
+    // First pass: index all symbols by name, preferring top-level (no parent)
+    for (const sym of symbols) {
+      if (!sym.parentClass) {
+        byName.set(sym.name, sym);
+      }
+    }
+    // Second pass: index remaining symbols that aren't yet indexed
+    for (const sym of symbols) {
+      if (!byName.has(sym.name)) {
+        byName.set(sym.name, sym);
+      }
+    }
+
+    for (const sym of symbols) {
+      if (sym.parentClass) {
+        const parent = byName.get(sym.parentClass);
+        if (parent && parent !== sym && parent.children) {
+          // Avoid duplicates (class methods are already added by _extractClass)
+          const isDuplicate = parent.children.some(
+            (c) => c.name === sym.name && c.startLine === sym.startLine
+          );
+          if (!isDuplicate) {
+            parent.children.push(sym);
           }
         }
       }
@@ -295,7 +514,8 @@ class Parser {
       case 'python': return this._parsePython(content);
       case 'bash': return this._parseBash(content);
       case 'sql': return this._parseSql(content);
-      case 'css': return this._parseCss(content);
+      case 'css': return this._parseCss(content, filePath);
+      case 'text': return this._parseText(filePath, content);
       default: return { symbols: [], imports: [] };
     }
   }
@@ -379,7 +599,6 @@ class Parser {
 
   _parseSql(content) {
     const symbols = [];
-    const lines = content.split('\n');
 
     const fullContent = content;
     // CREATE TABLE name
@@ -414,7 +633,7 @@ class Parser {
     return { symbols, imports: [] };
   }
 
-  _parseCss(content) {
+  _parseCss(content, filePath) {
     const symbols = [];
     const lines = content.split('\n');
 
@@ -434,6 +653,220 @@ class Parser {
       }
     });
 
+    return { symbols, imports: [] };
+  }
+
+  // --- Generic text-based parsers ---
+
+  _parseText(filePath, content) {
+    const ext = '.' + filePath.split('.').pop().toLowerCase();
+    switch (ext) {
+      case '.json': return this._parseJson(content);
+      case '.yaml':
+      case '.yml': return this._parseYaml(content);
+      case '.graphql':
+      case '.gql': return this._parseGraphql(content);
+      case '.md': return this._parseMarkdown(content);
+      case '.toml': return this._parseToml(content);
+      case '.xml':
+      case '.html': return this._parseXml(content);
+      case '.vue':
+      case '.svelte': return this._parseVueSvelte(content);
+      default: return { symbols: [], imports: [] };
+    }
+  }
+
+  _parseJson(content) {
+    const symbols = [];
+    // Extract top-level keys from JSON objects
+    const lines = content.split('\n');
+    lines.forEach((line, i) => {
+      // Top-level key: "keyName":
+      const keyMatch = line.match(/^\s{0,4}"([\w$-]+)"\s*:/);
+      if (keyMatch) {
+        symbols.push({
+          name: keyMatch[1],
+          kind: 'variable',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: false,
+          async: false,
+        });
+      }
+    });
+    return { symbols, imports: [] };
+  }
+
+  _parseYaml(content) {
+    const symbols = [];
+    const lines = content.split('\n');
+    lines.forEach((line, i) => {
+      // Top-level YAML keys (no leading whitespace)
+      const keyMatch = line.match(/^([\w$_-]+)\s*:/);
+      if (keyMatch && !line.startsWith('#')) {
+        symbols.push({
+          name: keyMatch[1],
+          kind: 'variable',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: false,
+          async: false,
+        });
+      }
+    });
+    return { symbols, imports: [] };
+  }
+
+  _parseGraphql(content) {
+    const symbols = [];
+    const lines = content.split('\n');
+    lines.forEach((line, i) => {
+      // type Name, input Name, enum Name, interface Name, union Name, scalar Name, directive Name
+      const defMatch = line.match(/^(?:type|input|enum|interface|union|scalar|directive)\s+(\w+)/);
+      if (defMatch) {
+        symbols.push({
+          name: defMatch[1],
+          kind: 'class',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: false,
+          async: false,
+        });
+      }
+      // query/mutation/subscription definitions
+      const opMatch = line.match(/^(?:query|mutation|subscription)\s+(\w+)/);
+      if (opMatch) {
+        symbols.push({
+          name: opMatch[1],
+          kind: 'function',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: false,
+          async: false,
+        });
+      }
+    });
+    return { symbols, imports: [] };
+  }
+
+  _parseMarkdown(content) {
+    const symbols = [];
+    const lines = content.split('\n');
+    lines.forEach((line, i) => {
+      // Headings: # Title, ## Section, etc.
+      const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
+      if (headingMatch) {
+        const level = headingMatch[1].length;
+        symbols.push({
+          name: headingMatch[2].trim(),
+          kind: level === 1 ? 'class' : 'function',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: false,
+          async: false,
+        });
+      }
+    });
+    return { symbols, imports: [] };
+  }
+
+  _parseToml(content) {
+    const symbols = [];
+    const lines = content.split('\n');
+    lines.forEach((line, i) => {
+      // TOML section headers: [section] or [[array]]
+      const sectionMatch = line.match(/^\[+([^\]]+)\]+/);
+      if (sectionMatch) {
+        symbols.push({
+          name: sectionMatch[1].trim(),
+          kind: 'class',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: false,
+          async: false,
+        });
+      }
+      // Top-level key = value
+      const kvMatch = line.match(/^([\w_-]+)\s*=/);
+      if (kvMatch) {
+        symbols.push({
+          name: kvMatch[1],
+          kind: 'variable',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: false,
+          async: false,
+        });
+      }
+    });
+    return { symbols, imports: [] };
+  }
+
+  _parseXml(content) {
+    const symbols = [];
+    const lines = content.split('\n');
+    lines.forEach((line, i) => {
+      // Opening XML/HTML tags: <tagName or <tagName>
+      const tagMatch = line.match(/<([A-Za-z][\w.-]*)[^>]*>/);
+      if (tagMatch) {
+        symbols.push({
+          name: tagMatch[1],
+          kind: 'class',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: false,
+          async: false,
+        });
+      }
+    });
+    return { symbols, imports: [] };
+  }
+
+  _parseVueSvelte(content) {
+    const symbols = [];
+    const lines = content.split('\n');
+    // Extract script section symbols using simple regex
+    let inScript = false;
+    lines.forEach((line, i) => {
+      if (/<script/.test(line)) { inScript = true; return; }
+      if (/<\/script>/.test(line)) { inScript = false; return; }
+      if (!inScript) return;
+
+      // function declarations
+      const funcMatch = line.match(/(?:export\s+)?(?:async\s+)?function\s+(\w+)/);
+      if (funcMatch) {
+        symbols.push({
+          name: funcMatch[1],
+          kind: 'function',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: line.includes('export'),
+          async: line.includes('async'),
+        });
+      }
+      // const/let arrow functions
+      const arrowMatch = line.match(/(?:export\s+)?(?:const|let)\s+(\w+)\s*=\s*(?:async\s+)?\(/);
+      if (arrowMatch) {
+        symbols.push({
+          name: arrowMatch[1],
+          kind: 'function',
+          signature: line.trim(),
+          startLine: i + 1,
+          endLine: i + 1,
+          exported: line.includes('export'),
+          async: line.includes('async'),
+        });
+      }
+    });
     return { symbols, imports: [] };
   }
 }

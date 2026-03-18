@@ -121,4 +121,100 @@ function goodbye() {
       expect(outline).toHaveLength(0);
     });
   });
+
+  // New file type support
+  describe('extended file type indexing', () => {
+    it('indexes .json files and extracts top-level keys as symbols', async () => {
+      dir = tmpDir();
+      fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
+        name: 'my-project',
+        version: '1.0.0',
+        description: 'A test project',
+      }, null, 2));
+
+      engine = new IndexEngine(dir, {
+        extensions: ['.json'],
+      });
+      await engine.ready();
+      await sleep(300);
+
+      const outline = engine.getOutline('package.json');
+      expect(outline).toBeDefined();
+      const names = outline.map((s) => s.name);
+      expect(names).toContain('name');
+      expect(names).toContain('version');
+    });
+
+    it('indexes .yaml files and extracts top-level keys as symbols', async () => {
+      dir = tmpDir();
+      fs.writeFileSync(path.join(dir, 'config.yaml'),
+        'name: my-service\nversion: 2\nport: 3000\n');
+
+      engine = new IndexEngine(dir, {
+        extensions: ['.yaml'],
+      });
+      await engine.ready();
+      await sleep(300);
+
+      const outline = engine.getOutline('config.yaml');
+      expect(outline).toBeDefined();
+      const names = outline.map((s) => s.name);
+      expect(names).toContain('name');
+      expect(names).toContain('version');
+      expect(names).toContain('port');
+    });
+
+    it('indexes .yml files the same as .yaml', async () => {
+      dir = tmpDir();
+      fs.writeFileSync(path.join(dir, 'docker-compose.yml'),
+        'version: "3"\nservices:\n  web:\n    image: nginx\n');
+
+      engine = new IndexEngine(dir, {
+        extensions: ['.yml'],
+      });
+      await engine.ready();
+      await sleep(300);
+
+      const file = engine.store.getFile('docker-compose.yml');
+      expect(file).toBeTruthy();
+      expect(file.language).toBe('text');
+    });
+
+    it('indexes .md files and extracts headings as symbols', async () => {
+      dir = tmpDir();
+      fs.writeFileSync(path.join(dir, 'README.md'),
+        '# Introduction\n\nSome text.\n\n## Installation\n\nMore text.\n');
+
+      engine = new IndexEngine(dir, {
+        extensions: ['.md'],
+      });
+      await engine.ready();
+      await sleep(300);
+
+      const outline = engine.getOutline('README.md');
+      const names = outline.map((s) => s.name);
+      expect(names).toContain('Introduction');
+      expect(names).toContain('Installation');
+    });
+
+    it('default config includes .json and .yaml extensions', () => {
+      // Verify DEFAULT_EXTENSIONS in index.js covers these types
+      dir = tmpDir();
+      // Instantiate with no extensions config — uses defaults
+      engine = new IndexEngine(dir);
+      // The watcher was set up with defaults. Check by inspecting the watcher's config.
+      const watcherConfig = engine.watcher.config;
+      expect(watcherConfig.extensions).toContain('.json');
+      expect(watcherConfig.extensions).toContain('.yaml');
+      expect(watcherConfig.extensions).toContain('.yml');
+      expect(watcherConfig.extensions).toContain('.md');
+    });
+
+    it('config.extensions flows through to the watcher', () => {
+      dir = tmpDir();
+      const customExtensions = ['.js', '.json', '.yaml'];
+      engine = new IndexEngine(dir, { extensions: customExtensions });
+      expect(engine.watcher.config.extensions).toEqual(customExtensions);
+    });
+  });
 });

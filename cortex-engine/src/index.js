@@ -6,6 +6,13 @@ const Parser = require('./parser');
 const Watcher = require('./watcher');
 const Tagger = require('./tagger');
 
+const DEFAULT_EXTENSIONS = [
+  '.js', '.jsx', '.cjs', '.mjs', '.ts', '.tsx',
+  '.json', '.yaml', '.yml', '.graphql', '.gql',
+  '.md', '.toml', '.xml', '.html', '.css', '.scss', '.less',
+  '.vue', '.svelte',
+];
+
 class IndexEngine {
   constructor(projectRoot, config = {}) {
     this.projectRoot = path.resolve(projectRoot);
@@ -29,7 +36,7 @@ class IndexEngine {
     this.tagger = new Tagger(config.tagRules || {});
 
     this.watcher = new Watcher(this.projectRoot, {
-      extensions: config.extensions || ['.js', '.jsx', '.cjs', '.mjs', '.ts', '.tsx'],
+      extensions: config.extensions || DEFAULT_EXTENSIONS,
       ignorePaths: config.ignorePaths || [],
     });
 
