@@ -196,6 +196,7 @@ get_hooks_for_tier() {
     require-vault-for-edits.sh
     require-vault-update.sh
     enforce-vault-context.sh
+    pre-agent-dispatch.sh
   )
 
   # Standard adds
@@ -336,6 +337,12 @@ STANDARD_EDIT
           { "type": "command", "command": "${hook_prefix}/require-independent-review.sh", "timeout": 5 }
 STANDARD_SKILL
   fi)
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          { "type": "command", "command": "${hook_prefix}/pre-agent-dispatch.sh", "timeout": 5 }
         ]
       }$(
   if [ "$tier" = "full" ]; then
@@ -484,7 +491,8 @@ CLAUDEMD_HEADER
 | **Bash** git operations | `invalidate-after-git-op.sh` | Auto-marks evidence stale |
 | **Bash** git merge | `post-merge-test-gate.sh` | Flags merge-pending-test state |
 | **Skill** enterprise-* | `enforce-enterprise-pipeline.sh` | Must follow stage order |
-| **Edit/Write** source file | `require-vault-for-edits.sh` | Must have vault context loaded |
+| **Edit/Write** source file | `require-vault-for-edits.sh` | Must have vault context (subagents auto-inherit via vault pass) |
+| **Agent** dispatch | `pre-agent-dispatch.sh` | Creates vault pass so subagent inherits parent authorization |
 | **Skill** enterprise-* | `enforce-vault-context.sh` | Must run /vault-context first |
 | **Bash** git commit/push | `require-vault-update.sh` | Must have invoked /vault-update or /vault-capture |
 LITE_ROWS
