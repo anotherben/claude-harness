@@ -272,7 +272,7 @@ get_skills_for_tier() {
 
   # Full adds
   if [ "$tier" = "full" ]; then
-    skills+=(fleet-commander)
+    skills+=(fleet-commander conductor-resume)
   fi
 
   echo "${skills[@]}"

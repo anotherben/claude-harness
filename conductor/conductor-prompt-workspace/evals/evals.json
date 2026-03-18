@@ -1,0 +1,104 @@
+{
+  "skill_name": "conductor-worker-prompt",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "TASK: Add tenant_id scope to purchaseOrderService.listOrders()\nFILES:\n  - apps/api/src/services/purchaseOrderService.js (modify: add tenant_id WHERE clause)\n  - apps/api/src/__tests__/purchaseOrderService.test.js (add: tenant isolation test)\nDO NOT TOUCH:\n  - apps/api/src/routes/purchaseOrders.js\n  - apps/api/src/middleware/auth.js\nACCEPTANCE CRITERIA:\n  - [ ] listOrders() includes `WHERE tenant_id = $1` in query\n  - [ ] Test: calling listOrders with tenant A does not return tenant B orders\n  - [ ] Existing purchaseOrderService tests still pass\nTEST COMMAND: cd apps/api && npx jest --no-coverage purchaseOrderService\nCOMMIT PREFIX: fix(api):",
+      "expected_output": "Worker modifies exactly the 2 listed files, runs the test command, commits with fix(api): prefix, writes a handover doc",
+      "assertions": [
+        {
+          "id": "files-in-scope",
+          "text": "Worker only modifies files listed in FILES section, not DO NOT TOUCH files",
+          "type": "scope"
+        },
+        {
+          "id": "test-command-used",
+          "text": "Worker runs the exact TEST COMMAND from the spec (not a different test command)",
+          "type": "compliance"
+        },
+        {
+          "id": "commit-prefix",
+          "text": "Commit message starts with fix(api):",
+          "type": "compliance"
+        },
+        {
+          "id": "handover-written",
+          "text": "Worker writes a handover doc as its final action",
+          "type": "completion"
+        },
+        {
+          "id": "handover-has-criteria",
+          "text": "Handover includes acceptance criteria checklist with pass/fail for each item",
+          "type": "quality"
+        },
+        {
+          "id": "no-scope-creep",
+          "text": "Worker does not refactor, clean up, or improve code beyond the acceptance criteria",
+          "type": "scope"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "TASK: Fix currency formatting in InvoicePDFModal\nFILES:\n  - apps/admin/src/components/purchasing/InvoicePDFModal.jsx (modify: fix dollar sign placement)\nDO NOT TOUCH:\n  - apps/admin/src/components/purchasing/InvoicePDFLineItemsTable.jsx\n  - apps/api/src/services/invoiceService.js\nACCEPTANCE CRITERIA:\n  - [ ] Dollar amounts display as $1,234.56 not 1234.56$\n  - [ ] Existing InvoicePDFModal tests still pass\nTEST COMMAND: cd apps/admin && npx jest --no-coverage InvoicePDFModal\nCOMMIT PREFIX: fix(admin):",
+      "expected_output": "Worker fixes the formatting in the one file, does NOT touch the adjacent line items table even though it's related, runs tests, commits, writes handover",
+      "assertions": [
+        {
+          "id": "adjacent-file-untouched",
+          "text": "Worker does not modify InvoicePDFLineItemsTable.jsx even though it's closely related",
+          "type": "scope"
+        },
+        {
+          "id": "test-command-used",
+          "text": "Worker runs the exact TEST COMMAND from the spec",
+          "type": "compliance"
+        },
+        {
+          "id": "handover-written",
+          "text": "Worker writes a handover doc as its final action",
+          "type": "completion"
+        },
+        {
+          "id": "no-scope-creep",
+          "text": "Worker does not add formatting utilities, refactor currency logic, or improve surrounding code",
+          "type": "scope"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "TASK: Add pagination to supplier list API\nFILES:\n  - apps/api/src/services/supplierService.js (modify: add limit/offset params to listSuppliers)\n  - apps/api/src/routes/suppliers.js (modify: read page/limit from query params)\n  - apps/api/src/__tests__/supplierService.test.js (add: pagination tests)\nDO NOT TOUCH:\n  - apps/api/src/middleware/auth.js\n  - apps/admin/src/pages/SupplierList.jsx\nACCEPTANCE CRITERIA:\n  - [ ] listSuppliers() accepts limit and offset parameters\n  - [ ] GET /suppliers?page=2&limit=10 returns correct page\n  - [ ] Default limit is 50, default page is 1\n  - [ ] Tests cover: default params, explicit params, empty result\n  - [ ] Existing supplier tests still pass\nTEST COMMAND: cd apps/api && npx jest --no-coverage supplierService\nCOMMIT PREFIX: feat(api):",
+      "expected_output": "Worker implements pagination in service + route, writes tests, does NOT touch the frontend SupplierList.jsx, commits with feat(api): prefix, writes handover",
+      "assertions": [
+        {
+          "id": "frontend-untouched",
+          "text": "Worker does not modify SupplierList.jsx even though it consumes the API",
+          "type": "scope"
+        },
+        {
+          "id": "all-criteria-addressed",
+          "text": "Worker's implementation addresses all 5 acceptance criteria",
+          "type": "completeness"
+        },
+        {
+          "id": "commit-prefix",
+          "text": "Commit message starts with feat(api):",
+          "type": "compliance"
+        },
+        {
+          "id": "handover-written",
+          "text": "Worker writes a handover doc as its final action",
+          "type": "completion"
+        },
+        {
+          "id": "handover-has-criteria",
+          "text": "Handover includes pass/fail for each of the 5 acceptance criteria",
+          "type": "quality"
+        }
+      ],
+      "files": []
+    }
+  ]
+}

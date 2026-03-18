@@ -279,69 +279,93 @@ Create `.claude/enterprise-state/fleet-<timestamp>.json`:
 
 ---
 
-## PHASE 5: DISPATCH
+## PHASE 5: DISPATCH (via Conductor)
 
-### 5a. Prompt Construction
+Workers are full `claude -p` sessions with hooks, MCP, and skills — not ungoverned subagents.
 
-Every dispatched agent gets a prompt with:
+### 5a. Write Task Spec Files
 
-1. **The task** — exact description, files to touch, acceptance criteria
-2. **Enterprise pipeline** — `/enterprise` for every agent
-3. **Worktree path** — where to work
-4. **Boundaries** — files this agent MUST NOT touch (owned by other workstreams)
-5. **Migration number** — if applicable, the reserved filename
-6. **Merge target** — which branch to merge into when done
+For each task, write a structured task spec file. This is the worker's complete instructions:
 
-Prompt template:
-```
-/enterprise
-
-TASK: <task description>
-
-SCOPE:
-- Files to modify: <list>
-- DO NOT TOUCH: <files owned by other workstreams>
-- Worktree: <path>
-- Branch: feat/<slug>
+```bash
+cat > /tmp/conductor-tasks/<task-slug>.md <<'TASK_EOF'
+TASK: <task name>
+FILES:
+  - <file path> (modify: <what to change>)
+  - <file path> (add: <what to add>)
+DO NOT TOUCH:
+  - <files owned by other workstreams>
+  - <protected files>
+ACCEPTANCE CRITERIA:
+  - [ ] <criterion 1>
+  - [ ] <criterion 2>
+  - [ ] Existing tests still pass
+TEST COMMAND: <specific test command for this task>
+COMMIT PREFIX: <feat|fix|refactor>(scope):
 
 <if migration>
 MIGRATION: Use filename <reserved-name>. Number is pre-assigned.
 </if>
-
-ACCEPTANCE CRITERIA:
-- <list from intake>
-
-When complete: all tests pass, code committed to feat/<slug>, ready for merge to dev.
+TASK_EOF
 ```
 
-### 5b. Launch Protocol
+Task specs must be **specific enough for mechanical execution** — exact files, exact criteria, exact test commands. If you can't write the spec at this level, the task needs to be broken down further (return to Phase 3b).
 
-**For Claude agents:**
+### 5b. Launch Workers via Conductor
+
+**Single worker:**
 ```bash
-# Launch via agent orchestrator with model override
-# Use your orchestrator's launch mechanism for the worktree path, session name, model, and prompt
+bash ~/claude-harness/conductor/dispatch.sh \
+  --task-file /tmp/conductor-tasks/<task-slug>.md \
+  --model <opus|sonnet|haiku> \
+  --budget <usd> \
+  --worktree <ws-slug> \
+  --name <task-slug> \
+  --dispatch-dir /tmp/conductor-${FLEET_ID}
 ```
 
-Or if using Claude Code directly with the Agent tool:
-```
-Agent tool with:
-  model: <sonnet|opus|haiku>
-  prompt: <constructed prompt>
-  isolation: worktree
+**Parallel workers** (use `run_in_background` for each):
+```bash
+# Wave 1 — all independent workstreams launch concurrently
+bash ~/claude-harness/conductor/dispatch.sh \
+  --task-file /tmp/conductor-tasks/task-1.md \
+  --model sonnet --budget 2 --worktree ws-1 \
+  --dispatch-dir /tmp/conductor-${FLEET_ID} &
+
+bash ~/claude-harness/conductor/dispatch.sh \
+  --task-file /tmp/conductor-tasks/task-2.md \
+  --model haiku --budget 0.50 --worktree ws-2 \
+  --dispatch-dir /tmp/conductor-${FLEET_ID} &
+
+wait
 ```
 
-**For worker agents (alternative orchestrators):**
-```
-# Dispatch worker agent into worktree with enterprise pipeline
-# Use your agent orchestrator's dispatch mechanism to send the
-# constructed prompt to the worker in its assigned worktree.
+Workers get the full governance stack:
+- **Hooks**: evidence recording, commit gates, lint, TDD, vault-update
+- **MCP**: vault-index, jcodemunch, context-mode
+- **Skills**: /enterprise-build, /vault-update, /vault-capture, /enterprise-debug
+- **Blocked**: Agent (no sub-spawning), /enterprise-verify, /enterprise-review, /enterprise-forge, /enterprise-harness
+
+### 5c. Collect + Persist Results
+
+After `wait` returns (all workers done):
+
+```bash
+# Aggregate results
+bash ~/claude-harness/conductor/collect.sh --dispatch-dir /tmp/conductor-${FLEET_ID}
+
+# Results are auto-persisted to Obsidian by dispatch.sh
+# Fleet state at: {VAULT}/_evidence/conductor/{date}-fleet-state.json
 ```
 
-### 5c. Dispatch Order
+### 5d. Dispatch Order
 
-1. Launch all Wave 1 workstreams concurrently
-2. Update fleet state: each workstream → `"status": "running"`
-3. Monitor (see Phase 6)
+1. Write task spec files for all Wave 1 tasks
+2. Launch all Wave 1 workstreams concurrently via conductor
+3. Update fleet state: each workstream → `"status": "running"`
+4. `wait` for all workers to complete
+5. Run `collect.sh` to see summary
+6. Monitor (see Phase 6)
 
 ---
 
