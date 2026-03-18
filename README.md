@@ -55,7 +55,7 @@ Choose how much enforcement you want:
 
 ```bash
 # Clone the harness
-git clone https://github.com/anotherben/claude-harness.git ~/claude-harness
+git clone https://github.com/<your-org>/claude-harness.git ~/claude-harness
 
 # Install into your project
 cd your-project

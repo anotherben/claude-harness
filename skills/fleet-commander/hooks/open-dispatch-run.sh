@@ -35,7 +35,7 @@ done
 [ -n "$BRANCH" ] || { echo "--branch is required" >&2; exit 1; }
 [ -n "$WORKTREE_PATH" ] || { echo "--worktree-path is required" >&2; exit 1; }
 
-ORCH_JSON=$(ensure_agent_deck_orchestrator "$OWNER_FAMILY")
+ORCH_JSON=$(ensure_fleet_orchestrator "$OWNER_FAMILY")
 ORCHESTRATOR_ID=$(printf '%s' "$ORCH_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["orchestrator_id"])')
 
 open_args=(

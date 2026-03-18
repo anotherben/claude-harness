@@ -26,9 +26,9 @@ if [ -z "$GIT_DIR" ] || [ -z "$GIT_COMMON" ] || [ "$GIT_DIR" = "$GIT_COMMON" ] |
   exit 2
 fi
 
-SESSION_TITLE="$(current_agent_deck_session)"
+SESSION_TITLE="$(current_fleet_session)"
 [ -n "$SESSION_TITLE" ] || {
-  echo "DISPATCH GATE: no active agent-deck session is bound to this Claude worker."
+  echo "DISPATCH GATE: no active fleet session is bound to this Claude worker."
   echo "Use the registered dispatch wrappers to open a run and launch a worker first."
   exit 2
 }

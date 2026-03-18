@@ -2,7 +2,7 @@
 # Context injection hook — zero-cost until triggered.
 # Detects patterns in Bash commands and injects relevant operational context.
 # Reads project-specific config from .claude/context-inject.json if it exists.
-# Falls back to Muninn queries if no config file.
+# Falls back to knowledge graph queries if no config file.
 # Fires on PreToolUse for Bash. Exits 0 (non-blocking) with optional message.
 
 INPUT=$(cat)

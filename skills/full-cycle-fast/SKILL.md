@@ -37,8 +37,7 @@ For tasks where the full pipeline is overkill but you still want structure.
 ### 1. Context Recall (30 seconds)
 
 ```
-cortex-memory: search_sessions(query="[task keywords]")
-muninn: muninn_recall(context=["[task keywords]"], mode="deep")
+# Query knowledge graph for prior context on [task keywords] (if configured)
 ```
 
 Note any gotchas. Move on.
@@ -66,7 +65,7 @@ RISK: [what could break]
 - Run full test suite
 - `git diff --stat` — review what changed
 - Commit with conventional message
-- Compound any gotchas to Muninn
+- Compound any gotchas to knowledge graph
 
 No review agents. No research agents. No ceremony. Just working software.
 

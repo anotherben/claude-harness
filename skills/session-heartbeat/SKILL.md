@@ -106,7 +106,7 @@ These rules fade from working memory over time. Re-read and internalize each one
 
 **REVERT-FIRST**: If a test that was passing is now failing after your change: `git checkout -- [file]`. Do NOT update the test to match your code. Do NOT fix forward. Revert first, understand why, then re-approach.
 
-**PRE-CODE CHECKLIST**: Before the next edit, recall gotchas from memory (Muninn or equivalent). Quote the specific trap that applies. "Checked" is not enough — name the specific trap.
+**PRE-CODE CHECKLIST**: Before the next edit, recall gotchas from memory (knowledge graph or equivalent). Quote the specific trap that applies. "Checked" is not enough — name the specific trap.
 
 **TENANT ISOLATION**: If multi-tenant: every INSERT needs `tenant_id`. Every SELECT/UPDATE/DELETE scopes to `tenant_id` in the WHERE clause. Check your stack profile for exceptions.
 
@@ -126,7 +126,7 @@ Estimate how deep into the context window we are:
 
 - **Under 50%**: Continue normally. Schedule next heartbeat in ~25 tool calls.
 - **50-70%**: Wrap up the current sub-task. Commit what is working. Prepare a mental summary of remaining work.
-- **Over 70%**: STOP new work immediately. Save state to Muninn (`muninn_remember`). Write handover doc to `docs/handovers/`. Commit everything. Tell user to `/clear`.
+- **Over 70%**: STOP new work immediately. Save state to knowledge graph if configured. Write handover doc to `docs/handovers/`. Commit everything. Tell user to `/clear`.
 
 When context-gate.sh blocks Edit/Write, that is the hard signal you are over 70%. Do not fight the hook — save state and hand over.
 

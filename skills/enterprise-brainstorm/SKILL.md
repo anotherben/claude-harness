@@ -82,7 +82,7 @@ Spawn an Explore agent (or do it yourself for Small tier):
 - [ ] Map the current API surface — routes, middleware, request/response shapes
 - [ ] Map the current UI — components, state management, hooks, event flow
 - [ ] Read existing tests — what's tested, what's not, test patterns used
-- [ ] Check memory (Memora/Muninn if available, else MEMORY.md) for prior decisions, gotchas, anti-patterns
+- [ ] Check memory (knowledge graph if available, else MEMORY.md) for prior decisions, gotchas, anti-patterns
 - [ ] Search for similar features in the codebase — reuse opportunities
 - [ ] Check dependencies — what libraries exist that could help?
 

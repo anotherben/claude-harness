@@ -28,7 +28,7 @@ if [ ! -f "$REVIEW_FLAG" ]; then
   echo "AGENT OUTPUT REVIEW REQUIRED before merging '$BRANCH'."
   echo ""
   echo "Before merging an agent's work:"
-  echo "  1. Read the agent's output: agent-deck session output <session-name> -q"
+  echo "  1. Read the agent's output: fleet-cli session output <session-name> -q"
   echo "  2. Check what files changed: cd <worktree> && git diff --stat HEAD~1"
   echo "  3. Verify tests pass ON THE BRANCH: cd <worktree> && npx jest --no-coverage"
   echo "  4. Then mark as reviewed:"

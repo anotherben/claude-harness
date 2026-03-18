@@ -26,7 +26,7 @@ WORKTREE_COUNT=$(git worktree list 2>/dev/null | grep -v "^$REPO_ROOT " | wc -l 
 if [ "$WORKTREE_COUNT" -gt 5 ] 2>/dev/null; then
   echo "WORKTREE CLEANUP: $WORKTREE_COUNT active worktrees. After merging, clean up:"
   echo "  git worktree remove <path> --force   # for each merged worktree"
-  echo "  agent-deck remove <session>           # for each completed session"
+  echo "  fleet-cli remove <session>             # for each completed session"
   echo "  git worktree prune                    # clean stale references"
 fi
 

@@ -7,4 +7,4 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$SCRIPT_DIR/fleet-common.sh"
 
 OWNER_FAMILY="${1:-claude}"
-ensure_agent_deck_orchestrator "$OWNER_FAMILY"
+ensure_fleet_orchestrator "$OWNER_FAMILY"

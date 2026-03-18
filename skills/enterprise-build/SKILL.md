@@ -87,7 +87,7 @@ This prevents wasting a RED→GREEN cycle on "Jest isn't configured" instead of 
 
 Before writing any code:
 
-1. **Save session state** (use whichever memory backend is available — Memora MCP, Muninn MCP, or filesystem fallback to `docs/handovers/`):
+1. **Save session state** (use whichever memory backend is available — knowledge graph MCP, or filesystem fallback to `docs/handovers/`):
    ```
    MEMORY: save task context — TDD: [slug], contract: [path], current PC: PC-1
    ```

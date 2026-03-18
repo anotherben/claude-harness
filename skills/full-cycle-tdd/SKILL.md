@@ -20,7 +20,7 @@ The test defines "done". The code exists only to make the test pass.
 
 1. Agent Harness (`.claude/AGENT_HARNESS.md`)
 2. Superpowers TDD skill (`superpowers:test-driven-development`)
-3. Muninn + cortex-memory MCP servers
+3. Memory/knowledge MCP servers (if configured)
 4. Test framework configured (jest/vitest/playwright per project)
 
 ---
@@ -29,7 +29,7 @@ The test defines "done". The code exists only to make the test pass.
 
 ### Phase 1: Define + Research
 
-1. Load Agent Harness Phase 0 — query cortex-memory and Muninn for prior context
+1. Load Agent Harness Phase 0 — query knowledge graph for prior context
 2. Invoke `superpowers:brainstorming` — push for acceptance criteria and edge cases
 3. Save design to `.claude/designs/[feature-name].md`
 
@@ -102,7 +102,7 @@ Some things (UI rendering, integration with external services) are genuinely har
 1. Run full test suite
 2. Run `superpowers:verification-before-completion`
 3. Invoke `superpowers:requesting-code-review`
-4. Compound learnings to Muninn
+4. Compound learnings to knowledge graph
 5. Output completion summary per Agent Harness Phase 4
 
 ---

@@ -41,7 +41,7 @@ if [ -n "$WORKER_ID" ]; then
     --status "$WORKER_STATUS" >/dev/null
 fi
 
-ORCH_JSON=$(ensure_agent_deck_orchestrator "$OWNER_FAMILY")
+ORCH_JSON=$(ensure_fleet_orchestrator "$OWNER_FAMILY")
 ORCHESTRATOR_ID=$(printf '%s' "$ORCH_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["orchestrator_id"])')
 
 registry_cli close-dispatch-run \

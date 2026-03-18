@@ -51,7 +51,7 @@ fi
 WORKER_ID="$(sanitize_label "$SESSION_TITLE")"
 OWNER_INSTANCE="${OWNER_FAMILY}:deck:${WORKER_ID}"
 
-ORCH_JSON=$(ensure_agent_deck_orchestrator "$OWNER_FAMILY")
+ORCH_JSON=$(ensure_fleet_orchestrator "$OWNER_FAMILY")
 ORCHESTRATOR_ID=$(printf '%s' "$ORCH_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["orchestrator_id"])')
 
 open_args=(
@@ -78,7 +78,7 @@ if [ ! -d "$WORKTREE_PATH" ]; then
   fi
 fi
 
-launch_args=("$AGENT_DECK_BIN" launch "$WORKTREE_PATH" -title "$SESSION_TITLE" -cmd "$COMMAND" -no-wait)
+launch_args=("$FLEET_CLI_BIN" launch "$WORKTREE_PATH" -title "$SESSION_TITLE" -cmd "$COMMAND" -no-wait)
 if [ -n "$GROUP" ]; then
   launch_args+=(-group "$GROUP")
 fi
@@ -93,7 +93,7 @@ registry_cli register-worker \
   --vault-item-id "$ITEM_ID" \
   --owner-family "$OWNER_FAMILY" \
   --owner-instance "$OWNER_INSTANCE" \
-  --agent-deck-session "$SESSION_TITLE" \
+  --fleet-session "$SESSION_TITLE" \
   --repo-path "$REPO_PATH" \
   --branch "$BRANCH" \
   --worktree-path "$WORKTREE_PATH" \

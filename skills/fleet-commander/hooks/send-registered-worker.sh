@@ -38,7 +38,7 @@ check_args=(
   check-dispatch
   --profile-name "$ORCHESTRATOR_PROFILE"
   --conductor-name "$ORCHESTRATOR_NAME"
-  --agent-deck-session "$SESSION_TITLE"
+  --fleet-session "$SESSION_TITLE"
   --repo-path "$REPO_PATH"
   --branch "$BRANCH"
   --worktree-path "$WORKTREE_PATH"
@@ -54,4 +54,4 @@ if [ -z "$CHECK_OK" ]; then
   exit 1
 fi
 
-"$AGENT_DECK_BIN" session send "$SESSION_TITLE" "$MESSAGE"
+"$FLEET_CLI_BIN" session send "$SESSION_TITLE" "$MESSAGE"

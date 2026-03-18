@@ -14,14 +14,14 @@ case "$COMMAND" in
   *"ensure-orchestrator.sh"*|*"open-dispatch-run.sh"*|*"launch-registered-worker.sh"*|*"send-registered-worker.sh"*|*"heartbeat-worker.sh"*|*"close-dispatch-run.sh"*)
     exit 0
     ;;
-  *"agent-deck launch"*|*"agent-deck session send"*|*"agent-deck try "*)
+  *"fleet-cli launch"*|*"fleet-cli session send"*|*"fleet-cli try "*)
     ;;
   *)
     exit 0
     ;;
 esac
 
-echo "FLEET GATE: raw agent-deck worker dispatch is blocked."
+echo "FLEET GATE: raw fleet-cli worker dispatch is blocked."
 echo ""
 echo "Use the registered orchestration wrappers instead:"
 echo "  .claude/hooks/ensure-orchestrator.sh"

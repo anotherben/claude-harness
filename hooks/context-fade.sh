@@ -19,7 +19,7 @@ echo "$COUNT" > "$COUNTER_FILE"
 
 # Soft reminders only — hard blocking is in context-gate.sh
 if [ $((COUNT % 20)) -eq 0 ] && [ "$COUNT" -ge 60 ]; then
-  echo "Session depth: $COUNT tool calls. Save important decisions to Muninn as you go."
+  echo "Session depth: $COUNT tool calls. Save important decisions to the knowledge graph as you go."
 fi
 
 exit 0

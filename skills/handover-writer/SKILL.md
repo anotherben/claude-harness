@@ -89,10 +89,10 @@ Save to `docs/handovers/YYYY-MM-DD-<task-slug>.md`:
 3. [Exact first command or action to take]
 4. [Second action]
 
-## Related Muninn Memories
+## Related Knowledge Graph Memories
 
-- Recall: `muninn_recall(context=["[topic]"])` for related context
-- Key decisions stored via `muninn_decide`
+- Recall from knowledge graph if configured for related context
+- Key decisions stored via knowledge graph if configured
 ```
 
 ### Step 3: Update MEMORY.md
@@ -104,11 +104,11 @@ Update the "Resume Point" section in MEMORY.md with:
 - Reference to this handover doc
 - Brief remaining work summary
 
-### Step 4: Save to Muninn
+### Step 4: Save to Knowledge Graph
 
 If the work involves important decisions, gotchas, or patterns worth preserving:
-- `muninn_remember` with key findings (type="issue" for gotchas, type="decision" for decisions)
-- `muninn_link` to connect related memories
+- Save to knowledge graph if configured (type="issue" for gotchas, type="decision" for decisions)
+- Link related memories in the knowledge graph if the backend supports it
 
 ### Step 5: Commit the Handover
 

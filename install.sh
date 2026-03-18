@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # claude-harness installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/anotherben/claude-harness/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/<your-org>/claude-harness/main/install.sh | bash
 # Or:    cd my-project && ~/claude-harness/install.sh
 
 VERSION="1.0.0"

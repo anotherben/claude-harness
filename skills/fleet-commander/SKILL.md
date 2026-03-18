@@ -1,6 +1,6 @@
 ---
 name: fleet-commander
-description: "Multi-orchestrator fleet management. Takes a batch of tasks, analyzes dependencies and boundaries, assigns optimal models (Opus/Sonnet/Haiku/Codex), sets up isolated worktrees, and dispatches concurrent orchestrators with merge coordination. Use when the user has multiple tasks to parallelize across agents."
+description: "Multi-orchestrator fleet management. Takes a batch of tasks, analyzes dependencies and boundaries, assigns optimal models (Opus/Sonnet/Haiku/Worker), sets up isolated worktrees, and dispatches concurrent orchestrators with merge coordination. Use when the user has multiple tasks to parallelize across agents."
 ---
 
 # Fleet Commander — Multi-Orchestrator Dispatch
@@ -87,7 +87,7 @@ Assign the optimal model to each task based on complexity, not importance.
 
 ### Model Decision Matrix
 
-| Signal | Opus | Sonnet | Haiku | Codex |
+| Signal | Opus | Sonnet | Haiku | Worker |
 |--------|------|--------|-------|-------|
 | Ambiguous requirements, needs interpretation | YES | - | - | - |
 | Complex business logic, domain boundaries | YES | - | - | - |
@@ -107,7 +107,7 @@ Assign the optimal model to each task based on complexity, not importance.
 | Model | Never assign to |
 |-------|----------------|
 | Haiku | E2E debugging, iterative problem-solving, complex refactors |
-| Codex | Anything requiring judgment, debugging, ambiguous scope |
+| Worker | Anything requiring judgment, debugging, ambiguous scope |
 | Opus | Mechanical/boilerplate tasks (waste of capability) |
 
 ### Cost Awareness
@@ -119,7 +119,7 @@ MODEL ASSIGNMENTS:
   Task A: Sonnet  — standard feature, clear scope, 4 files
   Task B: Haiku   — config addition, 1 file, <15 lines
   Task C: Opus    — ambiguous domain boundary, needs interpretation
-  Task D: Codex   — mechanical find/replace across 12 files
+  Task D: Worker  — mechanical find/replace across 12 files
 ```
 
 ---
@@ -148,7 +148,7 @@ TASK SIZING:
   Concerns: [count] — [list]
   Est. lines: [count]
   Methods: [count]
-  Model: [Opus/Sonnet/Haiku/Codex]
+  Model: [Opus/Sonnet/Haiku/Worker]
   VERDICT: [PASS — dispatch as-is] or [SPLIT — break into N sub-tasks]
 ```
 
@@ -286,7 +286,7 @@ Create `.claude/enterprise-state/fleet-<timestamp>.json`:
 Every dispatched agent gets a prompt with:
 
 1. **The task** — exact description, files to touch, acceptance criteria
-2. **Enterprise pipeline** — `/enterprise` for Claude, `$cortex-enterprise` for Codex
+2. **Enterprise pipeline** — `/enterprise` for every agent
 3. **Worktree path** — where to work
 4. **Boundaries** — files this agent MUST NOT touch (owned by other workstreams)
 5. **Migration number** — if applicable, the reserved filename
@@ -318,8 +318,8 @@ When complete: all tests pass, code committed to feat/<slug>, ready for merge to
 
 **For Claude agents:**
 ```bash
-# Launch with model override
-agent-deck launch <worktree-path> -t <session-name> -m <model> "<prompt>"
+# Launch via agent orchestrator with model override
+# Use your orchestrator's launch mechanism for the worktree path, session name, model, and prompt
 ```
 
 Or if using Claude Code directly with the Agent tool:
@@ -330,22 +330,12 @@ Agent tool with:
   isolation: worktree
 ```
 
-**For Codex agents:**
-```bash
-# Step 1: Add session (background, no start)
-agent-deck add <worktree-path> -c "codex --full-auto" -t <name> -w <branch> -b
-
-# Step 2: Start session
-agent-deck session start <name>
-
-# Step 3: Wait for Codex to reach prompt
-sleep 10
-
-# Step 4: Send task with enterprise skill
-agent-deck session send <name> '$cortex-enterprise <task description>' --no-wait
+**For worker agents (alternative orchestrators):**
 ```
-
-**NEVER use `launch` for Codex** — it sends the message before Codex is ready.
+# Dispatch worker agent into worktree with enterprise pipeline
+# Use your agent orchestrator's dispatch mechanism to send the
+# constructed prompt to the worker in its assigned worktree.
+```
 
 ### 5c. Dispatch Order
 
@@ -362,11 +352,9 @@ agent-deck session send <name> '$cortex-enterprise <task description>' --no-wait
 Periodically check each workstream:
 
 ```bash
-# Check if agent is still running
-agent-deck session list
+# Check if agent is still running (use your orchestrator's session list)
 
-# Check for output/progress
-agent-deck session logs <name> | tail -20
+# Check for output/progress (use your orchestrator's log viewer)
 
 # Check git activity in worktree
 cd .claude/worktrees/<slug> && git log --oneline -3
@@ -376,7 +364,7 @@ cd .claude/worktrees/<slug> && git log --oneline -3
 
 | Signal | Meaning | Action |
 |--------|---------|--------|
-| Codex at 95% context, no output | Stuck | Kill, relaunch with Sonnet |
+| Worker at 95% context, no output | Stuck | Kill, relaunch with Sonnet |
 | Agent idle >10 min, no commits | Possibly stuck | Check logs, consider restart |
 | Test failures in worktree | Agent struggling | Let it retry (3 attempts), then escalate |
 | Agent completed but tests fail | Bad output | Relaunch with higher-capability model |
@@ -385,7 +373,7 @@ cd .claude/worktrees/<slug> && git log --oneline -3
 
 ```
 Haiku fails → retry with Sonnet
-Codex fails → retry with Sonnet
+Worker fails → retry with Sonnet
 Sonnet fails → retry with Opus
 Opus fails → flag for human review
 ```
@@ -452,7 +440,7 @@ FLEET REPORT — fleet-<id>
 =============================
 Tasks completed:    [N]/[total]
 Workstreams:        [N] parallel, [W] waves
-Models used:        Opus: [n], Sonnet: [n], Haiku: [n], Codex: [n]
+Models used:        Opus: [n], Sonnet: [n], Haiku: [n], Worker: [n]
 Escalations:        [list any model upgrades]
 Conflicts resolved: [list any merge conflicts]
 Total branches:     [N] created, [N] merged, [N] cleaned up
@@ -476,10 +464,10 @@ Update fleet state: `"status": "complete"`
 "I need someone to figure out the right domain boundary"     → Opus
 "Build this CRUD endpoint with these 5 fields"               → Sonnet
 "Add this env var to all 3 config files"                     → Haiku
-"Rename userID to userId in every file"                      → Codex
-"Debug why this Playwright test times out"                   → Sonnet (NEVER Haiku/Codex)
+"Rename userID to userId in every file"                      → Worker
+"Debug why this Playwright test times out"                   → Sonnet (NEVER Haiku/Worker)
 "Investigate why orders duplicate under load"                → Opus
-"Add TypeScript types to these 8 utility functions"          → Codex
+"Add TypeScript types to these 8 utility functions"          → Worker
 "Wire up this new React page with routing and API calls"     → Sonnet
 ```
 
@@ -487,7 +475,7 @@ Update fleet state: `"status": "complete"`
 
 ## CONSTRAINTS
 
-1. **Enterprise pipeline is non-negotiable** — every agent gets `/enterprise` or `$cortex-enterprise`
+1. **Enterprise pipeline is non-negotiable** — every agent gets `/enterprise`
 2. **Max 4 concurrent agents** — RAM constraint, check before dispatch
 3. **One session per task** — kill after merge, keep context small
 4. **Merge to dev first** — NEVER push to master

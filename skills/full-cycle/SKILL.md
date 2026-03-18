@@ -1,6 +1,6 @@
 ---
 name: full-cycle
-description: Complete structured development workflow combining Agent Harness, Superpowers, Compound Engineering, Agent Teams, and Muninn. Use when starting any new feature, bug fix, refactor, or development task. Invoked with /full-cycle followed by a description of what to build. Interactive planning then fully autonomous execution. Only pauses once for plan approval.
+description: Complete structured development workflow combining Agent Harness, Superpowers, Compound Engineering, and Agent Teams. Use when starting any new feature, bug fix, refactor, or development task. Invoked with /full-cycle followed by a description of what to build. Interactive planning then fully autonomous execution. Only pauses once for plan approval.
 ---
 
 # Full Cycle Development Workflow
@@ -18,7 +18,7 @@ Verify before starting:
 2. Compound Engineering commands (/plan, /review, /compound)
 3. Agent Harness (.claude/AGENT_HARNESS.md)
 4. Agent Teams enabled (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 in settings)
-5. Muninn MCP server running
+5. Knowledge graph MCP server running (if configured)
 6. Required directories exist: `.claude/plans/`, `.claude/designs/`
 7. If anything is missing, stop and tell the user what to install
 
@@ -43,7 +43,7 @@ If user provides a detailed spec file, skip brainstorming and use the spec direc
 
 Flow straight to Phase 2.
 
-## Phase 2: Research + Muninn Recall
+## Phase 2: Research + Knowledge Recall
 
 Index the codebase for token-efficient exploration:
 ```
@@ -51,16 +51,18 @@ index_folder(path="[relevant app directory, e.g. apps/api/src]")
 ```
 Then use `search_symbols`, `get_file_outline`, and `get_symbol` instead of Read/Grep for code lookups throughout planning and execution. Reserve Read for config files, non-code files, and pre-edit context.
 
-Query Muninn first:
+Query knowledge graph first (if configured):
 ```
-muninn_recall(query="[feature keywords]", tags=["pattern", "decision", "anti-pattern", "edge-case"])
+# Recall from knowledge graph if configured
+recall(query="[feature keywords]", tags=["pattern", "decision", "anti-pattern", "edge-case"])
 ```
 
-Invoke Compound Engineering /plan with the design document and Muninn learnings.
+Invoke Compound Engineering /plan with the design document and prior learnings.
 
 Cross-check against known anti-patterns:
 ```
-muninn_recall(query="[proposed approach keywords]", tags=["anti-pattern"])
+# Recall anti-patterns from knowledge graph if configured
+recall(query="[proposed approach keywords]", tags=["anti-pattern"])
 ```
 
 Flag contradictions. Flow straight to Phase 3.
@@ -195,13 +197,17 @@ Spawn 3 focused subagents in parallel:
 Each subagent writes findings to `.claude/plans/[feature-name]-review.md`.
 Fix critical issues only (max 3 iterations each). Warnings get documented, not fixed.
 
-### Compound to Muninn
+### Compound to Knowledge Graph
 
-For each blocker: `muninn_remember(content='[description and resolution]', tags=['full-cycle', '[feature-name]', 'bug-fix'])`
-For each pattern: `muninn_remember(content='[pattern]', tags=['full-cycle', '[feature-name]', 'pattern'])`
-For each decision: `muninn_remember(content='[decision and why]', tags=['full-cycle', '[feature-name]', 'decision'])`
+For each blocker, pattern, and decision -- save to knowledge graph if configured:
+```
+# Save to knowledge graph if configured
+remember(content='[description and resolution]', tags=['full-cycle', '[feature-name]', 'bug-fix'])
+remember(content='[pattern]', tags=['full-cycle', '[feature-name]', 'pattern'])
+remember(content='[decision and why]', tags=['full-cycle', '[feature-name]', 'decision'])
+```
 
-Link related learnings with `memory_link`. Boost critical learnings with `memory_boost`.
+Link related learnings and boost critical ones if the knowledge graph backend supports it.
 
 ### Completion Summary
 
@@ -233,7 +239,7 @@ If session ends mid-cycle:
 
 1. Check plan file — count [x] vs [ ] tasks
 2. Check blockers file for documented issues
-3. Query Muninn: `muninn_recall(query="full-cycle [feature-name]", tags=["full-cycle"])`
+3. Query knowledge graph if configured: `recall(query="full-cycle [feature-name]", tags=["full-cycle"])`
 4. Check git log for commits
 
 Plan exists with incomplete tasks → resume from next unchecked task
@@ -282,7 +288,7 @@ Save to `.claude/plans/[feature-name]-handoff.md` and start a fresh session.
 - **Subagents for sequential work.** Migrations, builds, single-file changes stay solo.
 - **Tests verify completion.** Not assumptions, not promises — passing tests.
 - **Blockers get skipped.** Document and continue, don't wait.
-- **Learnings compound.** Muninn gets updated every cycle.
+- **Learnings compound.** Knowledge graph gets updated every cycle.
 - **Teams get cleaned up.** Delete team after each task.
 - **No file conflicts.** Never have two teammates editing the same file.
 - **Track everything.** Progress, decisions, assumptions — context is never lost.

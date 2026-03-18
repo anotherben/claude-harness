@@ -21,7 +21,7 @@ security patterns, and real-world examples before a single line of code is writt
 
 1. Agent Harness (`.claude/AGENT_HARNESS.md`)
 2. Compound Engineering plugin (workflows: plan, deepen-plan, work, review)
-3. Muninn + cortex-memory MCP servers
+3. Memory/knowledge MCP servers (if configured)
 4. Context7 MCP for framework docs
 
 ---
@@ -30,7 +30,7 @@ security patterns, and real-world examples before a single line of code is writt
 
 ### Phase 1: Define
 
-1. Load Agent Harness Phase 0 — query cortex-memory and Muninn
+1. Load Agent Harness Phase 0 — query knowledge graph for prior context
 2. Invoke `compound-engineering:workflows:brainstorm` — collaborative dialogue
 3. Save design to `.claude/designs/[feature-name].md`
 
@@ -94,8 +94,8 @@ Invoke `compound-engineering:resolve_todo_parallel` to fix all P1/P2 findings in
 ### Compound Learnings
 
 1. Invoke `compound-engineering:workflows:compound` — document what was learned
-2. Save patterns, gotchas, decisions to Muninn
-3. Index session via cortex-memory
+2. Save patterns, gotchas, decisions to knowledge graph
+3. Index session in knowledge graph (if configured)
 
 ---
 

@@ -48,7 +48,7 @@ ls docs/solutions/ 2>/dev/null | grep -i "<keywords>"
 ```
 
 ### Search memory for prior knowledge:
-Query memory (Memora/Muninn if available) with the problem domain keywords to check if this was already captured.
+Query memory (knowledge graph if available) with the problem domain keywords to check if this was already captured.
 
 ### Search git history:
 ```bash
@@ -212,7 +212,7 @@ related:
 
 ## Step 4: Save to Memory
 
-After writing the solution document, save the key knowledge for cross-session retrieval. Use whichever memory backend is available (Memora MCP, Muninn MCP, or filesystem fallback).
+After writing the solution document, save the key knowledge for cross-session retrieval. Use whichever memory backend is available (knowledge graph MCP, or filesystem fallback).
 
 ### What to save:
 

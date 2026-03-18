@@ -12,8 +12,8 @@ echo "  FLEET DASHBOARD — $(date '+%Y-%m-%d %H:%M')"
 echo "═══════════════════════════════════════════════"
 echo ""
 
-echo "AGENT-DECK:"
-"$AGENT_DECK_BIN" status 2>&1 | head -3
+echo "FLEET CLI:"
+"$FLEET_CLI_BIN" status 2>&1 | head -3
 echo ""
 
 echo "ORCHESTRATOR:"
@@ -29,7 +29,7 @@ registry_cli list-dispatch-runs --status open \
 echo ""
 
 echo "SESSIONS:"
-"$AGENT_DECK_BIN" list 2>&1 | grep -v "^Profile:" | grep -v "^$" | grep -v "^Total:" | grep -v "Update available"
+"$FLEET_CLI_BIN" list 2>&1 | grep -v "^Profile:" | grep -v "^$" | grep -v "^Total:" | grep -v "Update available"
 echo ""
 
 echo "WORKTREES:"
