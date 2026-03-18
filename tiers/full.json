@@ -1,0 +1,55 @@
+{
+  "name": "Full",
+  "description": "Standard + fleet orchestration, context injection, jcodemunch, prompt refinement.",
+  "extends": "standard",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          { "hook": "suggest-jcodemunch.sh", "timeout": 5 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "hook": "jcodemunch-reindex.sh", "timeout": 5 }
+        ]
+      },
+      {
+        "hooks": [
+          { "hook": "context-fade.sh", "timeout": 5 }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          { "hook": "ensure-environment.sh", "timeout": 30 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "hook": "refine-prompt.sh", "timeout": 5 }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          { "hook": "post-compact-handover.sh", "timeout": 5 }
+        ]
+      }
+    ]
+  },
+  "skills_add": [
+    "fleet-commander"
+  ],
+  "templates_required": [
+    "JCODEMUNCH_REPO_ID"
+  ]
+}

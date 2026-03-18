@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "name": "claude-harness",
+  "description": "Vibe prompt in, enterprise quality out.",
+  "tiers": ["lite", "standard", "full"],
+  "default_tier": "lite",
+  "supported_project_types": ["node", "python", "go", "rust"],
+  "required_tools": ["python3", "git", "bash"],
+  "optional_tools": ["jq", "npx", "obsidian"]
+}

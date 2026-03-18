@@ -1,0 +1,88 @@
+{
+  "name": "Lite",
+  "description": "TDD + evidence + lint + merge protocol. The essentials.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "hook": "pre-commit-gate.sh", "timeout": 10 },
+          { "hook": "require-test-evidence.sh", "timeout": 5 },
+          { "hook": "enforce-merge-protocol.sh", "timeout": 5 },
+          { "hook": "require-lint-clean.sh", "timeout": 15 }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "hook": "protect-files.sh", "timeout": 5 },
+          { "hook": "require-tdd-before-source-edit.sh", "timeout": 5 }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          { "hook": "enforce-enterprise-pipeline.sh", "timeout": 5 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "hook": "record-test-evidence.sh", "timeout": 10 },
+          { "hook": "invalidate-after-git-op.sh", "timeout": 5 },
+          { "hook": "post-merge-test-gate.sh", "timeout": 5 }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "hook": "auto-format.sh", "timeout": 15 }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          { "hook": "mark-skill-invoked.sh", "timeout": 5 }
+        ]
+      }
+    ]
+  },
+  "skills": [
+    "enterprise",
+    "enterprise-discover",
+    "enterprise-brainstorm",
+    "enterprise-plan",
+    "enterprise-contract",
+    "enterprise-build",
+    "enterprise-review",
+    "enterprise-forge",
+    "enterprise-verify",
+    "enterprise-compound",
+    "enterprise-debug",
+    "enterprise-harness",
+    "full-cycle",
+    "full-cycle-tdd",
+    "full-cycle-fast",
+    "full-cycle-research",
+    "contract-manager",
+    "scope-check",
+    "patch-or-fix",
+    "but-why",
+    "handover-writer",
+    "session-heartbeat",
+    "run-verification",
+    "senior-architect",
+    "deploy-checklist",
+    "create-migration"
+  ],
+  "templates_required": [
+    "PROJECT_NAME",
+    "TEST_COMMAND",
+    "LINT_COMMAND",
+    "PROTECTED_FILES",
+    "SOURCE_EXTENSIONS",
+    "MIN_SUITES"
+  ]
+}
