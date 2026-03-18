@@ -84,6 +84,27 @@ Auto-detect everything. Do NOT ask the user — detect and confirm.
 
 **Test command** — check `package.json` scripts for `test:local` (preferred) or `test`. For monorepos, check subdirectories (`apps/*/package.json`).
 
+**Test lanes** — detect all available test commands and classify them:
+
+| Script name | Tier | DB required | Server required |
+|------------|------|-------------|-----------------|
+| `test` | mocked | no | no |
+| `test:local` / `test:integration` | integration | yes (DATABASE_URL) | no |
+| `test:e2e` / playwright config exists | e2e | yes | yes |
+
+Store in `stack-profile.json` under `test_lanes`:
+```json
+{
+  "test_lanes": {
+    "unit": { "command": "npm test", "tier": "mocked", "db_required": false },
+    "integration": { "command": "npm run test:local", "tier": "integration", "db_required": true },
+    "e2e": { "command": "npx playwright test", "tier": "e2e", "server_required": true }
+  }
+}
+```
+
+Detection: scan `package.json` scripts for test-related entries. Check for `playwright.config.*` or `cypress.config.*` files. For monorepos, check each app's package.json.
+
 **Vault path** — check these locations in order:
 1. `~/Documents/Product Ideas` (if exists)
 2. `~/Documents/Vault`
@@ -109,6 +130,12 @@ Project:
   Lint command:  {lint_cmd}
   Vault:        {vault_path}
   Existing .claude/: {yes (backed up) / no}
+
+Test lanes:
+  unit:        {unit_cmd}    (mocked — uses jest.mock/prismaMock)
+  integration: {integ_cmd}   (real DB — DATABASE_URL required)
+  e2e:         {e2e_cmd}     (browser — requires running server)
+Min test tier: integration   (mocked tests alone are not acceptable evidence)
 ```
 
 ## Step 2: Choose Tier
@@ -176,12 +203,15 @@ for f in *.sh; do
     -e "s|{{PROTECTED_FILES}}|.env|g" \
     -e "s|{{SOURCE_EXTENSIONS}}|{detected_extensions}|g" \
     -e "s|{{MIN_SUITES}}|10|g" \
+    -e "s|{{MIN_TEST_TIER}}|integration|g" \
     -e "s|{{VAULT_PATH}}|{detected_vault_path}|g" \
     -e "s|{{VAULT_EVIDENCE_PATH}}|{detected_vault_path}/_evidence|g" \
     "$f"
 done
 chmod +x *.sh
 ```
+
+**Default `MIN_TEST_TIER` is `integration`** — mocked tests are never acceptable evidence. Only override to `mocked` if the project genuinely has no database or external services.
 
 ## Step 4: Copy Skills
 
@@ -200,12 +230,15 @@ All hook paths use: `"$CLAUDE_PROJECT_DIR"/.claude/hooks/`
 
 ## Step 6: Generate CLAUDE.md Section
 
-If CLAUDE.md exists, append the enforcement section (wrapped in `<!-- claude-harness -->` comments). If not, create a new CLAUDE.md.
+If CLAUDE.md exists, **propose** the enforcement section and show the user what will be added. Let them review what to keep. Wrap in `<!-- claude-harness enforcement section -->` comments so it can be identified and updated later.
 
 Include:
-- "Proof-or-STFU" header
-- Hook enforcement chain table (rows vary by tier)
+- "Proof-or-STFU" header with minimum evidence tier rule (e.g., "Minimum evidence tier: `integration`")
+- Evidence storage location (`.claude/evidence/`)
+- Hook enforcement chain table (rows vary by tier) — `require-test-evidence.sh` row must mention tier enforcement, `record-test-evidence.sh` row must mention tier detection and vault note
 - "No escape hatches" footer
+
+If CLAUDE.md already has a `<!-- claude-harness enforcement section -->` block, replace it rather than appending a duplicate.
 
 ## Step 7: Set Up Vault Structure
 

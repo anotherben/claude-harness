@@ -87,6 +87,7 @@
     "PROTECTED_FILES",
     "SOURCE_EXTENSIONS",
     "MIN_SUITES",
+    "MIN_TEST_TIER",
     "VAULT_PATH"
   ]
 }

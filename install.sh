@@ -131,6 +131,22 @@ PROTECTED_FILES="${PROTECTED_FILES:-.env}"
 read -rp "Minimum test suites for evidence [10]: " MIN_SUITES
 MIN_SUITES="${MIN_SUITES:-10}"
 
+# Min test tier
+echo ""
+echo "Minimum test tier for commit evidence:"
+echo "  [1] integration (default) — tests must hit real services (DB, API)"
+echo "  [2] e2e                   — browser tests must pass"
+echo "  [3] mocked                — any passing tests count (not recommended)"
+echo ""
+read -rp "Minimum tier [1/2/3]: " TIER_CHOICE_TEST
+case "$TIER_CHOICE_TEST" in
+  1) MIN_TEST_TIER="integration" ;;
+  2) MIN_TEST_TIER="e2e" ;;
+  3) MIN_TEST_TIER="mocked" ;;
+  *) MIN_TEST_TIER="integration"; warn "Invalid choice, defaulting to integration" ;;
+esac
+info "Minimum test tier: ${MIN_TEST_TIER}"
+
 # Vault path (required — Obsidian is core to the harness)
 VAULT_PATH=""
 VAULT_EVIDENCE_PATH=""
@@ -220,6 +236,7 @@ for hook in $(get_hooks_for_tier "$TIER"); do
       -e "s|{{PROTECTED_FILES}}|${PROTECTED_FILES}|g" \
       -e "s|{{SOURCE_EXTENSIONS}}|${SOURCE_EXTENSIONS}|g" \
       -e "s|{{MIN_SUITES}}|${MIN_SUITES}|g" \
+      -e "s|{{MIN_TEST_TIER}}|${MIN_TEST_TIER}|g" \
       -e "s|{{VAULT_PATH}}|${VAULT_PATH}|g" \
       -e "s|{{VAULT_EVIDENCE_PATH}}|${VAULT_EVIDENCE_PATH}|g" \
       -e "s|{{JCODEMUNCH_REPO_ID}}|${JCODEMUNCH_REPO_ID}|g" \
@@ -433,7 +450,8 @@ info "Generating CLAUDE.md..."
 
 generate_claude_md() {
   local tier="$1"
-  cat <<'CLAUDEMD_HEADER'
+  local min_tier="${MIN_TEST_TIER:-integration}"
+  cat <<CLAUDEMD_HEADER
 ## Proof-or-STFU (ENFORCED BY HOOKS)
 
 **Every claim is false until you paste the test output.**
@@ -444,6 +462,9 @@ generate_claude_md() {
 - After ANY git operation, ALL prior results are stale
 - After ANY source file edit, prior results are stale
 - If you cannot verify, say **"UNVERIFIED"** — never say "passes"
+- **Minimum evidence tier: \`${min_tier}\`** — mocked tests are not acceptable evidence. Run integration tests (\`npm run test:local\` or equivalent) before committing.
+
+Evidence is stored as JSON in \`.claude/evidence/\`. Hooks read this — not markdown, not /tmp markers.
 
 ### Hook enforcement chain (all exit 2 = hard block)
 
@@ -455,11 +476,11 @@ CLAUDEMD_HEADER
   cat <<'LITE_ROWS'
 | **Edit/Write** source file | `require-tdd-before-source-edit.sh` | Must have recent tests or staged test files |
 | **Edit/Write** protected file | `protect-files.sh` | Blocks protected files |
-| **Bash** git commit | `require-test-evidence.sh` | Evidence must be fresh, matching HEAD |
+| **Bash** git commit | `require-test-evidence.sh` | Evidence must be fresh, matching HEAD, minimum tier enforced |
 | **Bash** git commit | `require-lint-clean.sh` | Lint must pass on staged source files |
 | **Bash** git commit | `pre-commit-gate.sh` | Must have test files or evidence |
 | **Bash** git merge | `enforce-merge-protocol.sh` | Blocks blind conflict resolution |
-| **Bash** test commands | `record-test-evidence.sh` | Auto-records evidence JSON |
+| **Bash** test commands | `record-test-evidence.sh` | Auto-records evidence JSON with tier, output, and vault note |
 | **Bash** git operations | `invalidate-after-git-op.sh` | Auto-marks evidence stale |
 | **Bash** git merge | `post-merge-test-gate.sh` | Flags merge-pending-test state |
 | **Skill** enterprise-* | `enforce-enterprise-pipeline.sh` | Must follow stage order |

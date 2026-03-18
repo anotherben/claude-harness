@@ -23,6 +23,10 @@ For each changed file matching the applicable pattern, check:
 6. Describe/it names describe BEHAVIOR not implementation (e.g., "rejects expired tokens" not "calls validateToken")
 7. AAA structure — Arrange, Act, Assert are clearly separated (setup, execution, verification in distinct blocks)
 8. Test file mirrors source file structure — test file location and naming correspond to the source file being tested
+9. **Evidence tier matches change scope** — check `.claude/evidence/last-test-run.json` for the `tier` field:
+   - If changed files touch database queries, models, or repositories and tier is `mocked` → **FAIL**: "changes touch database layer but only mocked tests ran"
+   - If changed files touch API routes or controllers and tier is `mocked` → **FAIL**: "changes touch API layer but only mocked tests ran"
+   - If tier is `integration` or `e2e` → evidence is credible for these changes
 
 ## Common Pitfalls
 

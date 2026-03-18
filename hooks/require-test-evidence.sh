@@ -51,8 +51,14 @@ counts_verified = ev.get('counts_verified', True)
 suites_passed = ev.get('result', {}).get('suites_passed', 0)
 mode = ev.get('mode', 'parallel')
 ev_timestamp = ev.get('timestamp', '')
+ev_tier = ev.get('tier', 'unknown')
 
 MIN_SUITES = 50
+
+# Tier enforcement — {{MIN_TEST_TIER}} is replaced by install.sh
+# Tier hierarchy: mocked < integration < e2e
+MIN_TEST_TIER = '{{MIN_TEST_TIER}}'
+TIER_ORDER = {'mocked': 0, 'unknown': 0, 'integration': 1, 'e2e': 2}
 
 errors = []
 if stale:
@@ -69,6 +75,22 @@ if suites_passed < MIN_SUITES:
     errors.append(f'Only {suites_passed} suites ran. Full suite required (minimum {MIN_SUITES}). Run: cd apps/api && npm run test:local')
 if mode == 'parallel':
     errors.append('Tests ran in parallel mode. RunInBand required for evidence. Run: cd apps/api && npm run test:local')
+
+# Enforce minimum test tier
+if MIN_TEST_TIER in TIER_ORDER:
+    ev_tier_level = TIER_ORDER.get(ev_tier, 0)
+    min_tier_level = TIER_ORDER[MIN_TEST_TIER]
+    if ev_tier_level < min_tier_level:
+        tier_cmds = {
+            'integration': 'npm run test:local',
+            'e2e': 'npx playwright test'
+        }
+        fix_cmd = tier_cmds.get(MIN_TEST_TIER, 'the appropriate test command')
+        errors.append(
+            f'Test evidence tier is "{ev_tier}" but minimum required is "{MIN_TEST_TIER}". '
+            f'Run: {fix_cmd}. '
+            f'Mocked tests alone do not prove the code works against real services.'
+        )
 
 if ev_timestamp and not stale:
     try:
@@ -97,7 +119,7 @@ if errors:
     print('FAIL|' + '; '.join(errors))
 else:
     tests = ev.get('result', {}).get('tests_passed', 0)
-    print(f'PASS|{suites_passed} suites, {tests} tests passed on {ev_commit}')
+    print(f'PASS|{suites_passed} suites, {tests} tests passed on {ev_commit} [tier={ev_tier}]')
 PYEOF
 )
 
