@@ -1,21 +1,34 @@
 const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
 const IndexEngine = require('./index');
+const GitIntegration = require('./git');
 const { registerFileTools } = require('./tools/file-tools');
 const { registerSearchTools } = require('./tools/search-tools');
+const { registerGitTools } = require('./tools/git-tools');
 const { registerAdminTools } = require('./tools/admin-tools');
+const { registerKnowledgeTools } = require('./tools/knowledge-tools');
+const Knowledge = require('./knowledge');
+const Fleet = require('./fleet');
+const { registerFleetTools } = require('./tools/fleet-tools');
 
 async function createServer(projectRoot, config = {}) {
   const server = new McpServer({
     name: 'cortex-engine',
-    version: '0.1.0',
+    version: '1.0.0',
   });
 
   const engine = new IndexEngine(projectRoot, config);
   await engine.ready();
 
+  const git = new GitIntegration(projectRoot);
+  const knowledge = new Knowledge(projectRoot, config);
+  const fleet = new Fleet(knowledge);
+
   registerFileTools(server, engine);
   registerSearchTools(server, engine);
+  registerGitTools(server, git);
+  registerKnowledgeTools(server, knowledge);
+  registerFleetTools(server, fleet);
   registerAdminTools(server, engine);
 
   // Clean shutdown
@@ -27,7 +40,7 @@ async function createServer(projectRoot, config = {}) {
   process.on('SIGTERM', cleanup);
   process.on('SIGINT', cleanup);
 
-  return { server, engine };
+  return { server, engine, git, knowledge, fleet };
 }
 
 // Run as MCP stdio server if invoked directly

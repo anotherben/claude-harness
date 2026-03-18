@@ -156,6 +156,54 @@ class Store {
     `).all({ pattern: `%${baseName}` });
   }
 
+
+  // --- Tags ---
+
+  upsertTags(fileId, symbolTags) {
+    // symbolTags is a Map<symbolName, string[]>
+    const delByFile = this.db.prepare('DELETE FROM tags WHERE file_id = ?');
+    const getSymbol = this.db.prepare('SELECT id FROM symbols WHERE file_id = ? AND name = ?');
+    const ins = this.db.prepare(
+      'INSERT INTO tags (symbol_id, file_id, symbol_name, tag) VALUES (@symbolId, @fileId, @symbolName, @tag)'
+    );
+
+    const tx = this.db.transaction(() => {
+      delByFile.run(fileId);
+      for (const [symbolName, tags] of symbolTags) {
+        const sym = getSymbol.get(fileId, symbolName);
+        if (!sym) continue;
+        for (const tag of tags) {
+          ins.run({ symbolId: sym.id, fileId, symbolName, tag });
+        }
+      }
+    });
+    tx();
+  }
+
+  findByTag(tag, limit) {
+    let sql = `
+      SELECT t.tag, t.symbol_name, s.kind, s.signature, s.start_line AS startLine,
+             s.end_line AS endLine, f.path AS filePath
+      FROM tags t
+      JOIN symbols s ON s.id = t.symbol_id
+      JOIN files f ON f.id = t.file_id
+      WHERE t.tag = @tag
+      ORDER BY f.path, s.start_line
+    `;
+    const params = { tag };
+    if (limit) {
+      sql += ' LIMIT @limit';
+      params.limit = limit;
+    }
+    return this.db.prepare(sql).all(params);
+  }
+
+  getTagsForFile(fileId) {
+    return this.db.prepare(
+      'SELECT symbol_name, tag FROM tags WHERE file_id = ?'
+    ).all(fileId);
+  }
+
   // --- Stats ---
 
   getStats() {

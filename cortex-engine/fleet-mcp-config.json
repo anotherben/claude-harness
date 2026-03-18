@@ -1,0 +1,7 @@
+{
+  "cortex-engine": {
+    "command": "node",
+    "args": ["__CORTEX_ENGINE_PATH__/src/server.js", "__PROJECT_ROOT__"],
+    "env": {}
+  }
+}

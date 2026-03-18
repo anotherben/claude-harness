@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const Store = require('./store');
 const Parser = require('./parser');
 const Watcher = require('./watcher');
+const Tagger = require('./tagger');
 
 class IndexEngine {
   constructor(projectRoot, config = {}) {
@@ -24,6 +25,8 @@ class IndexEngine {
     this.store = new Store(dbPath);
     this.store.migrate();
     this.parser = new Parser();
+
+    this.tagger = new Tagger(config.tagRules || {});
 
     this.watcher = new Watcher(this.projectRoot, {
       extensions: config.extensions || ['.js', '.jsx', '.cjs', '.mjs', '.ts', '.tsx'],
@@ -74,6 +77,10 @@ class IndexEngine {
     const result = this.parser.parse(relPath, content);
     this.store.upsertSymbols(file.id, result.symbols);
     this.store.upsertImports(file.id, result.imports);
+
+    // Semantic tagging
+    const symbolTags = this.tagger.tagSymbols(result.symbols, content);
+    this.store.upsertTags(file.id, symbolTags);
 
     // Cache content for readSymbol
     this._contentCache.set(relPath, content);
@@ -148,6 +155,10 @@ class IndexEngine {
     const outline = this.store.getSymbolsByFile(file.id);
 
     return { symbol, imports, outline };
+  }
+
+  findByTag(tag, limit) {
+    return this.store.findByTag(tag, limit);
   }
 
   findSymbol(query, opts = {}) {

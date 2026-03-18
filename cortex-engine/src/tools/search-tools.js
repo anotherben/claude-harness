@@ -64,6 +64,20 @@ function registerSearchTools(server, engine) {
     const results = engine.findImporters(params.file_path);
     return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
   });
+  server.tool('cortex_find_by_tag', {
+    description: 'Find symbols by semantic tag (db_read, db_write, unscoped_query, route_handler, etc.)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tag: { type: 'string', description: 'Semantic tag to search for' },
+        limit: { type: 'number', description: 'Max results' },
+      },
+      required: ['tag'],
+    },
+  }, async (params) => {
+    const results = engine.findByTag(params.tag, params.limit);
+    return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+  });
 }
 
 module.exports = { registerSearchTools };

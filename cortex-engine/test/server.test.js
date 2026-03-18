@@ -17,6 +17,12 @@ const IndexEngine = require('../src/index');
 const { registerFileTools } = require('../src/tools/file-tools');
 const { registerSearchTools } = require('../src/tools/search-tools');
 const { registerAdminTools } = require('../src/tools/admin-tools');
+const { registerKnowledgeTools } = require('../src/tools/knowledge-tools');
+const Knowledge = require('../src/knowledge');
+const Fleet = require('../src/fleet');
+const { registerFleetTools } = require('../src/tools/fleet-tools');
+const { registerGitTools } = require('../src/tools/git-tools');
+const GitIntegration = require('../src/git');
 
 describe('MCP Server Tools', () => {
   let engine;
@@ -60,6 +66,12 @@ module.exports = { useFoo };
 
     registerFileTools(mockServer, engine);
     registerSearchTools(mockServer, engine);
+    const git = new GitIntegration(dir);
+    registerGitTools(mockServer, git);
+    const knowledge = new Knowledge(dir);
+    registerKnowledgeTools(mockServer, knowledge);
+    const fleet = new Fleet(knowledge);
+    registerFleetTools(mockServer, fleet);
     registerAdminTools(mockServer, engine);
   });
 
@@ -77,11 +89,16 @@ module.exports = { useFoo };
       'cortex_find_symbol', 'cortex_find_text', 'cortex_find_references',
       'cortex_find_importers',
       'cortex_status', 'cortex_reindex',
+      'cortex_git_status', 'cortex_git_diff', 'cortex_git_blame',
+      'cortex_git_log', 'cortex_git_hotspots',
+      'cortex_find_by_tag',
+      'cortex_annotate', 'cortex_recall', 'cortex_patterns', 'cortex_lessons',
+      'cortex_ingest_handover', 'cortex_learning_report', 'cortex_fleet_mcp_config',
     ];
     for (const name of expected) {
       expect(toolNames).toContain(name);
     }
-    expect(toolNames.length).toBe(12);
+    expect(toolNames.length).toBe(25);
   });
 
   // PC-18: cortex_outline returns correct data

@@ -35,3 +35,17 @@ CREATE INDEX IF NOT EXISTS idx_symbols_name ON symbols(name);
 CREATE INDEX IF NOT EXISTS idx_imports_file ON imports(file_id);
 CREATE INDEX IF NOT EXISTS idx_imports_source ON imports(source);
 CREATE INDEX IF NOT EXISTS idx_files_path ON files(path);
+
+CREATE TABLE IF NOT EXISTS tags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  symbol_id INTEGER NOT NULL,
+  file_id INTEGER NOT NULL,
+  symbol_name TEXT NOT NULL,
+  tag TEXT NOT NULL,
+  FOREIGN KEY (symbol_id) REFERENCES symbols(id) ON DELETE CASCADE,
+  FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_tags_tag ON tags(tag);
+CREATE INDEX IF NOT EXISTS idx_tags_symbol ON tags(symbol_id);
+CREATE INDEX IF NOT EXISTS idx_tags_file ON tags(file_id);

@@ -48,6 +48,7 @@ class Parser {
   }
 
   _walk(node, content, symbols, imports) {
+    if (!node) return;
     switch (node.type) {
       case 'function_declaration':
         this._extractFunction(node, content, symbols);
