@@ -37,6 +37,7 @@ Choose how much enforcement you want:
 
 | | Lite | Standard | Full |
 |---|:---:|:---:|:---:|
+| **Obsidian vault** — every change tied to a work item | ✓ | ✓ | ✓ |
 | **TDD enforcement** — can't edit source without tests | ✓ | ✓ | ✓ |
 | **Evidence system** — JSON proof, auto-staleness | ✓ | ✓ | ✓ |
 | **Lint gate** — ESLint/ruff/clippy before commit | ✓ | ✓ | ✓ |
@@ -44,7 +45,6 @@ Choose how much enforcement you want:
 | **Protected files** — .env untouchable | ✓ | ✓ | ✓ |
 | **Enterprise pipeline** — 9-stage skill chain | ✓ | ✓ | ✓ |
 | **Plan-before-edits** — no code without a plan | | ✓ | ✓ |
-| **Vault integration** — Obsidian project tracking | | ✓ | ✓ |
 | **Independent review** — builder ≠ reviewer | | ✓ | ✓ |
 | **Context management** — injection + fade + handover | | | ✓ |
 | **Code indexing** — jcodemunch enforcement | | | ✓ |
@@ -214,6 +214,7 @@ Install by copying to `.claude/skills/`.
 ## Requirements
 
 - Claude Code CLI
+- [Obsidian](https://obsidian.md/) vault (the harness tracks all work items, evidence, and institutional knowledge here)
 - `python3` (hooks use it for JSON parsing)
 - `jq` (optional, some hooks use it)
 - `git`

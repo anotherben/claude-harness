@@ -131,13 +131,17 @@ PROTECTED_FILES="${PROTECTED_FILES:-.env}"
 read -rp "Minimum test suites for evidence [10]: " MIN_SUITES
 MIN_SUITES="${MIN_SUITES:-10}"
 
-# Vault path (Standard+)
+# Vault path (required — Obsidian is core to the harness)
 VAULT_PATH=""
 VAULT_EVIDENCE_PATH=""
-if [ "$TIER" = "standard" ] || [ "$TIER" = "full" ]; then
-  read -rp "Obsidian vault path [~/Documents/Vault]: " VAULT_PATH
-  VAULT_PATH="${VAULT_PATH:-$HOME/Documents/Vault}"
-  VAULT_EVIDENCE_PATH="${VAULT_PATH}/_evidence"
+read -rp "Obsidian vault path [~/Documents/Vault]: " VAULT_PATH
+VAULT_PATH="${VAULT_PATH:-$HOME/Documents/Vault}"
+VAULT_EVIDENCE_PATH="${VAULT_PATH}/_evidence"
+if [ ! -d "$VAULT_PATH" ]; then
+  warn "Vault path does not exist yet — it will be created at install time"
+  mkdir -p "$VAULT_PATH"
+  mkdir -p "$VAULT_EVIDENCE_PATH"
+  ok "Created vault at ${VAULT_PATH}"
 fi
 
 # jcodemunch repo ID (Full)
@@ -159,7 +163,7 @@ ok "Directory structure created"
 # --- Determine which hooks to install ---
 get_hooks_for_tier() {
   local tier="$1"
-  # Lite hooks (always installed)
+  # Lite hooks (always installed — includes vault, which is core)
   local hooks=(
     protect-files.sh
     require-tdd-before-source-edit.sh
@@ -173,14 +177,14 @@ get_hooks_for_tier() {
     post-merge-test-gate.sh
     mark-skill-invoked.sh
     auto-format.sh
+    require-vault-for-edits.sh
+    require-vault-update.sh
+    enforce-vault-context.sh
   )
 
   # Standard adds
   if [ "$tier" = "standard" ] || [ "$tier" = "full" ]; then
     hooks+=(
-      require-vault-for-edits.sh
-      require-vault-update.sh
-      enforce-vault-context.sh
       require-plan-before-edits.sh
       require-independent-review.sh
       mark-plan-approved.sh
@@ -280,11 +284,11 @@ generate_settings() {
           { "type": "command", "command": "${hook_prefix}/pre-commit-gate.sh", "timeout": 10 },
           { "type": "command", "command": "${hook_prefix}/require-test-evidence.sh", "timeout": 5 },
           { "type": "command", "command": "${hook_prefix}/enforce-merge-protocol.sh", "timeout": 5 },
-          { "type": "command", "command": "${hook_prefix}/require-lint-clean.sh", "timeout": 15 }$(
+          { "type": "command", "command": "${hook_prefix}/require-lint-clean.sh", "timeout": 15 },
+          { "type": "command", "command": "${hook_prefix}/require-vault-update.sh", "timeout": 5 }$(
   if [ "$tier" = "standard" ] || [ "$tier" = "full" ]; then
     cat <<STANDARD_BASH
 ,
-          { "type": "command", "command": "${hook_prefix}/require-vault-update.sh", "timeout": 5 },
           { "type": "command", "command": "${hook_prefix}/pre-merge-test-check.sh", "timeout": 5 }
 STANDARD_BASH
   fi)
@@ -294,11 +298,11 @@ STANDARD_BASH
         "matcher": "Edit|Write",
         "hooks": [
           { "type": "command", "command": "${hook_prefix}/protect-files.sh", "timeout": 5 },
-          { "type": "command", "command": "${hook_prefix}/require-tdd-before-source-edit.sh", "timeout": 5 }$(
+          { "type": "command", "command": "${hook_prefix}/require-tdd-before-source-edit.sh", "timeout": 5 },
+          { "type": "command", "command": "${hook_prefix}/require-vault-for-edits.sh", "timeout": 5 }$(
   if [ "$tier" = "standard" ] || [ "$tier" = "full" ]; then
     cat <<STANDARD_EDIT
 ,
-          { "type": "command", "command": "${hook_prefix}/require-vault-for-edits.sh", "timeout": 5 },
           { "type": "command", "command": "${hook_prefix}/require-plan-before-edits.sh", "timeout": 5 }
 STANDARD_EDIT
   fi)
@@ -307,11 +311,11 @@ STANDARD_EDIT
       {
         "matcher": "Skill",
         "hooks": [
-          { "type": "command", "command": "${hook_prefix}/enforce-enterprise-pipeline.sh", "timeout": 5 }$(
+          { "type": "command", "command": "${hook_prefix}/enforce-enterprise-pipeline.sh", "timeout": 5 },
+          { "type": "command", "command": "${hook_prefix}/enforce-vault-context.sh", "timeout": 5 }$(
   if [ "$tier" = "standard" ] || [ "$tier" = "full" ]; then
     cat <<STANDARD_SKILL
 ,
-          { "type": "command", "command": "${hook_prefix}/enforce-vault-context.sh", "timeout": 5 },
           { "type": "command", "command": "${hook_prefix}/require-independent-review.sh", "timeout": 5 }
 STANDARD_SKILL
   fi)
@@ -459,16 +463,16 @@ CLAUDEMD_HEADER
 | **Bash** git operations | `invalidate-after-git-op.sh` | Auto-marks evidence stale |
 | **Bash** git merge | `post-merge-test-gate.sh` | Flags merge-pending-test state |
 | **Skill** enterprise-* | `enforce-enterprise-pipeline.sh` | Must follow stage order |
+| **Edit/Write** source file | `require-vault-for-edits.sh` | Must have vault context loaded |
+| **Skill** enterprise-* | `enforce-vault-context.sh` | Must run /vault-context first |
+| **Bash** git commit/push | `require-vault-update.sh` | Must have invoked /vault-update or /vault-capture |
 LITE_ROWS
 
   # Standard adds
   if [ "$tier" = "standard" ] || [ "$tier" = "full" ]; then
     cat <<'STANDARD_ROWS'
-| **Edit/Write** source file | `require-vault-for-edits.sh` | Must have vault context loaded |
 | **Edit/Write** source file | `require-plan-before-edits.sh` | Must have approved plan |
 | **Skill** enterprise-review | `require-independent-review.sh` | Builder cannot review own work |
-| **Skill** enterprise-* | `enforce-vault-context.sh` | Must run /vault-context first |
-| **Bash** git commit/push | `require-vault-update.sh` | Must have invoked /vault-update or /vault-capture |
 | **Bash** git merge | `pre-merge-test-check.sh` | Must test after prior merges |
 | **PostToolUse** ExitPlanMode | `mark-plan-approved.sh` | Sets plan-approved marker |
 STANDARD_ROWS

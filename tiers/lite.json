@@ -1,6 +1,6 @@
 {
   "name": "Lite",
-  "description": "TDD + evidence + lint + merge protocol. The essentials.",
+  "description": "TDD + evidence + lint + merge protocol + vault. The essentials.",
   "hooks": {
     "PreToolUse": [
       {
@@ -9,20 +9,23 @@
           { "hook": "pre-commit-gate.sh", "timeout": 10 },
           { "hook": "require-test-evidence.sh", "timeout": 5 },
           { "hook": "enforce-merge-protocol.sh", "timeout": 5 },
-          { "hook": "require-lint-clean.sh", "timeout": 15 }
+          { "hook": "require-lint-clean.sh", "timeout": 15 },
+          { "hook": "require-vault-update.sh", "timeout": 5 }
         ]
       },
       {
         "matcher": "Edit|Write",
         "hooks": [
           { "hook": "protect-files.sh", "timeout": 5 },
-          { "hook": "require-tdd-before-source-edit.sh", "timeout": 5 }
+          { "hook": "require-tdd-before-source-edit.sh", "timeout": 5 },
+          { "hook": "require-vault-for-edits.sh", "timeout": 5 }
         ]
       },
       {
         "matcher": "Skill",
         "hooks": [
-          { "hook": "enforce-enterprise-pipeline.sh", "timeout": 5 }
+          { "hook": "enforce-enterprise-pipeline.sh", "timeout": 5 },
+          { "hook": "enforce-vault-context.sh", "timeout": 5 }
         ]
       }
     ],
@@ -83,6 +86,7 @@
     "LINT_COMMAND",
     "PROTECTED_FILES",
     "SOURCE_EXTENSIONS",
-    "MIN_SUITES"
+    "MIN_SUITES",
+    "VAULT_PATH"
   ]
 }

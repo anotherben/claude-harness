@@ -1,27 +1,24 @@
 {
   "name": "Standard",
-  "description": "Lite + vault integration, plan gate, independent review.",
+  "description": "Lite + plan gate, independent review.",
   "extends": "lite",
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
-          { "hook": "require-vault-update.sh", "timeout": 5 },
           { "hook": "pre-merge-test-check.sh", "timeout": 5 }
         ]
       },
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "hook": "require-vault-for-edits.sh", "timeout": 5 },
           { "hook": "require-plan-before-edits.sh", "timeout": 5 }
         ]
       },
       {
         "matcher": "Skill",
         "hooks": [
-          { "hook": "enforce-vault-context.sh", "timeout": 5 },
           { "hook": "require-independent-review.sh", "timeout": 5 }
         ]
       }
@@ -36,7 +33,5 @@
     ]
   },
   "skills_add": [],
-  "templates_required": [
-    "VAULT_PATH"
-  ]
+  "templates_required": []
 }
