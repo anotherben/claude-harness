@@ -247,6 +247,68 @@ This is what makes `/enterprise` ready to go immediately. Run the discover phase
 
 The goal: after this step, `/enterprise` can start at the brainstorm phase — no "let me learn your codebase" delay.
 
+## Step 8b: Generate Review Lenses
+
+After enterprise-discover completes and `stack-profile.json` exists, generate stack-specific review lens skills that enterprise-review will dispatch during code review.
+
+1. **Read the stack profile:**
+   ```bash
+   cat .claude/enterprise-state/stack-profile.json
+   ```
+
+2. **Determine which lenses to generate** using this detection table:
+
+   | Condition | Lens template | Lens ID |
+   |-----------|--------------|---------|
+   | Language is JavaScript AND framework is Express/Fastify/Koa/Nest | `api-node.md` | `api-node` |
+   | Frontend source directory exists | `frontend-react.md` | `frontend-react` |
+   | Frontend source directory exists | `component.md` | `component` |
+   | Database is PostgreSQL | `sql-pg.md` | `sql-pg` |
+   | Database is any SQL (not PostgreSQL) | `sql-general.md` | `sql-general` |
+   | Test framework is Jest/Vitest/Mocha | `test-js.md` | `test-js` |
+   | Test framework is pytest | `test-python.md` | `test-python` |
+   | Language is Python AND framework is Django/FastAPI/Flask | `api-python.md` | `api-python` |
+   | Language is Go | `api-go.md` | `api-go` |
+   | Language is Go AND database exists | `sql-go.md` | `sql-go` |
+   | **Always** | `security.md` | `security` |
+   | **Always** | `architecture.md` | `architecture` |
+
+3. **For each matched lens:**
+   ```bash
+   mkdir -p .claude/skills/review-lens-{id}
+   cp ~/claude-harness/templates/review-lenses/{template}.md .claude/skills/review-lens-{id}/SKILL.md
+   ```
+
+   Then templatize with values from the stack profile:
+   - `{{SOURCE_DIR}}` — backend source directory
+   - `{{FRONTEND_DIR}}` — frontend source directory
+   - `{{AUTH_MIDDLEWARE}}` — auth middleware name (e.g., `authenticateStaff`)
+   - `{{TENANT_FIELD}}` — multi-tenancy field (e.g., `tenant_id`)
+   - `{{TENANT_ENABLED}}` — `true` or `false`
+   - `{{MIGRATION_DIR}}` — migration directory path
+   - `{{FILE_SIZE_SOFT_LIMIT}}` — default `400`
+   - `{{DB_TYPE}}` — database type
+
+4. **Write the lens registry** at `.claude/enterprise-state/review-lenses.json`:
+   ```json
+   {
+     "generated_at": "ISO-8601",
+     "lenses": [
+       {
+         "id": "api-node",
+         "skill_path": ".claude/skills/review-lens-api-node/SKILL.md",
+         "applies_to": "route files, controllers, middleware",
+         "stack_key": "node-express"
+       }
+     ]
+   }
+   ```
+
+5. **Verify** no template variables remain:
+   ```bash
+   grep -r '{{' .claude/skills/review-lens-*/ 2>/dev/null | head -5
+   ```
+
 ## Step 9: Readiness Verification
 
 Run ALL of these checks:
@@ -261,6 +323,9 @@ Run ALL of these checks:
 | Vault exists | `ls {vault_path}/00-Inbox` | Exists |
 | Evidence dir | `ls {vault_path}/_evidence/` | Exists |
 | Stack profile | `ls .claude/enterprise-state/stack-profile.json` | Exists |
+| Review lenses | `ls -d .claude/skills/review-lens-*/ \| wc -l` | 2+ (security + architecture always) |
+| Lens registry | `cat .claude/enterprise-state/review-lenses.json` | Valid JSON |
+| No lens template vars | `grep -r '{{' .claude/skills/review-lens-*/ \| head -5` | Empty |
 | Obsidian running | `pgrep -x Obsidian` | PID (warn if not running) |
 
 ### Readiness Report
@@ -275,6 +340,7 @@ claude-harness installed ({tier} tier) — READY
   Docs:     CLAUDE.md enforcement section ✓
   Vault:    {vault_path} ✓
   Profile:  stack-profile.json ✓
+  Lenses:   {n} review lenses generated
   Obsidian: {running/not running — start it for live sync}
 
   READY: Run /enterprise <your task> to start.
