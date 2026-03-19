@@ -12,7 +12,7 @@ Built-in **Cortex Engine** — a code intelligence MCP server that makes agents 
 
 ```
 claude-harness/
-├── cortex-engine/        # Code intelligence MCP server (25 tools, real-time index)
+├── cortex-engine/        # Code intelligence MCP server (26 tools, real-time index)
 ├── hooks/                # 29 shell hooks — quality gates that block bad actions
 ├── skills/               # 30 Claude Code skills — enterprise dev pipeline
 ├── conductor/            # Fleet orchestration — multi-agent dispatch + merge
@@ -63,7 +63,7 @@ claude-harness/
 
 | Feature | What It Does |
 |---------|-------------|
-| **25 MCP tools** | File reading, symbol search, git context, semantic tags, knowledge store, fleet coordination |
+| **26 MCP tools** | File reading, symbol search, git context, semantic tags, knowledge store, fleet coordination |
 | **Real-time watcher** | Index updates in milliseconds after edits — no manual reindex |
 | **20 file types** | JS, TS, TSX, JSX, Python, Bash, SQL, CSS, JSON, YAML, GraphQL, Markdown, TOML, XML, HTML, Vue, Svelte, SCSS, LESS + configurable |
 | **Nested symbols** | Factory methods, local helpers, inner types, interface members — not just top-level exports |
@@ -115,23 +115,38 @@ No project path needed — Cortex uses the working directory automatically.
 
 Full details: [`cortex-engine/README.md`](cortex-engine/README.md)
 
-### Benchmarks (vs jcodemunch)
+### Token Savings Telemetry
 
-Tested on helpdesk (JS, 7,320 files) and firearm-systems (TS, 754 files):
+Every Cortex response includes `_meta` with measured savings:
 
-| Metric | Cortex Engine | jcodemunch |
+```
+cortex_read_symbol("handlePaymentWebhook")
+→ 380 tokens returned (vs 3,300 to read the full file)
+→ 2,920 tokens saved (89%), $0.04 saved on Opus per call
+```
+
+At scale: 100 symbol reads/session = ~200K tokens saved = $3.00/session on Opus.
+
+Use `cortex_telemetry()` for cumulative stats across the session.
+
+### Benchmarks
+
+Tested on JS and TypeScript repos:
+
+| Metric | Cortex Engine | Traditional |
 |--------|:---:|:---:|
-| **Query speed** | <1ms | 11-43ms |
-| **Symbol search (createPurchaseOrder)** | 5 hits | 2 hits |
-| **Import graph (purchasing.js)** | 8 importers | 0 importers |
+| **Query speed** | <1ms | 10-160ms |
+| **Token savings per read** | 89% average | 0% |
 | **Index freshness** | Real-time watcher | Manual reindex |
-| **Semantic tags** | 6 tag types, configurable | None |
+| **Semantic tags** | 11 tag types, configurable | None |
 | **Knowledge persistence** | Annotations + Obsidian sync | None |
 | **Git awareness** | Blame, hotspots, diff, log | None |
-| **File types** | 20 | 7 |
+| **File types** | 20 | 5-7 |
 | **Symbol categories** | 6 (code, config, docs, markup, style, query) | 1 |
-| **Languages (tree-sitter)** | JS, TS, TSX | JS, TS, TSX, + 30 via jcodemunch |
-| **Languages (regex fallback)** | Python, Bash, SQL, CSS, JSON, YAML, GraphQL, MD, TOML, XML, HTML, Vue, Svelte | N/A |
+| **Import graph** | Cross-extension (.js→.ts), barrel-aware | Basic or none |
+| **Nested symbols** | Factory methods, inner types, interface members | Top-level only |
+| **Languages (tree-sitter)** | JS, TS, TSX | Varies |
+| **Languages (regex)** | Python, Bash, SQL, CSS, JSON, YAML, GraphQL, MD, TOML, XML, HTML, Vue, Svelte | N/A |
 
 ---
 
@@ -338,7 +353,7 @@ Each agent gets: isolated git worktree, cortex-engine MCP, vault claim, skill se
 
 ```bash
 # Clone
-git clone https://github.com/anotherben/claude-harness.git ~/claude-harness
+git clone https://github.com/your-org/claude-harness.git ~/claude-harness
 
 # Install cortex-engine
 cd ~/claude-harness/cortex-engine && npm install
