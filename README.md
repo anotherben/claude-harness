@@ -4,7 +4,7 @@
 
 A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) and [Codex CLI](https://github.com/openai/codex) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
 
-Two built-in MCP servers. An Obsidian vault as the shared brain. 30 code intelligence tools. 29 enterprise skills. 28 quality gate hooks. Zero escape hatches.
+Two built-in MCP servers. An Obsidian vault as the shared brain. 30 code intelligence tools. 29 enterprise skills. 30 quality gate hooks. Zero escape hatches.
 
 ---
 
@@ -135,7 +135,7 @@ Hook chain:
 ```
 claude-harness/
 ├── cortex-engine/        # Code intelligence MCP (30 tools, 8 languages)
-├── hooks/                # 28 shell hooks — quality gates
+├── hooks/                # 30 shell hooks — quality gates
 ├── skills/               # 29 Claude Code skills — enterprise workflow
 ├── conductor/            # Fleet orchestration — multi-agent dispatch
 ├── plugins/              # Domain guards (Shopify, REX SOAP, SQL safety)
@@ -330,7 +330,9 @@ At scale: 100 reads/session = ~200K tokens saved = **$3/session on Opus**.
 
 ## Skills — 29 Enterprise Workflows
 
-### The Enterprise Pipeline (9 stages)
+### The Enterprise Pipeline (9 stages + auto-bootstrap)
+
+Every `/enterprise` invocation first runs a **HARNESS CHECK** — verifies hooks, settings, evidence dir, Cortex MCP, and Vault MCP are all installed. If anything is missing, it auto-runs `/harness-init` + `/vault-init` before proceeding. No more silent advisory-only mode in new repos.
 
 ```
 /enterprise-discover  →  Learn codebase (stack profile, traps, best practices)
@@ -401,7 +403,7 @@ Run **`/enterprise`** to orchestrate the full pipeline with automatic mode selec
 
 ---
 
-## Hooks — 28 Quality Gates
+## Hooks — 30 Quality Gates
 
 ### Source File Protection
 | Hook | When | Enforces |
@@ -419,6 +421,8 @@ Run **`/enterprise`** to orchestrate the full pipeline with automatic mode selec
 | `require-lint-clean.sh` | git commit | Linter passes on staged files |
 | `pre-commit-gate.sh` | git commit (3+ files) | Test files or evidence required |
 | `require-vault-update.sh` | git commit/push | Vault updated for source changes |
+| `validate-test-relevance.sh` | git commit | Tests must reference changed source symbols |
+| `validate-test-quality.sh` | git commit | No tautological tests (`expect(true)`), no empty test bodies, no placeholder names |
 
 ### Git Merge Gates
 | Hook | When | Enforces |
@@ -595,7 +599,7 @@ require-test-evidence.sh reads JSON:
 |-----------|-------|
 | MCP tools (Cortex Engine) | 30 |
 | Skills (enterprise workflows) | 29 |
-| Hooks (quality gates) | 28 |
+| Hooks (quality gates) | 30 |
 | Tree-sitter languages | 8 |
 | File types indexed | 22 |
 | Source categories | 7 |
