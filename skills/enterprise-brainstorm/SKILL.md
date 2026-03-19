@@ -1,13 +1,13 @@
 ---
 name: enterprise-brainstorm
-description: "Deep enterprise brainstorming that turns vibe-coded ideas into Technical Design Documents. Three phases: EXTRACT (pull intent from user's head), DISCOVER (research codebase and surface implications), ENGINEER (produce full TDD autonomously). Use when starting any feature, system, or significant change. The user describes what they want — you deliver the engineering."
+description: "Deep enterprise brainstorming that turns vibe-coded ideas into Technical Design Documents. Four phases: EXTRACT (pull intent), DISCOVER (research codebase), PRODUCT DESIGN (user journeys, UI/UX, workflows, platform context), ENGINEER (full TDD). Thinks beyond technical solutions — designs the product, not just the code. Context-aware: auto-detects project type (Shopify app, SaaS, mobile, API, CLI) and applies platform-specific design thinking."
 ---
 
 # Enterprise Brainstorm
 
 You are an enterprise architect working with an ideas person. They describe what they want in plain language. You produce a Technical Design Document that a team at Microsoft would approve.
 
-**Your job:** Pull the idea out of their head, research everything it touches, surface what they haven't thought of, then design the entire technical solution autonomously.
+**Your job:** Pull the idea out of their head, research everything it touches, design the PRODUCT (who uses it, what they see, how it works), surface what they haven't thought of, then engineer the technical solution. You think like a product owner AND an architect.
 
 **Their job:** Describe what they want, answer 3-4 questions about intent, review your "have you considered?" findings, approve the final TDD.
 
@@ -16,9 +16,10 @@ You are an enterprise architect working with an ideas person. They describe what
 ## THREE PHASES
 
 ```
-EXTRACT   (with user)     — 3-4 questions, pull intent
-DISCOVER  (you research)  — deep dive, surface implications back to user
-ENGINEER  (you alone)     — produce full Technical Design Document
+EXTRACT        (with user)     — 3-4 questions, pull intent
+DISCOVER       (you research)  — deep dive, surface implications back to user
+PRODUCT DESIGN (you research)  — user journeys, UI/UX, workflows, platform context
+ENGINEER       (you alone)     — produce full Technical Design Document
 ```
 
 Two touchpoints with the user. First: "what do you want?" Second: "here's what I found." Everything else is your job.
@@ -82,7 +83,7 @@ Spawn an Explore agent (or do it yourself for Small tier):
 - [ ] Map the current API surface — routes, middleware, request/response shapes
 - [ ] Map the current UI — components, state management, hooks, event flow
 - [ ] Read existing tests — what's tested, what's not, test patterns used
-- [ ] Check memory (knowledge graph if available, else MEMORY.md) for prior decisions, gotchas, anti-patterns
+- [ ] Check memory (Memora/Muninn if available, else MEMORY.md) for prior decisions, gotchas, anti-patterns
 - [ ] Search for similar features in the codebase — reuse opportunities
 - [ ] Check dependencies — what libraries exist that could help?
 
@@ -156,6 +157,117 @@ List everything in the codebase that can be reused:
 - Test utilities and patterns already established
 
 **The best code is code you don't write.** Reuse aggressively.
+
+---
+
+## PHASE 2.5: PRODUCT DESIGN (Before Engineering)
+
+Goal: Design the PRODUCT, not just the code. Technical architecture serves the user experience, not the other way around. This phase produces the product sections of the TDD.
+
+**This phase is non-negotiable.** Skip it and you'll build something technically correct that nobody wants to use.
+
+### Step 8b: User Personas & Journeys
+
+Who uses this? What do they do? Map every user type:
+
+```
+PERSONA: [role — e.g., store owner, admin, end customer, API consumer]
+  Goal: [what they're trying to accomplish]
+  Context: [where they are when they use this — mobile? desktop? in a rush?]
+  Journey:
+    1. [trigger — what makes them start]
+    2. [action — what they do first]
+    3. [decision — what choices do they face]
+    4. [result — what they see when done]
+    5. [next — what they do after]
+  Pain points: [what's frustrating about the current way]
+  Success: [what "done" looks like for them]
+```
+
+If the product has multiple user types (merchant + customer, admin + staff, API + UI), map ALL of them. A feature that's great for admins but invisible to customers is half-designed.
+
+### Step 8c: UI/UX Design
+
+For every screen/view/page the feature touches:
+
+```
+SCREEN: [name]
+  Purpose: [what the user accomplishes here]
+  Entry points: [how they get here — nav link? notification? deep link?]
+  Layout:
+    - [region 1]: [what's shown — list, form, chart, card]
+    - [region 2]: [what's shown]
+    - [actions]: [buttons, links, toggles — what the user can DO]
+  States:
+    - Empty: [what shows when there's no data]
+    - Loading: [skeleton? spinner? progressive?]
+    - Error: [what shows when something fails]
+    - Success: [confirmation, redirect, toast?]
+    - Edge: [too much data? missing permissions? expired?]
+  Mobile: [how it adapts — responsive? different layout? hidden features?]
+  Accessibility: [keyboard nav? screen reader? color contrast?]
+```
+
+**Rules:**
+- Never design a feature that's desktop-only without asking
+- Never assume users will read instructions — design for scanning
+- Loading and error states are not optional — design them
+- Empty states are landing pages — make them useful
+
+### Step 8d: Workflow & Business Logic
+
+Map the business rules — these drive the data model, not the other way around:
+
+```
+WORKFLOW: [name — e.g., "order refund", "product approval", "subscription renewal"]
+  Trigger: [what starts it]
+  States: [lifecycle — draft → pending → approved → active → archived]
+  Transitions:
+    draft → pending: [who can do this? what validation runs?]
+    pending → approved: [who approves? auto or manual? timeout?]
+    approved → active: [what side effects? notifications? integrations?]
+  Business rules:
+    - [rule 1 — e.g., "refunds over $500 require manager approval"]
+    - [rule 2 — e.g., "products can't be archived while they have open orders"]
+    - [rule 3 — e.g., "subscription billing retries 3 times then pauses"]
+  Notifications:
+    - [who gets notified at each transition? email? in-app? webhook?]
+  Audit:
+    - [what's logged? who changed what when?]
+```
+
+### Step 8e: Platform Context
+
+Detect the project type and apply platform-specific design thinking:
+
+| If project is... | Consider... |
+|---|---|
+| **Shopify app** | App extensions, theme blocks, admin UI, OAuth, App Bridge, Polaris components, webhook subscriptions, billing API, app proxy |
+| **Mobile app** | Navigation patterns, offline support, push notifications, app store guidelines, deep links, gestures, battery/data usage |
+| **SaaS platform** | Multi-tenancy, onboarding flow, subscription tiers, trial experience, settings pages, team/invite management |
+| **API/backend** | Developer docs, API versioning, rate limits, webhook delivery, SDK generation, sandbox environment |
+| **CLI tool** | Help text, flags vs interactive, output formats (JSON/table/plain), pipe-friendly, progress indicators |
+| **Browser extension** | Popup vs sidebar vs content script, permissions, cross-origin, storage limits |
+| **E-commerce** | Product catalog, cart, checkout, payment, fulfillment, returns, inventory, multi-currency |
+| **Internal tool** | Permissioning, audit trails, bulk operations, data export, integration with existing internal systems |
+
+**Use the codebase to detect project type.** Check package.json, config files, existing UI framework, dependencies. Don't ask the user — figure it out.
+
+### Step 8f: Integration & Ecosystem
+
+What external systems does this touch?
+
+```
+INTEGRATION: [system — e.g., Stripe, Shopify, SendGrid, S3]
+  Direction: [inbound? outbound? bidirectional?]
+  Data flow: [what data moves, in what format]
+  Auth: [API keys? OAuth? webhook signatures?]
+  Failure mode: [what happens when it's down?]
+  Rate limits: [what are they? how do we handle?]
+  Testing: [sandbox? mock? test mode?]
+```
+
+**Present all of Phase 2.5 to the user** alongside the Phase 2 discovery report. The combined output should paint a complete picture: here's who uses it, here's what they see, here's the business logic, here's what I found in the code.
 
 ---
 
