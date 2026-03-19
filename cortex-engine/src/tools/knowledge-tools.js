@@ -1,7 +1,7 @@
 const { performance } = require('../telemetry');
 
 function registerKnowledgeTools(server, knowledge, telemetry) {
-  server.tool('cortex_annotate', {
+  server.registerTool('cortex_annotate', {
     description: 'Add a note to a file, symbol, or pattern. Persists across sessions.',
     inputSchema: {
       type: 'object',
@@ -22,7 +22,7 @@ function registerKnowledgeTools(server, knowledge, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_recall', {
+  server.registerTool('cortex_recall', {
     description: 'Get all annotations for a file or symbol',
     inputSchema: {
       type: 'object',
@@ -40,7 +40,7 @@ function registerKnowledgeTools(server, knowledge, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_patterns', {
+  server.registerTool('cortex_patterns', {
     description: 'Get pattern annotations for a directory',
     inputSchema: {
       type: 'object',
@@ -58,7 +58,7 @@ function registerKnowledgeTools(server, knowledge, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_lessons', {
+  server.registerTool('cortex_lessons', {
     description: 'Get lessons learned, optionally filtered by tag',
     inputSchema: {
       type: 'object',

@@ -1,7 +1,7 @@
 const { performance } = require('../telemetry');
 
 function registerAdminTools(server, engine, telemetry) {
-  server.tool('cortex_status', {
+  server.registerTool('cortex_status', {
     description: 'Index health: file count, symbol count, staleness',
     inputSchema: { type: 'object', properties: {} },
   }, async () => {
@@ -13,7 +13,7 @@ function registerAdminTools(server, engine, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_reindex', {
+  server.registerTool('cortex_reindex', {
     description: 'Force reindex of a specific file or all files',
     inputSchema: {
       type: 'object',
@@ -30,7 +30,7 @@ function registerAdminTools(server, engine, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_telemetry', {
+  server.registerTool('cortex_telemetry', {
     description: 'Cumulative token-savings telemetry: queries, tokens saved, cost avoided',
     inputSchema: { type: 'object', properties: {} },
   }, async () => {
@@ -44,7 +44,7 @@ function registerAdminTools(server, engine, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_diagnostic', {
+  server.registerTool('cortex_diagnostic', {
     description: 'Run diagnostic checks on the cortex-engine index to verify it is working correctly',
     inputSchema: { type: 'object', properties: {} },
   }, async () => {

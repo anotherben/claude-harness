@@ -2,6 +2,7 @@ const Watcher = require('../src/watcher');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const chokidar = require('chokidar');
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'cortex-watcher-'));
@@ -111,6 +112,32 @@ describe('Watcher', () => {
       const vendorAdds = adds.filter((p) => p.includes('vendor'));
       expect(vendorAdds).toHaveLength(0);
       expect(adds.some((p) => p.endsWith('app.js'))).toBe(true);
+    });
+  });
+
+  describe('startup defaults', () => {
+    it('does not enable polling unless explicitly requested', async () => {
+      dir = tmpDir();
+      const closeMock = jest.fn().mockResolvedValue();
+      const onMock = jest.fn(function on() { return this; });
+      const watchSpy = jest.fn(() => ({ on: onMock, close: closeMock }));
+      let FreshWatcher;
+
+      try {
+        jest.resetModules();
+        jest.doMock('chokidar', () => ({ watch: watchSpy }));
+        FreshWatcher = require('../src/watcher');
+        watcher = new FreshWatcher(dir, { extensions: ['.js'] });
+        expect(watchSpy).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({ usePolling: false }),
+        );
+        await watcher.close();
+      } finally {
+        jest.dontMock('chokidar');
+        jest.resetModules();
+        watcher = null;
+      }
     });
   });
 

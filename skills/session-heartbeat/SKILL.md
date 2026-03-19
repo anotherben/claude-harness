@@ -112,7 +112,7 @@ These rules fade from working memory over time. Re-read and internalize each one
 
 **SQL SAFETY**: `$1, $2` placeholders only — never template literals in SQL. `TIMESTAMPTZ` not `TIMESTAMP`. `IF NOT EXISTS` on all DDL.
 
-**jCodeMunch**: Prefer `get_symbol`/`get_file_outline`/`search_symbols` over Read/Grep for code exploration. If the codebase is not indexed yet, run `index_folder` first. Use Read only for full-file context, config/non-code files, or before editing.
+**Cortex Engine**: Prefer `cortex_outline`/`cortex_read_symbol`/`cortex_find_symbol` over Read/Grep for code exploration. If the index is stale or missing, run `cortex_status` and then `cortex_reindex()`. Use Read only for full-file context, config/non-code files, or before editing.
 
 **COMMIT DISCIPLINE**: Before committing, run `git diff --stat` and check:
 - No debug code (console.log, debugger, TODO)
@@ -181,7 +181,7 @@ When the heartbeat detects specific types of work, suggest the relevant skill:
 | Approaching context limit | `handover-writer` — save state properly |
 | Starting a new feature branch | `worktree-cleanup` — check for stale worktrees |
 | Migration being created | `sql-guard` — migration safety section |
-| Code exploration / symbol lookup | `jcodemunch` — index_folder, then get_symbol/search_symbols |
+| Code exploration / symbol lookup | `cortex-engine` - status, then outline/read_symbol/find_symbol |
 
 ## When to Invoke
 

@@ -1,7 +1,7 @@
 const { estimateTokens, performance } = require('../telemetry');
 
 function registerFileTools(server, engine, telemetry) {
-  server.tool('cortex_tree', {
+  server.registerTool('cortex_tree', {
     description: 'File tree with optional path prefix filter',
     inputSchema: {
       type: 'object',
@@ -19,7 +19,7 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_outline', {
+  server.registerTool('cortex_outline', {
     description: 'List symbols in a file with kind, signature, line range',
     inputSchema: {
       type: 'object',
@@ -43,7 +43,7 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
-  server.tool('cortex_read_symbol', {
+  server.registerTool('cortex_read_symbol', {
     description: 'Read the full source code of a single symbol',
     inputSchema: {
       type: 'object',
@@ -73,7 +73,7 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
-  server.tool('cortex_read_symbols', {
+  server.registerTool('cortex_read_symbols', {
     description: 'Batch read multiple symbols',
     inputSchema: {
       type: 'object',
@@ -114,7 +114,7 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.tool('cortex_read_range', {
+  server.registerTool('cortex_read_range', {
     description: 'Read a specific line range from a file',
     inputSchema: {
       type: 'object',
@@ -145,7 +145,7 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
-  server.tool('cortex_context', {
+  server.registerTool('cortex_context', {
     description: 'Get a symbol with its imports and file outline',
     inputSchema: {
       type: 'object',

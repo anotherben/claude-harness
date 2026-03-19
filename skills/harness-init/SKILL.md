@@ -146,7 +146,7 @@ Present the three tiers using AskUserQuestion:
 |------|-------------|----------|
 | **Lite** | Vault + TDD + evidence + lint + merge protocol + enterprise pipeline | Small projects, solo dev |
 | **Standard** (recommended) | + plan-before-edits + independent review | Team projects, production code |
-| **Full** | + context injection + jcodemunch + fleet + prompt refinement + handover | Large codebases, multi-agent workflows |
+| **Full** | + context injection + cortex-engine + fleet + prompt refinement + handover | Large codebases, multi-agent workflows |
 
 If the user passed a tier as an argument (`/harness-init standard`), skip this step.
 
@@ -186,8 +186,8 @@ pre-merge-test-check.sh
 context-inject.sh
 context-fade.sh
 refine-prompt.sh
-suggest-jcodemunch.sh
-jcodemunch-reindex.sh
+suggest-cortex.sh
+cortex-reindex.sh
 post-compact-handover.sh
 ensure-environment.sh
 ```

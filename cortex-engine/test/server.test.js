@@ -14,6 +14,7 @@ function sleep(ms) {
 // We test the MCP server by importing and calling the engine + tools directly
 // (spawning stdio MCP is complex; direct testing proves the logic)
 const IndexEngine = require('../src/index');
+const { createServer, resolveProjectRoot } = require('../src/server');
 const { registerFileTools } = require('../src/tools/file-tools');
 const { registerSearchTools } = require('../src/tools/search-tools');
 const { registerAdminTools } = require('../src/tools/admin-tools');
@@ -61,6 +62,9 @@ module.exports = { useFoo };
     const mockServer = {
       tool: (name, schema, handler) => {
         tools[name] = { schema, handler };
+      },
+      registerTool: (name, config, handler) => {
+        tools[name] = { schema: config, handler };
       },
     };
 
@@ -136,5 +140,28 @@ module.exports = { useFoo };
     const names = data.map((s) => s.name);
     expect(names).toContain('foo');
     expect(names).toContain('useFoo');
+  });
+});
+
+describe('createServer defaults', () => {
+  let dir;
+  let engine;
+
+  afterEach(async () => {
+    if (engine) await engine.close();
+    if (dir) fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('persists the index to .cortex/index.db by default', async () => {
+    dir = tmpDir();
+    fs.writeFileSync(path.join(dir, 'simple.js'), 'function foo() { return 1; }');
+
+    ({ engine } = await createServer(dir));
+
+    expect(fs.existsSync(path.join(dir, '.cortex', 'index.db'))).toBe(true);
+  });
+
+  it('prefers PWD over process cwd when no explicit project root is provided', () => {
+    expect(resolveProjectRoot(undefined, { PWD: '/repo/from-pwd' }, '/repo/from-cwd')).toBe('/repo/from-pwd');
   });
 });

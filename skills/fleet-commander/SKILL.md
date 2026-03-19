@@ -342,7 +342,7 @@ wait
 
 Workers get the full governance stack:
 - **Hooks**: evidence recording, commit gates, lint, TDD, vault-update
-- **MCP**: vault-index, jcodemunch, context-mode
+- **MCP**: vault-index, cortex-engine, context-mode
 - **Skills**: /enterprise-build, /vault-update, /vault-capture, /enterprise-debug
 - **Blocked**: Agent (no sub-spawning), /enterprise-verify, /enterprise-review, /enterprise-forge, /enterprise-harness
 

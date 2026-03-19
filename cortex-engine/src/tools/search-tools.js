@@ -1,7 +1,7 @@
 const { estimateTokens, performance } = require('../telemetry');
 
 function registerSearchTools(server, engine, telemetry) {
-  server.tool('cortex_find_symbol', {
+  server.registerTool('cortex_find_symbol', {
     description: 'Search symbols by name across all indexed files',
     inputSchema: {
       type: 'object',
@@ -45,7 +45,7 @@ function registerSearchTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.tool('cortex_find_text', {
+  server.registerTool('cortex_find_text', {
     description: 'Regex/literal search across indexed file contents',
     inputSchema: {
       type: 'object',
@@ -79,7 +79,7 @@ function registerSearchTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.tool('cortex_find_references', {
+  server.registerTool('cortex_find_references', {
     description: 'Find all references to an identifier across files',
     inputSchema: {
       type: 'object',
@@ -109,7 +109,7 @@ function registerSearchTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.tool('cortex_find_importers', {
+  server.registerTool('cortex_find_importers', {
     description: 'Find files that import a given file',
     inputSchema: {
       type: 'object',
@@ -137,7 +137,7 @@ function registerSearchTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.tool('cortex_find_by_tag', {
+  server.registerTool('cortex_find_by_tag', {
     description: 'Find symbols by semantic tag (db_read, db_write, unscoped_query, route_handler, etc.)',
     inputSchema: {
       type: 'object',

@@ -1,7 +1,7 @@
 const { performance } = require('../telemetry');
 
 function registerGitTools(server, gitIntegration, telemetry) {
-  server.tool('cortex_git_status', {
+  server.registerTool('cortex_git_status', {
     description: 'Current branch, uncommitted changes, staged files',
     inputSchema: { type: 'object', properties: {} },
   }, async () => {
@@ -13,7 +13,7 @@ function registerGitTools(server, gitIntegration, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_git_diff', {
+  server.registerTool('cortex_git_diff', {
     description: 'Diff vs branch/commit. Omit params for uncommitted changes.',
     inputSchema: {
       type: 'object',
@@ -32,7 +32,7 @@ function registerGitTools(server, gitIntegration, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_git_blame', {
+  server.registerTool('cortex_git_blame', {
     description: 'Who last changed each line of a file and why',
     inputSchema: {
       type: 'object',
@@ -57,7 +57,7 @@ function registerGitTools(server, gitIntegration, telemetry) {
     }
   });
 
-  server.tool('cortex_git_log', {
+  server.registerTool('cortex_git_log', {
     description: 'Recent commits, optionally filtered by file',
     inputSchema: {
       type: 'object',
@@ -78,7 +78,7 @@ function registerGitTools(server, gitIntegration, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_git_hotspots', {
+  server.registerTool('cortex_git_hotspots', {
     description: 'Files with most edits and bug fixes in recent history',
     inputSchema: {
       type: 'object',

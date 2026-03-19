@@ -51,7 +51,7 @@ class Watcher extends EventEmitter {
       ignored: ignoreFn,
       persistent: true,
       ignoreInitial: false,
-      usePolling: config.usePolling ?? process.platform === 'darwin',
+      usePolling: config.usePolling ?? false,
       interval: config.pollInterval ?? 100,
     });
 

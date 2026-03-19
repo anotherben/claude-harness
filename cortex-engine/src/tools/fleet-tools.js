@@ -1,7 +1,7 @@
 const { performance } = require('../telemetry');
 
 function registerFleetTools(server, fleet, telemetry) {
-  server.tool('cortex_ingest_handover', {
+  server.registerTool('cortex_ingest_handover', {
     description: 'Extract lessons from a worker handover and add to knowledge store',
     inputSchema: {
       type: 'object',
@@ -20,7 +20,7 @@ function registerFleetTools(server, fleet, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_learning_report', {
+  server.registerTool('cortex_learning_report', {
     description: 'Fleet-wide learning report: annotations, lessons, patterns by author and target',
     inputSchema: { type: 'object', properties: {} },
   }, async () => {
@@ -32,7 +32,7 @@ function registerFleetTools(server, fleet, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.tool('cortex_fleet_mcp_config', {
+  server.registerTool('cortex_fleet_mcp_config', {
     description: 'Get MCP server config for cortex-engine (for conductor dispatch)',
     inputSchema: {
       type: 'object',
