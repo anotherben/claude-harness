@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.4.0] - 2026-03-20
+
+### Added
+- **Route handler symbol extraction** — `router.post('/path', handler)` now appears in `cortex_outline` as `[route] POST /path` with line ranges and parent scope
+- **Test quality validation hooks** — `validate-test-relevance.sh` (tests must reference changed symbols) and `validate-test-quality.sh` (no tautological tests, no placeholder names, no empty bodies). 26/26 hook tests pass.
+- **Enterprise brainstorm Phase 2.5: Product Design** — user personas, UI/UX design, workflow/business logic, platform context detection (Shopify/SaaS/mobile/API/CLI), integration ecosystem mapping
+- **Harness-init Step 5b: MCP server registration** — auto-registers cortex-engine + vault-index in both Claude Code and Codex CLI. Removes jcodemunch if present.
+- **Enterprise HARNESS CHECK** — `/enterprise` now auto-detects if hooks, settings, evidence dir, cortex MCP, and vault MCP are installed. Auto-runs `/harness-init` + `/vault-init` if missing.
+
+### Fixed
+- **Stale vault-context markers** — `/tmp/claude-vault-context-*` files older than 2 hours are auto-deleted before gate checks. Prevents old sessions from satisfying new session gates.
+- **Mode selection timing** — Solo/Subagent/Swarm selection moved from after BRAINSTORM to after PLAN. The plan reveals task dependencies; the brainstorm doesn't.
+
+### Changed
+- **30 hooks** (was 28) — added validate-test-relevance.sh, validate-test-quality.sh
+- **333 tests** in cortex-engine (was 320) — added route extraction tests
+- **Enterprise brainstorm** now 4 phases (was 3): EXTRACT → DISCOVER → PRODUCT DESIGN → ENGINEER
+
 ## [1.3.0] - 2026-03-19
 
 ### Added
