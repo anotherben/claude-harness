@@ -182,12 +182,20 @@ class Store {
 
     let sql = `
       SELECT s.*, s.source_type AS sourceType, f.path AS filePath,
-        CASE
+        (CASE
           WHEN LOWER(s.name) = LOWER(@exact) THEN 100
           WHEN LOWER(s.name) LIKE LOWER(@prefix) THEN 75
           WHEN LOWER(s.name) LIKE LOWER(@pattern) THEN 50
           ELSE 0
-        END AS score
+        END
+        - CASE
+          WHEN f.path LIKE '%test%' OR f.path LIKE '%spec%' OR f.path LIKE '%mock%' OR f.path LIKE '%fixture%' THEN 10
+          ELSE 0
+        END
+        + CASE
+          WHEN f.path LIKE 'src/%' THEN 5
+          ELSE 0
+        END) AS score
       FROM symbols s
       JOIN files f ON f.id = s.file_id
       WHERE s.name LIKE @pattern
