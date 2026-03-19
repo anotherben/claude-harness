@@ -236,9 +236,14 @@ class Store {
 
     const suffixes = new Set();
 
+    // Generate suffixes from path segments, but require at least 2 segments
+    // to avoid false positives (e.g., 'auth' matching every auth-related import)
     const segments = base.split('/');
+    const minSegments = segments.length >= 3 ? 2 : 1;
     for (let i = segments.length - 1; i >= 0; i--) {
       const suffix = segments.slice(i).join('/');
+      const segmentCount = segments.length - i;
+      if (segmentCount < minSegments) continue;
       suffixes.add(suffix);
       for (const ext of EXTENSIONS) {
         suffixes.add(suffix + ext);
@@ -247,8 +252,11 @@ class Store {
 
     if (barrelBase !== null) {
       const barrelSegments = barrelBase.split('/');
+      const barrelMinSegments = barrelSegments.length >= 3 ? 2 : 1;
       for (let i = barrelSegments.length - 1; i >= 0; i--) {
         const suffix = barrelSegments.slice(i).join('/');
+        const segmentCount = barrelSegments.length - i;
+        if (segmentCount < barrelMinSegments) continue;
         suffixes.add(suffix);
         suffixes.add(suffix + '/');
         for (const ext of EXTENSIONS) {
