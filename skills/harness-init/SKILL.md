@@ -230,6 +230,53 @@ All hook paths use: `"$CLAUDE_PROJECT_DIR"/.claude/hooks/`
 
 **IMPORTANT**: If an existing settings.json was backed up, merge its `enabledPlugins` and any custom hooks into the new file.
 
+## Step 5b: Register MCP Servers (ALL TIERS)
+
+Both MCP servers must be registered for the harness to enforce properly. Without them, vault gates and cortex hooks are toothless.
+
+### cortex-engine (code intelligence)
+
+**Claude Code** — check `~/.claude.json` for a `cortex-engine` entry in `mcpServers`. If missing, add:
+```json
+"cortex-engine": {
+  "type": "stdio",
+  "command": "node",
+  "args": ["/Users/ben/claude-harness/cortex-engine/src/server.js"]
+}
+```
+No project path — cortex uses the working directory automatically.
+
+**Codex CLI** — check `codex mcp list` for cortex-engine. If missing:
+```bash
+codex mcp add cortex-engine -- node /Users/ben/claude-harness/cortex-engine/src/server.js
+```
+
+### vault-index (Obsidian vault query engine)
+
+**Claude Code** — check `~/.claude.json` for a `vault-index` entry. If missing, add:
+```json
+"vault-index": {
+  "type": "stdio",
+  "command": "node",
+  "args": ["/Users/ben/.vault-index/src/server.js"]
+}
+```
+
+**Codex CLI:**
+```bash
+codex mcp add vault-index -- node /Users/ben/.vault-index/src/server.js
+```
+
+### Verification
+
+After registration, verify both are live:
+- `cortex_status()` — should return file/symbol counts
+- `mcp__vault-index__list_vault(project="...")` — should return vault items
+
+If either fails, check that the server code exists at the path and `npm install` has been run.
+
+**If jcodemunch is present in mcpServers, remove it** — cortex-engine is the replacement.
+
 ## Step 6: Generate CLAUDE.md Section
 
 If CLAUDE.md exists, **propose** the enforcement section and show the user what will be added. Let them review what to keep. Wrap in `<!-- claude-harness enforcement section -->` comments so it can be identified and updated later.
@@ -358,6 +405,8 @@ Run ALL of these checks:
 | Vault exists | `ls {vault_path}/00-Inbox` | Exists |
 | Evidence dir | `ls {vault_path}/_evidence/` | Exists |
 | Stack profile | `ls .claude/enterprise-state/stack-profile.json` | Exists |
+| Cortex MCP | `cortex_status()` | Returns file/symbol counts |
+| Vault MCP | `mcp__vault-index__list_vault(project="...")` | Returns vault items |
 | Review lenses | `ls -d .claude/skills/review-lens-*/ \| wc -l` | 2+ (security + architecture always) |
 | Lens registry | `cat .claude/enterprise-state/review-lenses.json` | Valid JSON |
 | No lens template vars | `grep -r '{{' .claude/skills/review-lens-*/ \| head -5` | Empty |
