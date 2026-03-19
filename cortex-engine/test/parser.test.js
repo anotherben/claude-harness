@@ -349,4 +349,113 @@ describe('Parser', () => {
       }
     });
   });
+
+  // Express route extraction
+  describe('route extraction', () => {
+    let result;
+    beforeAll(() => {
+      const content = fs.readFileSync(path.join(FIXTURES, 'routes.js'), 'utf-8');
+      result = parser.parse('routes.js', content);
+    });
+
+    it('extracts router.get route as a route symbol', () => {
+      const route = result.symbols.find((s) => s.name === 'GET /orders');
+      expect(route).toBeDefined();
+      expect(route.kind).toBe('route');
+      expect(route.signature).toBe('GET /orders');
+    });
+
+    it('extracts router.post route with middleware', () => {
+      const route = result.symbols.find((s) => s.name === 'POST /orders');
+      expect(route).toBeDefined();
+      expect(route.kind).toBe('route');
+    });
+
+    it('extracts route with path parameters', () => {
+      const route = result.symbols.find((s) => s.name === 'GET /orders/:id');
+      expect(route).toBeDefined();
+      expect(route.kind).toBe('route');
+      expect(route.signature).toBe('GET /orders/:id');
+    });
+
+    it('extracts PUT, DELETE, and PATCH routes', () => {
+      expect(result.symbols.find((s) => s.name === 'PUT /orders/:id')).toBeDefined();
+      expect(result.symbols.find((s) => s.name === 'DELETE /orders/:id')).toBeDefined();
+      expect(result.symbols.find((s) => s.name === 'PATCH /orders/:id/approve')).toBeDefined();
+    });
+
+    it('extracts all 6 routes from the fixture', () => {
+      const routes = result.symbols.filter((s) => s.kind === 'route');
+      expect(routes).toHaveLength(6);
+    });
+
+    it('route symbols have correct line ranges', () => {
+      const routes = result.symbols.filter((s) => s.kind === 'route');
+      for (const route of routes) {
+        expect(route.startLine).toBeGreaterThan(0);
+        expect(route.endLine).toBeGreaterThanOrEqual(route.startLine);
+      }
+    });
+
+    it('route handlers are detected as async', () => {
+      const route = result.symbols.find((s) => s.name === 'GET /orders');
+      expect(route.async).toBe(true);
+    });
+
+    it('route symbols have parentClass set to enclosing function', () => {
+      const routes = result.symbols.filter((s) => s.kind === 'route');
+      for (const route of routes) {
+        expect(route.parentClass).toBe('createOrderRoutes');
+      }
+    });
+
+    it('route symbols appear as children of enclosing function', () => {
+      const factory = result.symbols.find((s) => s.name === 'createOrderRoutes');
+      expect(factory).toBeDefined();
+      const routeChildren = factory.children.filter((c) => c.kind === 'route');
+      expect(routeChildren.length).toBe(6);
+      const names = routeChildren.map((c) => c.name);
+      expect(names).toContain('GET /orders');
+      expect(names).toContain('POST /orders');
+      expect(names).toContain('PATCH /orders/:id/approve');
+    });
+
+    it('does NOT extract non-router calls like console.log', () => {
+      const consoleSymbol = result.symbols.find((s) => s.name && s.name.includes('log'));
+      expect(consoleSymbol).toBeUndefined();
+    });
+
+    it('does NOT extract calls without string path argument', () => {
+      // db.connect() has no string first arg, should not be extracted
+      const dbSymbol = result.symbols.find((s) => s.name && s.name.includes('connect'));
+      expect(dbSymbol).toBeUndefined();
+    });
+
+    it('works with inline content (no fixture needed)', () => {
+      const code = `
+        const router = require('express').Router();
+        router.get('/products/:id', async (req, res) => {
+          res.json({ id: req.params.id });
+        });
+      `;
+      const r = parser.parse('inline.js', code);
+      const route = r.symbols.find((s) => s.name === 'GET /products/:id');
+      expect(route).toBeDefined();
+      expect(route.kind).toBe('route');
+      expect(route.signature).toBe('GET /products/:id');
+    });
+
+    it('extracts routes using app.post pattern', () => {
+      const code = `
+        const app = require('express')();
+        app.post('/webhooks', (req, res) => {
+          res.sendStatus(200);
+        });
+      `;
+      const r = parser.parse('app.js', code);
+      const route = r.symbols.find((s) => s.name === 'POST /webhooks');
+      expect(route).toBeDefined();
+      expect(route.kind).toBe('route');
+    });
+  });
 });

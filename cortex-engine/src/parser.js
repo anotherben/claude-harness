@@ -148,6 +148,7 @@ class Parser {
 
       case 'expression_statement':
         this._extractExpressionImport(node, content, imports);
+        this._extractRoute(node, content, symbols, parentScope);
         break;
 
       // TypeScript / Python import declarations
@@ -500,6 +501,74 @@ class Parser {
 
   _extractExpressionImport(node, content, imports) {
     // Standalone require() — skip for now
+  }
+
+  _extractRoute(node, content, symbols, parentScope) {
+    // Look for Express route registrations: router.get('/path', handler)
+    // node is an expression_statement; its first child should be a call_expression
+    const callExpr = node.childCount > 0 ? node.child(0) : null;
+    if (!callExpr || callExpr.type !== 'call_expression') return;
+
+    const callee = callExpr.childForFieldName('function');
+    if (!callee || callee.type !== 'member_expression') return;
+
+    // Check method name is an HTTP verb
+    const methodNode = callee.childForFieldName('property');
+    if (!methodNode) return;
+    const methodName = methodNode.text;
+    const HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch']);
+    if (!HTTP_METHODS.has(methodName)) return;
+
+    // Check the object is router/app/Router (common Express patterns)
+    const objectNode = callee.childForFieldName('object');
+    if (!objectNode) return;
+    // Accept identifiers like router, app, or member expressions like this.router
+    if (objectNode.type !== 'identifier' && objectNode.type !== 'member_expression') return;
+
+    // Extract arguments
+    const argsNode = callExpr.childForFieldName('arguments');
+    if (!argsNode) return;
+
+    // First argument must be a string literal (the route path)
+    let pathArg = null;
+    let handlerNode = null;
+
+    for (let i = 0; i < argsNode.childCount; i++) {
+      const arg = argsNode.child(i);
+      // Skip commas and parens
+      if (arg.type === ',' || arg.type === '(' || arg.type === ')') continue;
+
+      if (!pathArg) {
+        // First real argument should be the path string
+        if (arg.type === 'string' || arg.type === 'template_string') {
+          pathArg = arg.text.replace(/^['"`]|['"`]$/g, '');
+        } else {
+          return; // First arg isn't a string — not a route pattern we handle
+        }
+      } else {
+        // Subsequent arguments: look for the handler callback
+        if (arg.type === 'arrow_function' || arg.type === 'function_expression') {
+          handlerNode = arg;
+        }
+      }
+    }
+
+    if (!pathArg || !handlerNode) return;
+
+    const httpMethod = methodName.toUpperCase();
+    const routeName = `${httpMethod} ${pathArg}`;
+
+    symbols.push({
+      name: routeName,
+      kind: 'route',
+      signature: routeName,
+      startLine: handlerNode.startPosition.row + 1,
+      endLine: handlerNode.endPosition.row + 1,
+      exported: false,
+      async: handlerNode.children.some((c) => c.type === 'async'),
+      parentClass: parentScope || null,
+      children: [],
+    });
   }
 
   _extractTsImport(node, imports) {
