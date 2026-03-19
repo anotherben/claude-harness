@@ -188,6 +188,8 @@ context-fade.sh
 refine-prompt.sh
 suggest-cortex.sh
 cortex-reindex.sh
+validate-test-relevance.sh
+validate-test-quality.sh
 post-compact-handover.sh
 ensure-environment.sh
 ```
