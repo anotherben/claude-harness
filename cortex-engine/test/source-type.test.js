@@ -58,6 +58,38 @@ describe('source_type categorization', () => {
     it('defaults unknown extensions to code', () => {
       expect(getSourceType('file.xyz')).toBe('code');
     });
+
+    it('file in __tests__/ gets source_type test', () => {
+      expect(getSourceType('src/__tests__/foo.js')).toBe('test');
+    });
+
+    it('file named foo.test.ts gets source_type test', () => {
+      expect(getSourceType('src/foo.test.ts')).toBe('test');
+    });
+
+    it('file named foo.spec.js gets source_type test', () => {
+      expect(getSourceType('src/foo.spec.js')).toBe('test');
+    });
+
+    it('file named foo.test.tsx gets source_type test', () => {
+      expect(getSourceType('components/foo.test.tsx')).toBe('test');
+    });
+
+    it('file in __mocks__/ gets source_type test', () => {
+      expect(getSourceType('src/__mocks__/db.js')).toBe('test');
+    });
+
+    it('file in __fixtures__/ gets source_type test', () => {
+      expect(getSourceType('test/__fixtures__/data.js')).toBe('test');
+    });
+
+    it('file in tests/ directory gets source_type test', () => {
+      expect(getSourceType('tests/integration.js')).toBe('test');
+    });
+
+    it('file in src/ (not test) gets source_type code, not test', () => {
+      expect(getSourceType('src/store.js')).toBe('code');
+    });
   });
 
   describe('Store source_type column', () => {
@@ -139,6 +171,10 @@ describe('source_type categorization', () => {
         { name: 'script', kind: 'class', signature: '<script>', startLine: 10, endLine: 10, exported: false, async: false },
       ], 'markup');
 
+      const fTest = store.upsertFile({ path: 'src/__tests__/api.test.js', language: 'javascript', hash: 't', sizeBytes: 90, lineCount: 9 });
+      store.upsertSymbols(fTest.id, [        { name: 'testApiHelper', kind: 'function', signature: 'function testApiHelper()', startLine: 1, endLine: 4, exported: false, async: false },
+      ], 'test');
+
       const fStyle = store.upsertFile({ path: 'main.css', language: 'css', hash: 'y', sizeBytes: 60, lineCount: 6 });
       store.upsertSymbols(fStyle.id, [
         { name: '.apiButton', kind: 'class', signature: '.apiButton', startLine: 1, endLine: 3, exported: false, async: false },
@@ -184,6 +220,26 @@ describe('source_type categorization', () => {
       const results = store.findSymbols({ query: 'api', sourceTypes: ['style'] });
       expect(results.length).toBe(1);
       expect(results[0].sourceType).toBe('style');
+    });
+
+    it('default findSymbols excludes test files', () => {
+      // Default is ['code', 'query'] — test files should not appear
+      const results = store.findSymbols({ query: 'api' });
+      const types = results.map(r => r.sourceType);
+      expect(types).not.toContain('test');
+    });
+
+    it('findSymbols with sourceTypes=[test] returns only test files', () => {
+      const results = store.findSymbols({ query: 'api', sourceTypes: ['test'] });
+      expect(results.length).toBe(1);
+      expect(results[0].name).toBe('testApiHelper');
+      expect(results[0].sourceType).toBe('test');
+    });
+
+    it('findSymbols with sourceTypes=[code,test,query] includes test files', () => {
+      const results = store.findSymbols({ query: 'api', sourceTypes: ['code', 'test', 'query'] });
+      const types = results.map(r => r.sourceType);
+      expect(types).toContain('test');
     });
   });
 
@@ -295,6 +351,76 @@ describe('source_type categorization', () => {
       const names = results.map(r => r.name);
       expect(names).toContain('requestHandler');
       expect(names).toContain('requestTimeout');
+    });
+
+    it('symbol from __tests__/ file has source_type test', async () => {
+      dir = tmpDir();
+      const testsDir = path.join(dir, '__tests__');
+      fs.mkdirSync(testsDir, { recursive: true });
+      fs.writeFileSync(path.join(testsDir, 'helper.js'), 'function testHelper() { return true; }');
+      engine = new IndexEngine(dir, { extensions: ['.js'] });
+      await engine.ready();
+      await sleep(300);
+
+      const outline = engine.getOutline('__tests__/helper.js');
+      expect(outline.length).toBeGreaterThan(0);
+      expect(outline[0].sourceType).toBe('test');
+    });
+
+    it('symbol from foo.test.ts file has source_type test', async () => {
+      dir = tmpDir();
+      fs.writeFileSync(path.join(dir, 'app.test.ts'), 'function testAppBoot() { return true; }');
+      engine = new IndexEngine(dir, { extensions: ['.ts'] });
+      await engine.ready();
+      await sleep(300);
+
+      const outline = engine.getOutline('app.test.ts');
+      expect(outline.length).toBeGreaterThan(0);
+      expect(outline[0].sourceType).toBe('test');
+    });
+
+    it('symbol from foo.spec.js file has source_type test', async () => {
+      dir = tmpDir();
+      fs.writeFileSync(path.join(dir, 'util.spec.js'), 'function describeUtil() { return true; }');
+      engine = new IndexEngine(dir, { extensions: ['.js'] });
+      await engine.ready();
+      await sleep(300);
+
+      const outline = engine.getOutline('util.spec.js');
+      expect(outline.length).toBeGreaterThan(0);
+      expect(outline[0].sourceType).toBe('test');
+    });
+
+    it('default findSymbols excludes test files', async () => {
+      dir = tmpDir();
+      const testsDir = path.join(dir, '__tests__');
+      fs.mkdirSync(testsDir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'helper.js'), 'function prodHelper() {}');
+      fs.writeFileSync(path.join(testsDir, 'helper.test.js'), 'function testHelper() {}');
+      engine = new IndexEngine(dir, { extensions: ['.js'] });
+      await engine.ready();
+      await sleep(300);
+
+      const results = engine.findSymbol('Helper');
+      const names = results.map(r => r.name);
+      expect(names).toContain('prodHelper');
+      expect(names).not.toContain('testHelper');
+    });
+
+    it('findSymbol with sourceTypes=[test] returns only test files', async () => {
+      dir = tmpDir();
+      const testsDir = path.join(dir, '__tests__');
+      fs.mkdirSync(testsDir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'helper.js'), 'function prodHelper() {}');
+      fs.writeFileSync(path.join(testsDir, 'helper.test.js'), 'function testHelper() {}');
+      engine = new IndexEngine(dir, { extensions: ['.js'] });
+      await engine.ready();
+      await sleep(300);
+
+      const results = engine.findSymbol('Helper', { sourceTypes: ['test'] });
+      const names = results.map(r => r.name);
+      expect(names).not.toContain('prodHelper');
+      expect(names).toContain('testHelper');
     });
   });
 });

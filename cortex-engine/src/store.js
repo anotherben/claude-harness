@@ -13,9 +13,41 @@ const EXTENSION_TO_SOURCE_TYPE = {
   '.css': 'style', '.scss': 'style', '.less': 'style',
 };
 
+// Patterns that identify test/spec/mock/fixture files by path segments or filename
+const TEST_PATH_PATTERNS = [
+  '__tests__', '__mocks__', '__fixtures__',
+];
+
+const TEST_FILE_PATTERN = /\.(test|spec)\.[^.]+$/;
+
+// Regex patterns for test-related directory names (e.g. tests/, specs/, mocks/, fixtures/)
+const TEST_DIR_PATTERNS = [
+  /(?:^|\/)tests?\//,
+  /(?:^|\/)specs?\//,
+  /(?:^|\/)mocks?\//,
+  /(?:^|\/)fixtures?\//,
+];
+
 function getSourceType(filePath) {
   const ext = '.' + filePath.split('.').pop().toLowerCase();
-  return EXTENSION_TO_SOURCE_TYPE[ext] || 'code';
+  const baseType = EXTENSION_TO_SOURCE_TYPE[ext] || 'code';
+
+  // Only classify 'code' files as potentially 'test' — config/docs/etc. keep their type
+  if (baseType === 'code') {
+    // Check filename pattern: foo.test.js, foo.spec.ts, etc.
+    if (TEST_FILE_PATTERN.test(filePath)) return 'test';
+
+    // Check path segments for exact directory name matches (e.g. __tests__/, __mocks__/)
+    for (const seg of TEST_PATH_PATTERNS) {
+      if (filePath.includes('/' + seg + '/') || filePath.startsWith(seg + '/')) return 'test';
+    }
+    // Check for test-related directory names via regex (tests/, specs/, mocks/, fixtures/)
+    for (const pattern of TEST_DIR_PATTERNS) {
+      if (pattern.test(filePath)) return 'test';
+    }
+  }
+
+  return baseType;
 }
 
 class Store {
@@ -250,10 +282,6 @@ class Store {
           WHEN LOWER(s.name) = LOWER(@exact) THEN 100
           WHEN LOWER(s.name) LIKE LOWER(@prefix) THEN 75
           WHEN LOWER(s.name) LIKE LOWER(@pattern) THEN 50
-          ELSE 0
-        END
-        - CASE
-          WHEN f.path LIKE '%test%' OR f.path LIKE '%spec%' OR f.path LIKE '%mock%' OR f.path LIKE '%fixture%' THEN 10
           ELSE 0
         END
         + CASE

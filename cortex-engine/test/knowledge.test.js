@@ -147,4 +147,106 @@ describe('Knowledge Store', () => {
       expect(files.length).toBeGreaterThan(0);
     });
   });
+
+  describe('syncToObsidian', () => {
+    let vaultDir;
+
+    beforeEach(() => {
+      vaultDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cortex-vault-'));
+    });
+
+    afterEach(() => {
+      if (vaultDir) fs.rmSync(vaultDir, { recursive: true, force: true });
+    });
+
+    it('creates markdown files grouped by target', () => {
+      knowledge.annotate({ target: 'src/foo.js', note: 'Note A', author: 'claude', tags: ['lesson'] });
+      knowledge.annotate({ target: 'src/bar.js', note: 'Note B', author: 'ben', tags: ['pattern'] });
+      knowledge.annotate({ target: 'src/foo.js', note: 'Note C', author: 'claude', tags: [] });
+
+      const result = knowledge.syncToObsidian(vaultDir);
+
+      expect(result.error).toBeUndefined();
+      expect(result.synced).toBe(3);
+
+      const fooMd = path.join(vaultDir, '_cortex', 'src/foo.js.md');
+      const barMd = path.join(vaultDir, '_cortex', 'src/bar.js.md');
+
+      expect(fs.existsSync(fooMd)).toBe(true);
+      expect(fs.existsSync(barMd)).toBe(true);
+
+      const fooContent = fs.readFileSync(fooMd, 'utf-8');
+      expect(fooContent).toContain('## src/foo.js');
+      expect(fooContent).toContain('Note A');
+      expect(fooContent).toContain('Note C');
+
+      const barContent = fs.readFileSync(barMd, 'utf-8');
+      expect(barContent).toContain('Note B');
+    });
+
+    it('only syncs new annotations after first sync (timestamp tracking)', () => {
+      knowledge.annotate({ target: 'src/a.js', note: 'First note', author: 'claude', tags: [] });
+
+      // First sync — should capture the one entry
+      const first = knowledge.syncToObsidian(vaultDir);
+      expect(first.synced).toBe(1);
+      expect(first.skipped).toBe(0);
+
+      // Add a new annotation after the sync
+      knowledge.annotate({ target: 'src/b.js', note: 'Second note', author: 'ben', tags: [] });
+
+      // Second sync — should only write the new entry
+      const second = knowledge.syncToObsidian(vaultDir);
+      expect(second.synced).toBe(1);
+      expect(second.skipped).toBe(1);
+
+      // The new file should exist
+      expect(fs.existsSync(path.join(vaultDir, '_cortex', 'src/b.js.md'))).toBe(true);
+    });
+
+    it('appends to existing markdown file when called again with new entries for same target', () => {
+      knowledge.annotate({ target: 'src/c.js', note: 'Original note', author: 'claude', tags: [] });
+      knowledge.syncToObsidian(vaultDir);
+
+      knowledge.annotate({ target: 'src/c.js', note: 'Appended note', author: 'ben', tags: [] });
+      knowledge.syncToObsidian(vaultDir);
+
+      const content = fs.readFileSync(path.join(vaultDir, '_cortex', 'src/c.js.md'), 'utf-8');
+      expect(content).toContain('Original note');
+      expect(content).toContain('Appended note');
+    });
+
+    it('returns error gracefully when vault path does not exist', () => {
+      const missing = path.join(os.tmpdir(), 'no-such-vault-' + Date.now());
+      const result = knowledge.syncToObsidian(missing);
+
+      expect(result.error).toMatch(/does not exist/);
+      expect(result.synced).toBe(0);
+    });
+
+    it('returns error gracefully when no vault path is provided and env var is not set', () => {
+      const k = new Knowledge(dir); // no obsidianVault config
+      const origEnv = process.env.OBSIDIAN_VAULT_PATH;
+      delete process.env.OBSIDIAN_VAULT_PATH;
+
+      const result = k.syncToObsidian(); // no argument
+
+      expect(result.error).toBeDefined();
+      expect(result.synced).toBe(0);
+
+      if (origEnv !== undefined) process.env.OBSIDIAN_VAULT_PATH = origEnv;
+    });
+
+    it('formats each annotation as a markdown section with timestamp and tags', () => {
+      knowledge.annotate({ target: 'src/d.js', note: 'Important finding', author: 'claude', tags: ['lesson', 'security'] });
+      knowledge.syncToObsidian(vaultDir);
+
+      const content = fs.readFileSync(path.join(vaultDir, '_cortex', 'src/d.js.md'), 'utf-8');
+      // Should contain the tags in the section header
+      expect(content).toContain('lesson, security');
+      expect(content).toContain('Important finding');
+      // Should contain a timestamp (ISO format)
+      expect(content).toMatch(/### \d{4}-\d{2}-\d{2}T/);
+    });
+  });
 });

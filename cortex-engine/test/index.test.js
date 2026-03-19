@@ -217,4 +217,87 @@ function goodbye() {
       expect(engine.watcher.config.extensions).toEqual(customExtensions);
     });
   });
+
+  // Cold-start stale index detection
+  describe('cold-start stale index detection', () => {
+    it('detects a modified file as stale on next ready() and reindexes it', async () => {
+      dir = tmpDir();
+      const filePath = path.join(dir, 'stale.js');
+      fs.writeFileSync(filePath, 'function original() {}');
+
+      // Use a file-based DB so the index persists across engine instances
+      const dbPath = path.join(dir, '.cortex', 'index.db');
+
+      // First engine: index the file
+      engine = new IndexEngine(dir, { dbPath: '.cortex/index.db' });
+      await engine.ready();
+      await sleep(300);
+
+      let outline = engine.getOutline('stale.js');
+      expect(outline.map((s) => s.name)).toContain('original');
+      await engine.close();
+      engine = null;
+
+      // Modify the file while engine is off
+      await sleep(100); // ensure mtime advances
+      fs.writeFileSync(filePath, 'function original() {}\nfunction added() {}');
+      // Touch to ensure mtime > indexed_at even on fast filesystems
+      const now = Date.now();
+      fs.utimesSync(filePath, new Date(now + 5000), new Date(now + 5000));
+
+      // Capture stderr to verify the log message
+      const stderrChunks = [];
+      const origWrite = process.stderr.write.bind(process.stderr);
+      process.stderr.write = (chunk, ...args) => {
+        stderrChunks.push(String(chunk));
+        return origWrite(chunk, ...args);
+      };
+
+      // Second engine: should detect staleness and reindex
+      engine = new IndexEngine(dir, { dbPath: '.cortex/index.db' });
+      await engine.ready();
+
+      process.stderr.write = origWrite;
+
+      const stderrOutput = stderrChunks.join('');
+      expect(stderrOutput).toMatch(/stale/i);
+
+      // Give indexing a moment to complete
+      await sleep(300);
+
+      outline = engine.getOutline('stale.js');
+      const names = outline.map((s) => s.name);
+      expect(names).toContain('original');
+      expect(names).toContain('added');
+    });
+
+    it('picks up new files added while engine was off', async () => {
+      dir = tmpDir();
+      const dbPath = '.cortex/index.db';
+
+      // First engine: index one file
+      fs.writeFileSync(path.join(dir, 'existing.js'), 'function existing() {}');
+      engine = new IndexEngine(dir, { dbPath });
+      await engine.ready();
+      await sleep(300);
+      await engine.close();
+      engine = null;
+
+      // Add a new file while engine is off
+      fs.writeFileSync(path.join(dir, 'newfile.js'), 'function freshFunc() {}');
+
+      // Second engine: the watcher emits 'add' for all current files on startup,
+      // so newfile.js gets indexed via the normal add-event path.
+      engine = new IndexEngine(dir, { dbPath });
+      await engine.ready();
+      await sleep(300);
+
+      // Both files should be indexed
+      const existingOutline = engine.getOutline('existing.js');
+      const newOutline = engine.getOutline('newfile.js');
+      expect(existingOutline.map((s) => s.name)).toContain('existing');
+      expect(newOutline.map((s) => s.name)).toContain('freshFunc');
+    });
+  });
+
 });

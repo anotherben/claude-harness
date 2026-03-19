@@ -4,6 +4,8 @@ const TypeScriptLang = require('tree-sitter-typescript');
 const Python = require('tree-sitter-python');
 const Go = require('tree-sitter-go');
 const Rust = require('tree-sitter-rust');
+const Java = require('tree-sitter-java');
+const CSharp = require('tree-sitter-c-sharp');
 
 const EXTENSION_TO_LANGUAGE = {
   '.js': 'javascript',
@@ -15,6 +17,8 @@ const EXTENSION_TO_LANGUAGE = {
   '.py': 'python',
   '.go': 'go',
   '.rs': 'rust',
+  '.java': 'java',
+  '.cs': 'csharp',
   '.sh': 'bash',
   '.bash': 'bash',
   '.sql': 'sql',
@@ -36,7 +40,7 @@ const EXTENSION_TO_LANGUAGE = {
 };
 
 // Languages with tree-sitter AST support
-const TREE_SITTER_LANGUAGES = new Set(['javascript', 'typescript', 'tsx', 'python', 'go', 'rust']);
+const TREE_SITTER_LANGUAGES = new Set(['javascript', 'typescript', 'tsx', 'python', 'go', 'rust', 'java', 'csharp']);
 
 // Languages using regex fallback
 const REGEX_LANGUAGES = new Set(['bash', 'sql', 'css', 'text']);
@@ -50,6 +54,8 @@ class Parser {
       python: Python,
       go: Go,
       rust: Rust,
+      java: Java,
+      csharp: CSharp,
     };
     this._lastLang = null;
     this._parser = null;
@@ -126,8 +132,18 @@ class Parser {
         break;
 
       case 'class_declaration':
-        this._extractClass(node, content, symbols, parentScope);
-        newScope = this._getNodeName(node) || parentScope;
+        if (this._lastLang === 'java') {
+          this._extractJavaClass(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+          skipChildRecurse = true;
+        } else if (this._lastLang === 'csharp') {
+          this._extractCsClass(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+          skipChildRecurse = true;
+        } else {
+          this._extractClass(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+        }
         break;
 
       case 'expression_statement':
@@ -145,13 +161,24 @@ class Parser {
         break;
 
       case 'interface_declaration':
-        this._extractInterface(node, content, symbols, parentScope);
-        newScope = this._getNodeName(node) || parentScope;
+        if (this._lastLang === 'java' || this._lastLang === 'csharp') {
+          this._extractJavaCsInterface(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+          skipChildRecurse = true;
+        } else {
+          this._extractInterface(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+        }
         break;
 
       case 'enum_declaration':
-        this._extractEnum(node, content, symbols, parentScope);
-        newScope = this._getNodeName(node) || parentScope;
+        if (this._lastLang === 'java' || this._lastLang === 'csharp') {
+          this._extractJavaCsEnum(node, content, symbols, parentScope);
+          skipChildRecurse = true;
+        } else {
+          this._extractEnum(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+        }
         break;
 
       case 'method_definition':
@@ -218,8 +245,16 @@ class Parser {
 
       // --- Go-specific node types ---
       case 'method_declaration':
-        this._extractGoMethod(node, content, symbols);
-        newScope = this._getNodeName(node) || parentScope;
+        if (this._lastLang === 'java') {
+          this._extractJavaMethod(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+        } else if (this._lastLang === 'csharp') {
+          this._extractCsMethod(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+        } else {
+          this._extractGoMethod(node, content, symbols);
+          newScope = this._getNodeName(node) || parentScope;
+        }
         break;
 
       case 'type_declaration':
@@ -232,7 +267,11 @@ class Parser {
         break;
 
       case 'import_declaration':
-        this._extractGoImport(node, imports);
+        if (this._lastLang === 'java') {
+          this._extractJavaImport(node, imports);
+        } else {
+          this._extractGoImport(node, imports);
+        }
         break;
 
       // --- Rust-specific node types ---
@@ -278,6 +317,52 @@ class Parser {
       case 'use_declaration':
         this._extractRustUse(node, imports);
         break;
+
+      // --- Java-specific node types ---
+      case 'annotation_type_declaration':
+        this._extractJavaAnnotationType(node, content, symbols, parentScope);
+        break;
+
+      case 'constructor_declaration':
+        if (this._lastLang === 'java') {
+          this._extractJavaConstructor(node, content, symbols, parentScope);
+        } else if (this._lastLang === 'csharp') {
+          this._extractCsConstructor(node, content, symbols, parentScope);
+        }
+        break;
+
+      case 'field_declaration':
+        if (this._lastLang === 'java') {
+          this._extractJavaField(node, content, symbols, parentScope);
+        }
+        break;
+
+      // --- C#-specific node types ---
+      case 'namespace_declaration':
+        this._extractCsNamespace(node, content, symbols, parentScope);
+        newScope = this._getCsNamespaceName(node) || parentScope;
+        skipChildRecurse = true;
+        break;
+
+      case 'struct_declaration':
+        if (this._lastLang === 'csharp') {
+          this._extractCsStruct(node, content, symbols, parentScope);
+          newScope = this._getNodeName(node) || parentScope;
+          skipChildRecurse = true;
+        }
+        break;
+
+      case 'property_declaration':
+        if (this._lastLang === 'csharp') {
+          this._extractCsProperty(node, content, symbols, parentScope);
+        }
+        break;
+
+      case 'using_directive':
+        if (this._lastLang === 'csharp') {
+          this._extractCsUsing(node, imports);
+        }
+        break;
     }
 
     // Skip recursion for nodes whose extractors already handle child iteration
@@ -304,7 +389,14 @@ class Parser {
           // Rust scope nodes
           node.type === 'impl_item' ||
           node.type === 'trait_item' ||
-          node.type === 'function_item') {
+          node.type === 'function_item' ||
+          // Java/C# scope nodes
+          node.type === 'class_declaration' ||
+          node.type === 'interface_declaration' ||
+          node.type === 'enum_declaration' ||
+          node.type === 'constructor_declaration' ||
+          node.type === 'namespace_declaration' ||
+          node.type === 'struct_declaration') {
         this._walk(child, content, symbols, imports, newScope);
       } else {
         this._walk(child, content, symbols, imports, parentScope);
@@ -1097,6 +1189,386 @@ class Parser {
       line: node.startPosition.row + 1,
     });
   }
+
+  // --- Java-specific extractors ---
+
+  _extractJavaClass(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'class',
+      signature: `class ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'method_declaration') {
+          this._extractJavaMethod(member, content, symbols, nameNode.text);
+        } else if (member.type === 'constructor_declaration') {
+          this._extractJavaConstructor(member, content, symbols, nameNode.text);
+        } else if (member.type === 'field_declaration') {
+          this._extractJavaField(member, content, symbols, nameNode.text);
+        }
+      }
+    }
+  }
+
+  _extractJavaMethod(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const params = node.childForFieldName('parameters');
+    const paramText = params ? params.text.replace(/^\(|\)$/g, '') : '';
+    const typeNode = node.childForFieldName('type');
+    const returnType = typeNode ? typeNode.text : 'void';
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'method',
+      signature: `${returnType} ${nameNode.text}(${paramText})`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractJavaConstructor(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const params = node.childForFieldName('parameters');
+    const paramText = params ? params.text.replace(/^\(|\)$/g, '') : '';
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'constructor',
+      signature: `${nameNode.text}(${paramText})`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractJavaCsInterface(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'interface',
+      signature: `interface ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    // Extract interface method declarations
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'method_declaration') {
+          this._extractJavaMethod(member, content, symbols, nameNode.text);
+        }
+      }
+    }
+  }
+
+  _extractJavaCsEnum(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'enum',
+      signature: `enum ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    // Extract enum constants/members
+    const body = this._lastLang === 'java'
+      ? node.childForFieldName('body')
+      : node.children.find(c => c.type === 'enum_member_declaration_list');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'enum_constant' || member.type === 'enum_member_declaration') {
+          const memberName = member.childForFieldName('name') || member.children.find(c => c.type === 'identifier');
+          if (memberName) {
+            symbols.push({
+              name: memberName.text,
+              kind: 'enum_member',
+              signature: memberName.text,
+              startLine: member.startPosition.row + 1,
+              endLine: member.endPosition.row + 1,
+              exported: false,
+              async: false,
+              parentClass: nameNode.text,
+              children: [],
+            });
+          }
+        }
+      }
+    }
+  }
+
+  _extractJavaAnnotationType(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'annotation',
+      signature: `@interface ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractJavaField(node, content, symbols, parentScope) {
+    // field_declaration: has declarator children with name fields
+    for (let i = 0; i < node.childCount; i++) {
+      const child = node.child(i);
+      if (child.type === 'variable_declarator') {
+        const nameNode = child.childForFieldName('name');
+        if (nameNode) {
+          symbols.push({
+            name: nameNode.text,
+            kind: 'property',
+            signature: this._getSignature(node, content),
+            startLine: node.startPosition.row + 1,
+            endLine: node.endPosition.row + 1,
+            exported: false,
+            async: false,
+            parentClass: parentScope || null,
+            children: [],
+          });
+        }
+      }
+    }
+  }
+
+  _extractJavaImport(node, imports) {
+    // Find the scoped_identifier node for the import path
+    let source = null;
+    for (let i = 0; i < node.childCount; i++) {
+      const child = node.child(i);
+      if (child.type === 'scoped_identifier') {
+        source = child.text;
+        break;
+      }
+    }
+    if (!source) return;
+    const identifiers = [source.split('.').pop()];
+    imports.push({ source, identifiers, line: node.startPosition.row + 1 });
+  }
+
+  // --- C#-specific extractors ---
+
+  _extractCsNamespace(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+    const nsName = nameNode.text;
+
+    symbols.push({
+      name: nsName,
+      kind: 'namespace',
+      signature: `namespace ${nsName}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    // Walk the namespace body, passing namespace name as scope
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        this._walk(body.child(i), content, symbols, [], nsName);
+      }
+    }
+  }
+
+  _getCsNamespaceName(node) {
+    const nameNode = node.childForFieldName('name');
+    return nameNode ? nameNode.text : null;
+  }
+
+  _extractCsClass(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'class',
+      signature: `class ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'method_declaration') {
+          this._extractCsMethod(member, content, symbols, nameNode.text);
+        } else if (member.type === 'constructor_declaration') {
+          this._extractCsConstructor(member, content, symbols, nameNode.text);
+        } else if (member.type === 'property_declaration') {
+          this._extractCsProperty(member, content, symbols, nameNode.text);
+        }
+      }
+    }
+  }
+
+  _extractCsMethod(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const params = node.childForFieldName('parameters');
+    const paramText = params ? params.text.replace(/^\(|\)$/g, '') : '';
+    const typeNode = node.childForFieldName('returns');
+    const returnType = typeNode ? typeNode.text : '';
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'method',
+      signature: returnType
+        ? `${returnType} ${nameNode.text}(${paramText})`
+        : `${nameNode.text}(${paramText})`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractCsConstructor(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const params = node.childForFieldName('parameters');
+    const paramText = params ? params.text.replace(/^\(|\)$/g, '') : '';
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'constructor',
+      signature: `${nameNode.text}(${paramText})`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractCsStruct(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'class',
+      signature: `struct ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'method_declaration') {
+          this._extractCsMethod(member, content, symbols, nameNode.text);
+        } else if (member.type === 'property_declaration') {
+          this._extractCsProperty(member, content, symbols, nameNode.text);
+        }
+      }
+    }
+  }
+
+  _extractCsProperty(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const typeNode = node.childForFieldName('type');
+    const typeName = typeNode ? typeNode.text : '';
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'property',
+      signature: typeName ? `${typeName} ${nameNode.text}` : nameNode.text,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractCsUsing(node, imports) {
+    // Find the name/qualified_name child for the using directive
+    let source = null;
+    for (let i = 0; i < node.childCount; i++) {
+      const child = node.child(i);
+      if (child.type === 'identifier' || child.type === 'qualified_name') {
+        // Skip 'using' keyword (first child)
+        if (child.text !== 'using') {
+          source = child.text;
+          break;
+        }
+      }
+    }
+    if (!source) return;
+    imports.push({
+      source,
+      identifiers: [source.split('.').pop()],
+      line: node.startPosition.row + 1,
+    });
+  }
+
 
   // --- Parent-child linking ---
 

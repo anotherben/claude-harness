@@ -48,6 +48,33 @@ function registerKnowledgeTools(server, knowledge, telemetry) {
     if (!telemetry) return result;
     return telemetry.wrapTimingOnly(result, elapsed);
   });
+
+  server.tool(
+    'cortex_sync_knowledge',
+    'Sync all knowledge annotations to an Obsidian vault. Groups annotations by target and writes one markdown file per target. Only writes files changed since last sync.',
+    {
+      vault_path: z.string().optional().describe(
+        'Absolute path to the Obsidian vault directory. Defaults to the OBSIDIAN_VAULT_PATH environment variable.'
+      ),
+    },
+    async (params) => {
+      const t0 = performance.now();
+      const vaultPath = params.vault_path || process.env.OBSIDIAN_VAULT_PATH;
+      const syncResult = knowledge.syncToObsidian(vaultPath);
+
+      let text;
+      if (syncResult.error) {
+        text = `Sync failed: ${syncResult.error}`;
+      } else {
+        text = `Obsidian sync complete: ${syncResult.synced} annotation(s) written to ${syncResult.vaultPath} (${syncResult.skipped} already synced)`;
+      }
+
+      const result = { content: [{ type: 'text', text }] };
+      const elapsed = performance.now() - t0;
+      if (!telemetry) return result;
+      return telemetry.wrapTimingOnly(result, elapsed);
+    }
+  );
 }
 
 module.exports = { registerKnowledgeTools };

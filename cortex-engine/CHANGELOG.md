@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.0] - 2026-03-19
+
+### Added
+- **tree-sitter Java** — full AST: classes, methods, constructors, interfaces, enums, annotations, fields
+- **tree-sitter C#** — full AST: namespaces, classes, methods, constructors, interfaces, enums, structs, properties
+- **`test` source_type** — test/spec/mock/fixture files auto-categorized, excluded from default search. Query with `source_types=['test']`
+- **Stale index detection** — on cold start, samples file mtimes vs index timestamps. Auto-reindexes stale/new files
+- **Obsidian knowledge sync** — `cortex_sync_knowledge` tool + auto-sync every 5 min when `OBSIDIAN_VAULT_PATH` set. Writes grouped markdown files to `{vault}/_cortex/`
+- **Multi-repo MCP** — `cortex_add_repo` and `cortex_list_repos` tools. Pass multiple roots via CLI. Search tools accept optional `repo` filter
+- Swift tree-sitter skipped (no compatible binding for tree-sitter@0.21.1)
+
+### Changed
+- **8 tree-sitter languages** (was 6) — JS, TS, TSX, Python, Go, Rust, Java, C#
+- **30 MCP tools** (was 27) — added cortex_sync_knowledge, cortex_add_repo, cortex_list_repos
+- **7 source_type categories** (was 6) — code, test, config, docs, markup, style, query
+- **320 tests** across 18 suites (was 262 across 17)
+
 ## [1.2.0] - 2026-03-19
 
 ### Added

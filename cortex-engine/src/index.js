@@ -49,8 +49,104 @@ class IndexEngine {
     this.watcher.on('unlink', (absPath) => this._removeFile(absPath));
   }
 
-  ready() {
-    return this.watcher.ready();
+  async ready() {
+    await this.watcher.ready();
+    await this._checkStaleIndex();
+  }
+
+  async _checkStaleIndex() {
+    // Get all files the watcher found on disk
+    const diskFiles = this.watcher.getWatchedFiles();
+    const diskCount = diskFiles.length;
+
+    // Get all indexed files from DB
+    const dbFiles = this.store.db
+      .prepare('SELECT path, indexed_at FROM files')
+      .all();
+    const dbCount = dbFiles.length;
+
+    if (dbCount === 0) {
+      // No existing index — watcher events will populate it normally
+      return;
+    }
+
+    // Check if disk file count has diverged significantly from DB count (>10%)
+    const countDiff = Math.abs(diskCount - dbCount);
+    if (countDiff > dbCount * 0.1) {
+      process.stderr.write(
+        'Cortex: file count mismatch (disk=' + diskCount + ' db=' + dbCount + '), triggering full reindex\n'
+      );
+      this._reindexAll(diskFiles);
+      return;
+    }
+
+    // Sample up to 100 files (every Nth file) to check mtimes
+    const sampleSize = Math.min(100, dbCount);
+    const step = Math.max(1, Math.floor(dbCount / sampleSize));
+
+    // Build a map of relPath -> indexed_at for DB files
+    const dbFileMap = new Map();
+    for (const row of dbFiles) {
+      dbFileMap.set(row.path, row.indexed_at);
+    }
+
+    // Build a map of relPath -> absPath for disk files
+    const diskFileMap = new Map();
+    for (const absPath of diskFiles) {
+      const relPath = this._relPath(absPath);
+      diskFileMap.set(relPath, absPath);
+    }
+
+    const sampled = dbFiles.filter((_, i) => i % step === 0);
+    const staleFiles = [];
+
+    for (const row of sampled) {
+      const absPath = diskFileMap.get(row.path);
+      if (!absPath) continue; // file might have been deleted — watcher handles unlink
+
+      let stat;
+      try {
+        stat = fs.statSync(absPath);
+      } catch {
+        continue; // can't stat — skip
+      }
+
+      // indexed_at is stored as SQLite datetime string (UTC, no trailing Z).
+      // Add a 2-second buffer to avoid false positives from second-precision truncation.
+      const indexedMs = new Date(row.indexed_at + 'Z').getTime();
+      if (stat.mtimeMs > indexedMs + 2000) {
+        staleFiles.push(absPath);
+      }
+    }
+
+    const staleRatio = staleFiles.length / sampled.length;
+
+    if (staleRatio > 0.1) {
+      process.stderr.write(
+        'Cortex: ' + staleFiles.length + ' stale files detected (>' +
+        Math.round(staleRatio * 100) + '% of sample), triggering full reindex\n'
+      );
+      this._reindexAll(diskFiles);
+    } else if (staleFiles.length > 0) {
+      process.stderr.write(
+        'Cortex: ' + staleFiles.length + ' stale file(s) detected, reindexing...\n'
+      );
+      for (const absPath of staleFiles) {
+        // Force re-parse by clearing the stored hash
+        const relPath = this._relPath(absPath);
+        this.store.deleteFile(relPath);
+        this._indexFile(absPath);
+      }
+    }
+  }
+
+  _reindexAll(diskFiles) {
+    // Clear DB and reindex every file from disk
+    this.store.db.exec('DELETE FROM files');
+    this._contentCache.clear();
+    for (const absPath of diskFiles) {
+      this._indexFile(absPath);
+    }
   }
 
   _relPath(absPath) {

@@ -76,6 +76,22 @@ class Watcher extends EventEmitter {
     return this._readyPromise;
   }
 
+  /**
+   * Returns a flat array of absolute paths for all files currently watched.
+   * Only valid after ready() resolves.
+   */
+  getWatchedFiles() {
+    const watched = this.watcher.getWatched();
+    const results = [];
+    for (const [dir, files] of Object.entries(watched)) {
+      const absDir = dir === '.' ? this.rootPath : path.join(this.rootPath, dir);
+      for (const file of files) {
+        results.push(path.join(absDir, file));
+      }
+    }
+    return results;
+  }
+
   async close() {
     await this.watcher.close();
   }
