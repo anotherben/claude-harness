@@ -101,7 +101,7 @@ module.exports = { useFoo };
     for (const name of expected) {
       expect(toolNames).toContain(name);
     }
-    expect(toolNames.length).toBe(26);
+    expect(toolNames.length).toBe(27);
   });
 
   // PC-18: cortex_outline returns correct data
