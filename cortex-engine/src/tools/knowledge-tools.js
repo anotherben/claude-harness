@@ -1,4 +1,6 @@
-function registerKnowledgeTools(server, knowledge) {
+const { performance } = require('../telemetry');
+
+function registerKnowledgeTools(server, knowledge, telemetry) {
   server.tool('cortex_annotate', {
     description: 'Add a note to a file, symbol, or pattern. Persists across sessions.',
     inputSchema: {
@@ -12,8 +14,12 @@ function registerKnowledgeTools(server, knowledge) {
       required: ['target', 'note'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     knowledge.annotate(params);
-    return { content: [{ type: 'text', text: `Annotation saved for ${params.target}` }] };
+    const result = { content: [{ type: 'text', text: `Annotation saved for ${params.target}` }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_recall', {
@@ -26,8 +32,12 @@ function registerKnowledgeTools(server, knowledge) {
       required: ['target'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const entries = knowledge.recall(params.target);
-    return { content: [{ type: 'text', text: JSON.stringify(entries, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(entries, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_patterns', {
@@ -40,8 +50,12 @@ function registerKnowledgeTools(server, knowledge) {
       required: ['directory'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const patterns = knowledge.patterns(params.directory);
-    return { content: [{ type: 'text', text: JSON.stringify(patterns, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(patterns, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_lessons', {
@@ -53,8 +67,12 @@ function registerKnowledgeTools(server, knowledge) {
       },
     },
   }, async (params) => {
+    const t0 = performance.now();
     const lessons = knowledge.lessons(params.tag);
-    return { content: [{ type: 'text', text: JSON.stringify(lessons, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(lessons, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 }
 

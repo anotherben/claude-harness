@@ -1,4 +1,6 @@
-function registerFileTools(server, engine) {
+const { estimateTokens, performance } = require('../telemetry');
+
+function registerFileTools(server, engine, telemetry) {
   server.tool('cortex_tree', {
     description: 'File tree with optional path prefix filter',
     inputSchema: {
@@ -9,8 +11,12 @@ function registerFileTools(server, engine) {
       },
     },
   }, async (params) => {
+    const t0 = performance.now();
     const files = engine.getTree(params.path_prefix, params.depth);
-    return { content: [{ type: 'text', text: JSON.stringify(files, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(files, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_outline', {
@@ -23,8 +29,18 @@ function registerFileTools(server, engine) {
       required: ['file_path'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const outline = engine.getOutline(params.file_path);
-    return { content: [{ type: 'text', text: JSON.stringify(outline, null, 2) }] };
+    const responseText = JSON.stringify(outline, null, 2);
+    const result = { content: [{ type: 'text', text: responseText }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    // tokens saved = full file tokens - outline JSON tokens
+    const file = engine.store.getFile(params.file_path);
+    const fileTokens = file ? Math.ceil(file.sizeBytes / 4) : 0;
+    const responseTokens = estimateTokens(responseText);
+    return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
   server.tool('cortex_read_symbol', {
@@ -38,11 +54,23 @@ function registerFileTools(server, engine) {
       required: ['file_path', 'symbol_name'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const source = engine.readSymbol(params.file_path, params.symbol_name);
     if (!source) {
-      return { content: [{ type: 'text', text: 'Symbol not found' }], isError: true };
+      const result = { content: [{ type: 'text', text: 'Symbol not found' }], isError: true };
+      const elapsed = performance.now() - t0;
+      if (!telemetry) return result;
+      return telemetry.wrapTimingOnly(result, elapsed);
     }
-    return { content: [{ type: 'text', text: source }] };
+    const result = { content: [{ type: 'text', text: source }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    // tokens saved = full file tokens - symbol source tokens
+    const file = engine.store.getFile(params.file_path);
+    const fileTokens = file ? Math.ceil(file.sizeBytes / 4) : 0;
+    const responseTokens = estimateTokens(source);
+    return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
   server.tool('cortex_read_symbols', {
@@ -65,8 +93,25 @@ function registerFileTools(server, engine) {
       required: ['specs'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const results = engine.readSymbols(params.specs);
-    return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+    const responseText = JSON.stringify(results, null, 2);
+    const result = { content: [{ type: 'text', text: responseText }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    // tokens saved = sum of all full file tokens - response tokens
+    let totalFileTokens = 0;
+    const seenFiles = new Set();
+    for (const spec of params.specs) {
+      if (!seenFiles.has(spec.filePath)) {
+        seenFiles.add(spec.filePath);
+        const file = engine.store.getFile(spec.filePath);
+        if (file) totalFileTokens += Math.ceil(file.sizeBytes / 4);
+      }
+    }
+    const responseTokens = estimateTokens(responseText);
+    return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
   server.tool('cortex_read_range', {
@@ -81,11 +126,23 @@ function registerFileTools(server, engine) {
       required: ['file_path', 'start_line', 'end_line'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const text = engine.readRange(params.file_path, params.start_line, params.end_line);
     if (text === null) {
-      return { content: [{ type: 'text', text: 'File not found' }], isError: true };
+      const result = { content: [{ type: 'text', text: 'File not found' }], isError: true };
+      const elapsed = performance.now() - t0;
+      if (!telemetry) return result;
+      return telemetry.wrapTimingOnly(result, elapsed);
     }
-    return { content: [{ type: 'text', text }] };
+    const result = { content: [{ type: 'text', text }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    // tokens saved = full file tokens - range tokens
+    const file = engine.store.getFile(params.file_path);
+    const fileTokens = file ? Math.ceil(file.sizeBytes / 4) : 0;
+    const responseTokens = estimateTokens(text);
+    return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
   server.tool('cortex_context', {
@@ -99,11 +156,24 @@ function registerFileTools(server, engine) {
       required: ['file_path', 'symbol_name'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const ctx = engine.getContext(params.file_path, params.symbol_name);
     if (!ctx) {
-      return { content: [{ type: 'text', text: 'Not found' }], isError: true };
+      const result = { content: [{ type: 'text', text: 'Not found' }], isError: true };
+      const elapsed = performance.now() - t0;
+      if (!telemetry) return result;
+      return telemetry.wrapTimingOnly(result, elapsed);
     }
-    return { content: [{ type: 'text', text: JSON.stringify(ctx, null, 2) }] };
+    const responseText = JSON.stringify(ctx, null, 2);
+    const result = { content: [{ type: 'text', text: responseText }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    // tokens saved = full file tokens - context JSON tokens
+    const file = engine.store.getFile(params.file_path);
+    const fileTokens = file ? Math.ceil(file.sizeBytes / 4) : 0;
+    const responseTokens = estimateTokens(responseText);
+    return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 }
 

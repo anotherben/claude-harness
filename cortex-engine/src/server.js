@@ -10,6 +10,7 @@ const { registerKnowledgeTools } = require('./tools/knowledge-tools');
 const Knowledge = require('./knowledge');
 const Fleet = require('./fleet');
 const { registerFleetTools } = require('./tools/fleet-tools');
+const { Telemetry } = require('./telemetry');
 
 async function createServer(projectRoot, config = {}) {
   const server = new McpServer({
@@ -23,13 +24,14 @@ async function createServer(projectRoot, config = {}) {
   const git = new GitIntegration(projectRoot);
   const knowledge = new Knowledge(projectRoot, config);
   const fleet = new Fleet(knowledge);
+  const telemetry = new Telemetry(projectRoot);
 
-  registerFileTools(server, engine);
-  registerSearchTools(server, engine);
-  registerGitTools(server, git);
-  registerKnowledgeTools(server, knowledge);
-  registerFleetTools(server, fleet);
-  registerAdminTools(server, engine);
+  registerFileTools(server, engine, telemetry);
+  registerSearchTools(server, engine, telemetry);
+  registerGitTools(server, git, telemetry);
+  registerKnowledgeTools(server, knowledge, telemetry);
+  registerFleetTools(server, fleet, telemetry);
+  registerAdminTools(server, engine, telemetry);
 
   // Clean shutdown
   const cleanup = async () => {
@@ -40,7 +42,7 @@ async function createServer(projectRoot, config = {}) {
   process.on('SIGTERM', cleanup);
   process.on('SIGINT', cleanup);
 
-  return { server, engine, git, knowledge, fleet };
+  return { server, engine, git, knowledge, fleet, telemetry };
 }
 
 // Run as MCP stdio server if invoked directly

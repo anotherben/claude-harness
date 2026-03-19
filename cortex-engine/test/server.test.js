@@ -64,15 +64,17 @@ module.exports = { useFoo };
       },
     };
 
-    registerFileTools(mockServer, engine);
-    registerSearchTools(mockServer, engine);
+    const { Telemetry } = require("../src/telemetry");
+    const telemetry = new Telemetry(dir);
+    registerFileTools(mockServer, engine, telemetry);
+    registerSearchTools(mockServer, engine, telemetry);
     const git = new GitIntegration(dir);
-    registerGitTools(mockServer, git);
+    registerGitTools(mockServer, git, telemetry);
     const knowledge = new Knowledge(dir);
-    registerKnowledgeTools(mockServer, knowledge);
+    registerKnowledgeTools(mockServer, knowledge, telemetry);
     const fleet = new Fleet(knowledge);
-    registerFleetTools(mockServer, fleet);
-    registerAdminTools(mockServer, engine);
+    registerFleetTools(mockServer, fleet, telemetry);
+    registerAdminTools(mockServer, engine, telemetry);
   });
 
   afterAll(async () => {
@@ -94,18 +96,20 @@ module.exports = { useFoo };
       'cortex_find_by_tag',
       'cortex_annotate', 'cortex_recall', 'cortex_patterns', 'cortex_lessons',
       'cortex_ingest_handover', 'cortex_learning_report', 'cortex_fleet_mcp_config',
+      'cortex_telemetry',
     ];
     for (const name of expected) {
       expect(toolNames).toContain(name);
     }
-    expect(toolNames.length).toBe(25);
+    expect(toolNames.length).toBe(26);
   });
 
   // PC-18: cortex_outline returns correct data
   it('cortex_outline returns symbols', async () => {
     const result = await tools.cortex_outline.handler({ file_path: 'simple.js' });
     expect(result.content).toBeDefined();
-    const data = JSON.parse(result.content[0].text);
+    const parsed = JSON.parse(result.content[0].text);
+    const data = parsed.data || parsed;
     const names = data.map((s) => s.name);
     expect(names).toContain('foo');
     expect(names).toContain('bar');
@@ -126,7 +130,8 @@ module.exports = { useFoo };
   // PC-20: cortex_find_symbol searches across files
   it('cortex_find_symbol searches across files', async () => {
     const result = await tools.cortex_find_symbol.handler({ query: 'foo' });
-    const data = JSON.parse(result.content[0].text);
+    const parsed = JSON.parse(result.content[0].text);
+    const data = parsed.data || parsed;
     // Should find 'foo' in simple.js and 'useFoo' in helper.js
     const names = data.map((s) => s.name);
     expect(names).toContain('foo');

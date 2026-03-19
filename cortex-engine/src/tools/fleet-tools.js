@@ -1,4 +1,6 @@
-function registerFleetTools(server, fleet) {
+const { performance } = require('../telemetry');
+
+function registerFleetTools(server, fleet, telemetry) {
   server.tool('cortex_ingest_handover', {
     description: 'Extract lessons from a worker handover and add to knowledge store',
     inputSchema: {
@@ -10,16 +12,24 @@ function registerFleetTools(server, fleet) {
       required: ['markdown', 'worker_id'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const count = fleet.ingestHandover(params.markdown, params.worker_id);
-    return { content: [{ type: 'text', text: `Ingested ${count} lessons from ${params.worker_id}` }] };
+    const result = { content: [{ type: 'text', text: `Ingested ${count} lessons from ${params.worker_id}` }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_learning_report', {
     description: 'Fleet-wide learning report: annotations, lessons, patterns by author and target',
     inputSchema: { type: 'object', properties: {} },
   }, async () => {
+    const t0 = performance.now();
     const report = fleet.learningReport();
-    return { content: [{ type: 'text', text: JSON.stringify(report, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(report, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_fleet_mcp_config', {
@@ -32,8 +42,12 @@ function registerFleetTools(server, fleet) {
       required: ['project_root'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const config = fleet.getMcpConfig(params.project_root);
-    return { content: [{ type: 'text', text: JSON.stringify(config, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(config, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 }
 

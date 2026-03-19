@@ -1,10 +1,16 @@
-function registerAdminTools(server, engine) {
+const { performance } = require('../telemetry');
+
+function registerAdminTools(server, engine, telemetry) {
   server.tool('cortex_status', {
     description: 'Index health: file count, symbol count, staleness',
     inputSchema: { type: 'object', properties: {} },
   }, async () => {
+    const t0 = performance.now();
     const stats = engine.getStatus();
-    return { content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_reindex', {
@@ -16,8 +22,26 @@ function registerAdminTools(server, engine) {
       },
     },
   }, async (params) => {
+    const t0 = performance.now();
     engine.reindex(params.file_path);
-    return { content: [{ type: 'text', text: 'Reindex complete' }] };
+    const result = { content: [{ type: 'text', text: 'Reindex complete' }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
+  });
+
+  server.tool('cortex_telemetry', {
+    description: 'Cumulative token-savings telemetry: queries, tokens saved, cost avoided',
+    inputSchema: { type: 'object', properties: {} },
+  }, async () => {
+    const t0 = performance.now();
+    if (!telemetry) {
+      return { content: [{ type: 'text', text: JSON.stringify({ error: 'Telemetry not initialized' }, null, 2) }] };
+    }
+    const report = telemetry.getReport();
+    const result = { content: [{ type: 'text', text: JSON.stringify(report, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 }
 

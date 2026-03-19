@@ -1,4 +1,6 @@
-function registerSearchTools(server, engine) {
+const { estimateTokens, performance } = require('../telemetry');
+
+function registerSearchTools(server, engine, telemetry) {
   server.tool('cortex_find_symbol', {
     description: 'Search symbols by name across all indexed files',
     inputSchema: {
@@ -17,13 +19,30 @@ function registerSearchTools(server, engine) {
       required: ['query'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const results = engine.findSymbol(params.query, {
       kind: params.kind,
       exportedOnly: params.exported_only,
       limit: params.limit,
       sourceTypes: params.source_types,
     });
-    return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+    const responseText = JSON.stringify(results, null, 2);
+    const result = { content: [{ type: 'text', text: responseText }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    // tokens saved = sum of all matching file tokens - search result tokens
+    let totalFileTokens = 0;
+    const seenFiles = new Set();
+    for (const r of results) {
+      if (r.filePath && !seenFiles.has(r.filePath)) {
+        seenFiles.add(r.filePath);
+        const file = engine.store.getFile(r.filePath);
+        if (file) totalFileTokens += Math.ceil(file.sizeBytes / 4);
+      }
+    }
+    const responseTokens = estimateTokens(responseText);
+    return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
   server.tool('cortex_find_text', {
@@ -37,10 +56,27 @@ function registerSearchTools(server, engine) {
       required: ['pattern'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const results = engine.findText(params.pattern, {
       caseSensitive: params.case_sensitive,
     });
-    return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+    const responseText = JSON.stringify(results, null, 2);
+    const result = { content: [{ type: 'text', text: responseText }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    // tokens saved = sum of matching file tokens - result tokens
+    let totalFileTokens = 0;
+    const seenFiles = new Set();
+    for (const r of results) {
+      if (r.filePath && !seenFiles.has(r.filePath)) {
+        seenFiles.add(r.filePath);
+        const file = engine.store.getFile(r.filePath);
+        if (file) totalFileTokens += Math.ceil(file.sizeBytes / 4);
+      }
+    }
+    const responseTokens = estimateTokens(responseText);
+    return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
   server.tool('cortex_find_references', {
@@ -53,8 +89,24 @@ function registerSearchTools(server, engine) {
       required: ['identifier'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const results = engine.findReferences(params.identifier);
-    return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+    const responseText = JSON.stringify(results, null, 2);
+    const result = { content: [{ type: 'text', text: responseText }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    let totalFileTokens = 0;
+    const seenFiles = new Set();
+    for (const r of results) {
+      if (r.filePath && !seenFiles.has(r.filePath)) {
+        seenFiles.add(r.filePath);
+        const file = engine.store.getFile(r.filePath);
+        if (file) totalFileTokens += Math.ceil(file.sizeBytes / 4);
+      }
+    }
+    const responseTokens = estimateTokens(responseText);
+    return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
   server.tool('cortex_find_importers', {
@@ -67,9 +119,24 @@ function registerSearchTools(server, engine) {
       required: ['file_path'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const results = engine.findImporters(params.file_path);
-    return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+    const responseText = JSON.stringify(results, null, 2);
+    const result = { content: [{ type: 'text', text: responseText }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    let totalFileTokens = 0;
+    for (const r of results) {
+      if (r.path) {
+        const file = engine.store.getFile(r.path);
+        if (file) totalFileTokens += Math.ceil(file.sizeBytes / 4);
+      }
+    }
+    const responseTokens = estimateTokens(responseText);
+    return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
+
   server.tool('cortex_find_by_tag', {
     description: 'Find symbols by semantic tag (db_read, db_write, unscoped_query, route_handler, etc.)',
     inputSchema: {
@@ -81,8 +148,24 @@ function registerSearchTools(server, engine) {
       required: ['tag'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     const results = engine.findByTag(params.tag, params.limit);
-    return { content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] };
+    const responseText = JSON.stringify(results, null, 2);
+    const result = { content: [{ type: 'text', text: responseText }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+
+    let totalFileTokens = 0;
+    const seenFiles = new Set();
+    for (const r of results) {
+      if (r.filePath && !seenFiles.has(r.filePath)) {
+        seenFiles.add(r.filePath);
+        const file = engine.store.getFile(r.filePath);
+        if (file) totalFileTokens += Math.ceil(file.sizeBytes / 4);
+      }
+    }
+    const responseTokens = estimateTokens(responseText);
+    return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 }
 

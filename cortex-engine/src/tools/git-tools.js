@@ -1,10 +1,16 @@
-function registerGitTools(server, gitIntegration) {
+const { performance } = require('../telemetry');
+
+function registerGitTools(server, gitIntegration, telemetry) {
   server.tool('cortex_git_status', {
     description: 'Current branch, uncommitted changes, staged files',
     inputSchema: { type: 'object', properties: {} },
   }, async () => {
+    const t0 = performance.now();
     const status = await gitIntegration.status();
-    return { content: [{ type: 'text', text: JSON.stringify(status, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(status, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_git_diff', {
@@ -18,8 +24,12 @@ function registerGitTools(server, gitIntegration) {
       },
     },
   }, async (params) => {
+    const t0 = performance.now();
     const diff = await gitIntegration.diff(params);
-    return { content: [{ type: 'text', text: diff || '(no changes)' }] };
+    const result = { content: [{ type: 'text', text: diff || '(no changes)' }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_git_blame', {
@@ -32,11 +42,18 @@ function registerGitTools(server, gitIntegration) {
       required: ['file_path'],
     },
   }, async (params) => {
+    const t0 = performance.now();
     try {
       const blame = await gitIntegration.blame(params.file_path);
-      return { content: [{ type: 'text', text: JSON.stringify(blame, null, 2) }] };
+      const result = { content: [{ type: 'text', text: JSON.stringify(blame, null, 2) }] };
+      const elapsed = performance.now() - t0;
+      if (!telemetry) return result;
+      return telemetry.wrapTimingOnly(result, elapsed);
     } catch (err) {
-      return { content: [{ type: 'text', text: `Blame failed: ${err.message}` }], isError: true };
+      const result = { content: [{ type: 'text', text: `Blame failed: ${err.message}` }], isError: true };
+      const elapsed = performance.now() - t0;
+      if (!telemetry) return result;
+      return telemetry.wrapTimingOnly(result, elapsed);
     }
   });
 
@@ -50,11 +67,15 @@ function registerGitTools(server, gitIntegration) {
       },
     },
   }, async (params) => {
+    const t0 = performance.now();
     const log = await gitIntegration.log({
       file: params.file,
       maxCount: params.max_count || 20,
     });
-    return { content: [{ type: 'text', text: JSON.stringify(log, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(log, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 
   server.tool('cortex_git_hotspots', {
@@ -67,11 +88,15 @@ function registerGitTools(server, gitIntegration) {
       },
     },
   }, async (params) => {
+    const t0 = performance.now();
     const hotspots = await gitIntegration.hotspots({
       days: params.days || 30,
       limit: params.limit || 20,
     });
-    return { content: [{ type: 'text', text: JSON.stringify(hotspots, null, 2) }] };
+    const result = { content: [{ type: 'text', text: JSON.stringify(hotspots, null, 2) }] };
+    const elapsed = performance.now() - t0;
+    if (!telemetry) return result;
+    return telemetry.wrapTimingOnly(result, elapsed);
   });
 }
 
