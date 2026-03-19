@@ -12,7 +12,7 @@ Built-in **Cortex Engine** — a code intelligence MCP server that makes agents 
 
 ```
 claude-harness/
-├── cortex-engine/        # Code intelligence MCP server (26 tools, real-time index)
+├── cortex-engine/        # Code intelligence MCP server (27 tools, real-time index)
 ├── hooks/                # 29 shell hooks — quality gates that block bad actions
 ├── skills/               # 30 Claude Code skills — enterprise dev pipeline
 ├── conductor/            # Fleet orchestration — multi-agent dispatch + merge
@@ -63,7 +63,7 @@ claude-harness/
 
 | Feature | What It Does |
 |---------|-------------|
-| **26 MCP tools** | File reading, symbol search, git context, semantic tags, knowledge store, fleet coordination |
+| **27 MCP tools** | File reading, symbol search, git context, semantic tags, knowledge store, fleet coordination |
 | **Real-time watcher** | Index updates in milliseconds after edits — no manual reindex |
 | **20 file types** | JS, TS, TSX, JSX, Python, Bash, SQL, CSS, JSON, YAML, GraphQL, Markdown, TOML, XML, HTML, Vue, Svelte, SCSS, LESS + configurable |
 | **Nested symbols** | Factory methods, local helpers, inner types, interface members — not just top-level exports |

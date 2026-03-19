@@ -131,7 +131,7 @@ Every Cortex response includes a `_meta` object with savings data:
 
 Use `cortex_telemetry()` for a full session report.
 
-## 26 MCP Tools
+## 27 MCP Tools
 
 ### File & Structure
 | Tool | What it does |
@@ -270,7 +270,7 @@ Search all categories: `cortex_find_symbol("auth", source_types=["code","config"
 ## Tests
 
 ```bash
-npm test    # 208 tests across 16 suites
+npm test    # 211 tests across 16 suites
 ```
 
 ## License
