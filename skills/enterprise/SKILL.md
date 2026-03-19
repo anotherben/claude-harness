@@ -13,8 +13,8 @@ You are an enterprise software architect. The user is a vibe coder — they tell
 
 Once `/enterprise` is activated, you are IN the pipeline until COMPLETE or user cancellation.
 
-1. **No workflow skills.** No `/full-cycle*` or any multi-stage skill. These compete with the pipeline.
-2. **Guard skills ARE allowed.** Domain-specific guard skills may be called during BUILD/DEBUG as quality checks. Return to the current stage immediately after.
+1. **No workflow skills.** No `/superpowers:*`, `/full-cycle*`, or any multi-stage skill. These compete with the pipeline.
+2. **Guard skills ARE allowed.** Domain-specific guard skills (e.g., database safety, API integration checks) may be called during BUILD/DEBUG as quality checks. Return to the current stage immediately after. Configure guard skills in your project's CLAUDE.md.
 3. **No skipping stages.** If a stage feels unnecessary, the path is wrong — re-triage, don't skip.
 4. **No exiting mid-pipeline.** Context running low → save handover, don't abandon to "just write the code."
 5. **Announce every transition:** `ENTERPRISE PIPELINE — Stage [N]: [NAME] — [slug]`
@@ -38,6 +38,46 @@ At every stage transition:
 ## ENTRY POINT
 
 **You are now in the Enterprise Pipeline. Follow it through to completion.**
+
+### HARNESS CHECK (RUN FIRST — EVERY TIME)
+
+Before anything else, verify the harness infrastructure is installed. Check ALL of the following:
+
+```
+1. Hooks installed?     → ls "$CLAUDE_PROJECT_DIR"/.claude/hooks/require-tdd-before-source-edit.sh
+2. Settings wired?      → ls "$CLAUDE_PROJECT_DIR"/.claude/settings.json (and it references hooks)
+3. Evidence dir exists?  → ls "$CLAUDE_PROJECT_DIR"/.claude/evidence/
+4. Cortex MCP available? → call cortex_status() — if it fails, cortex-engine is not registered
+5. Vault MCP available?  → call mcp__vault-index__list_vault(project="...") — if it fails, vault-index is not registered
+```
+
+**If ANY check fails:**
+1. Tell the user: "Harness not fully installed in this project. Running setup..."
+2. Run `/harness-init` to install hooks, settings.json, and evidence directory
+3. Run `/vault-init` to set up vault integration and MCP servers
+4. After both complete, continue to the VAULT CLAIM GATE below
+
+**If ALL checks pass:** proceed immediately.
+
+This check is non-negotiable. Without the harness, the enterprise pipeline has no enforcement — hooks don't fire, evidence isn't tracked, vault isn't consulted. The pipeline becomes advisory, not mandatory. Every `/enterprise` invocation MUST verify the infrastructure first.
+
+### VAULT CLAIM GATE (FAIL-CLOSED)
+
+Before any pipeline work, verify vault claim ownership:
+
+1. Check that `/vault-context` has been recorded for this session (enforced by vault-gates.sh Gate A).
+2. Read the session context file at `/tmp/claude-vault-context-${SESSION_ID}` to get the target `item_id`.
+3. If work is tied to a vault item, verify claim ownership:
+   - Call `mcp__vault-index__get_claim(item_id="<item_id>")`
+   - Claim must show `owner_instance = claude:<session_id>` and `state = claimed`
+   - If **no claim** exists → **STOP**: "Claim this item via /vault-update first."
+   - If **claimed by someone else** → **STOP**: "Item claimed by <owner>. Use /vault-update to request handoff."
+   - If **lease expired** → **STOP**: "Claim lease expired. Re-claim via /vault-update."
+4. If no specific item_id (project-level enterprise work), proceed but note that no vault item is bound.
+
+This gate applies to ALL enterprise paths: QUICK, STANDARD, FULL, CRITICAL, DEBUG.
+
+**Rule: no context → no claim → no code changes.**
 
 ### MECHANICAL GATE
 
@@ -151,8 +191,8 @@ node -e "
 ```
 /enterprise-discover    → stack-profile.json + stack-traps.json + project-profile.md
 /enterprise-brainstorm  → docs/designs/YYYY-MM-DD-<slug>-tdd.md
-  └── MODE SELECTION happens here (see below)
 /enterprise-plan        → docs/plans/YYYY-MM-DD-<slug>-plan.md
+  └── MODE SELECTION happens here (see below)
 /enterprise-contract    → docs/contracts/YYYY-MM-DD-<slug>-contract.md
 /enterprise-build       → code + tests (TDD)
 /enterprise-review      → docs/reviews/YYYY-MM-DD-<slug>-review.md
@@ -162,23 +202,31 @@ node -e "
 COMPLETE                → audit report
 ```
 
-### MODE SELECTION (FULL path only, after BRAINSTORM)
+### MODE SELECTION (FULL path only, after PLAN — not before)
 
 QUICK/STANDARD: Solo (auto, no prompt needed).
-FULL: deferred until the TDD reveals the task shape.
+FULL: deferred until the PLAN reveals the task shape. The plan breaks the TDD into concrete steps with exact file paths — only then can you see which tasks are independent.
+
+**Do NOT select mode after brainstorm.** The brainstorm produces a design. The plan produces tasks. Mode selection needs tasks.
 
 ```
-BRAINSTORM COMPLETE — MODE SELECTION
+PLAN COMPLETE — MODE SELECTION
 =====================================
-The TDD reveals [N] independent workstreams: [list]
+The plan reveals [N] implementation steps:
+  [list steps with file paths and dependencies]
+
+Independent steps (no shared files): [list]
+Coupled steps (same files/modules): [list]
+Coordination needed (cross-cutting): [list]
+
 Recommended: [mode] — [why]
 
-  1. Solo     — Sequential. Tightly coupled workstreams.
-  2. Subagent — Fresh agent per task. Independent workstreams.
-  3. Swarm    — Persistent teammates. Workstreams needing coordination.
+  1. Solo     — Sequential. Most steps share files or depend on each other.
+  2. Subagent — Fresh agent per task. 3+ steps that touch different files.
+  3. Swarm    — Persistent teammates. Steps need coordination (shared state, merge conflicts).
 ```
 
-Guidelines: 1-2 workstreams → Solo/Subagent. 3-5 → Subagent. 5+ with coordination → Swarm.
+Guidelines: 1-2 steps → Solo. 3-5 independent steps → Subagent. 5+ with shared files → Swarm.
 
 ### DEPLOY (Optional, after VERIFY)
 Invoke `deploy-checklist` skill. Check migrations, env vars, rollback plan. Skip if user hasn't requested deployment.
