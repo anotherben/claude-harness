@@ -91,6 +91,18 @@ class IndexEngine {
 
     // Semantic tagging
     const symbolTags = this.tagger.tagSymbols(result.symbols, content);
+
+    // Also pick up module-level route patterns (e.g. router.post() at file scope)
+    // and attribute them to whichever symbol spans that line.
+    const sourceSymbolTags = this.tagger.tagSourceSymbols(result.symbols, content);
+    for (const [symName, extraTags] of sourceSymbolTags) {
+      const existing = symbolTags.get(symName) || [];
+      for (const t of extraTags) {
+        if (!existing.includes(t)) existing.push(t);
+      }
+      symbolTags.set(symName, existing);
+    }
+
     this.store.upsertTags(file.id, symbolTags);
 
     // Cache content for readSymbol

@@ -125,6 +125,50 @@ class Tagger {
     return tags;
   }
 
+
+  /**
+   * Scan source for module-level route patterns and attribute them to the nearest
+   * enclosing symbol by line number.  Returns a Map<symbolName, string[]> of
+   * additional tags to merge with the result of tagSymbols().
+   *
+   * This is needed for JS files where router.post() calls live at module scope
+   * (not inside a named factory function) — tagSymbols() never sees them because
+   * there is no symbol body that contains them.
+   */
+  tagSourceSymbols(symbols, source) {
+    const extra = new Map();
+    if (!symbols || symbols.length === 0) return extra;
+
+    const lines = source.split('\n');
+
+    lines.forEach((line, i) => {
+      const lineNum = i + 1; // 1-based
+      if (!ROUTE_PATTERN.test(line)) return;
+
+      // Find the innermost symbol that spans this line.
+      // 'Innermost' = smallest (endLine - startLine) range that still contains lineNum.
+      let best = null;
+      for (const sym of symbols) {
+        if (sym.startLine <= lineNum && sym.endLine >= lineNum) {
+          if (
+            best === null ||
+            sym.endLine - sym.startLine < best.endLine - best.startLine
+          ) {
+            best = sym;
+          }
+        }
+      }
+
+      if (best) {
+        if (!extra.has(best.name)) extra.set(best.name, []);
+        const tags = extra.get(best.name);
+        if (!tags.includes('route_handler')) tags.push('route_handler');
+      }
+    });
+
+    return extra;
+  }
+
   /**
    * Get all tags for a file — combines symbol-level and source-level tags.
    */

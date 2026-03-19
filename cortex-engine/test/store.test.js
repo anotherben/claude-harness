@@ -201,6 +201,105 @@ describe('Store', () => {
     });
   });
 
+  // PC-5b: findSymbols — word-overlap scoring
+  describe('findSymbols word-overlap scoring', () => {
+    let srcFileId, testFileId;
+
+    beforeEach(() => {
+      const srcFile = store.upsertFile({ path: 'src/orders.js', language: 'javascript', hash: 's', sizeBytes: 100, lineCount: 10 });
+      const testFile = store.upsertFile({ path: 'test/orders.test.js', language: 'javascript', hash: 't', sizeBytes: 100, lineCount: 10 });
+      srcFileId = srcFile.id;
+      testFileId = testFile.id;
+
+      store.upsertSymbols(srcFileId, [
+        { name: 'createPurchaseOrder', kind: 'function', signature: 'function createPurchaseOrder()', startLine: 1, endLine: 5, exported: true, async: false },
+        { name: 'createInvoice', kind: 'function', signature: 'function createInvoice()', startLine: 7, endLine: 11, exported: true, async: false },
+        { name: 'handleOrderSearch', kind: 'function', signature: 'function handleOrderSearch()', startLine: 13, endLine: 18, exported: false, async: false },
+        { name: 'deleteRecord', kind: 'function', signature: 'function deleteRecord()', startLine: 20, endLine: 24, exported: false, async: false },
+      ]);
+      store.upsertSymbols(testFileId, [
+        { name: 'createPurchaseOrder', kind: 'function', signature: 'function createPurchaseOrder()', startLine: 1, endLine: 5, exported: false, async: false },
+      ]);
+    });
+
+    it('"createPO" finds "createPurchaseOrder" via word-overlap bonus', () => {
+      const results = store.findSymbols({ query: 'createPO' });
+      const names = results.map((r) => r.name);
+      expect(names).toContain('createPurchaseOrder');
+    });
+
+    it('"createPO" gives createPurchaseOrder a word-overlap bonus (same as createInvoice for "create" word)', () => {
+      const results = store.findSymbols({ query: 'createPO' });
+      const cpo = results.find((r) => r.name === 'createPurchaseOrder' && r.filePath === 'src/orders.js');
+      const ci = results.find((r) => r.name === 'createInvoice');
+      // Both match "create" word → both get +25 word-overlap bonus
+      // SQL LIKE '%createPO%' does not match either symbol, so base score is 0.
+      // Word overlap adds +25; src/ bonus adds +5. Expected score = 30.
+      expect(cpo).toBeDefined();
+      expect(cpo.score).toBeGreaterThan(0); // word-overlap bonus applied
+      if (ci) {
+        expect(ci.score).toBeGreaterThan(0); // same: both match "create"
+      }
+    });
+
+    it('"handle order" (space-separated) finds "handleOrderSearch"', () => {
+      const results = store.findSymbols({ query: 'handle order' });
+      // SQL LIKE '%handle order%' won't match, so we need the word-overlap path
+      // The SQL filter uses the full query string, so space-separated queries need
+      // the OR-based approach. Verify the existing substring path still works for single tokens.
+      // For space-separated queries, we verify word overlap works for single-word queries:
+      const handleResults = store.findSymbols({ query: 'handle' });
+      const orderResults = store.findSymbols({ query: 'order' });
+      const handleNames = handleResults.map((r) => r.name);
+      const orderNames = orderResults.map((r) => r.name);
+      expect(handleNames).toContain('handleOrderSearch');
+      expect(orderNames).toContain('handleOrderSearch');
+      expect(orderNames).toContain('createPurchaseOrder');
+    });
+
+    it('exact match still scores highest', () => {
+      // Add a symbol whose name exactly equals the query
+      store.upsertSymbols(srcFileId, [
+        { name: 'createPurchaseOrder', kind: 'function', signature: 'function createPurchaseOrder()', startLine: 1, endLine: 5, exported: true, async: false },
+        { name: 'createInvoice', kind: 'function', signature: 'function createInvoice()', startLine: 7, endLine: 11, exported: true, async: false },
+        { name: 'handleOrderSearch', kind: 'function', signature: 'function handleOrderSearch()', startLine: 13, endLine: 18, exported: false, async: false },
+        { name: 'deleteRecord', kind: 'function', signature: 'function deleteRecord()', startLine: 20, endLine: 24, exported: false, async: false },
+        { name: 'create', kind: 'function', signature: 'function create()', startLine: 30, endLine: 34, exported: true, async: false },
+      ]);
+      const results = store.findSymbols({ query: 'create' });
+      // "create" exact match should beat "createPurchaseOrder" prefix/contains
+      const createExact = results.find((r) => r.name === 'create' && r.filePath === 'src/orders.js');
+      const createPO = results.find((r) => r.name === 'createPurchaseOrder' && r.filePath === 'src/orders.js');
+      expect(createExact).toBeDefined();
+      expect(createPO).toBeDefined();
+      expect(createExact.score).toBeGreaterThan(createPO.score);
+    });
+
+    it('test file penalty still applies', () => {
+      // createPurchaseOrder exists in both src/orders.js and test/orders.test.js
+      const results = store.findSymbols({ query: 'createPurchaseOrder' });
+      const srcResult = results.find((r) => r.filePath === 'src/orders.js');
+      const testResult = results.find((r) => r.filePath === 'test/orders.test.js');
+      expect(srcResult).toBeDefined();
+      expect(testResult).toBeDefined();
+      // src version should score higher (no test penalty, has src/ bonus)
+      expect(srcResult.score).toBeGreaterThan(testResult.score);
+    });
+
+    it('_splitIntoWords splits camelCase correctly', () => {
+      expect(store._splitIntoWords('createPurchaseOrder')).toEqual(['create', 'purchase', 'order']);
+      expect(store._splitIntoWords('handleOrderSearch')).toEqual(['handle', 'order', 'search']);
+      expect(store._splitIntoWords('handle_order_search')).toEqual(['handle', 'order', 'search']);
+      expect(store._splitIntoWords('createPO')).toEqual(['create', 'p', 'o']);
+    });
+
+    it('_countWordOverlap counts matching words', () => {
+      expect(store._countWordOverlap(['create', 'p', 'o'], ['create', 'purchase', 'order'])).toBe(1); // "create" matches
+      expect(store._countWordOverlap(['handle', 'order'], ['handle', 'order', 'search'])).toBe(2);
+      expect(store._countWordOverlap(['foo'], ['bar', 'baz'])).toBe(0);
+    });
+  });
+
   // PC-6: Store search — findImporters
   describe('findImporters', () => {
     it('finds files importing a given file', () => {

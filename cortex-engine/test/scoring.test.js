@@ -29,15 +29,17 @@ describe('Scored search', () => {
   // PC-11: exact match scores higher than contains
   it('exact match scores highest', () => {
     const results = store.findSymbols({ query: 'listOrders' });
-    // Exact match should score 100
+    // Exact match should come first and score at least 100 (word-overlap bonus may raise it further)
     expect(results[0].name).toBe('listOrders');
-    expect(results[0].score).toBe(100);
+    expect(results[0].score).toBeGreaterThanOrEqual(100);
+    // The exact match must score strictly higher than any non-exact match
+    const nonExact = results.filter(r => r.name !== 'listOrders');
+    nonExact.forEach(r => expect(results[0].score).toBeGreaterThan(r.score));
     // Now test contains: 'Order' matches all three order functions
     const orderResults = store.findSymbols({ query: 'Order' });
     expect(orderResults.length).toBeGreaterThanOrEqual(3);
     // getOrderList starts with 'get' not 'Order', so prefix match scores higher
-    const prefixed = orderResults.filter(r => r.score >= 75);
-    const contained = orderResults.filter(r => r.score === 50);
+    const contained = orderResults.filter(r => r.score < 75);
     expect(contained.length).toBeGreaterThan(0);
   });
 

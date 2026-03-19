@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0] - 2026-03-19
+
+### Added
+- **tree-sitter Python** — full AST parsing: classes, methods, decorators, async functions, imports (tree-sitter-python@0.21.0)
+- **tree-sitter Go** — full AST parsing: structs, methods, interfaces, functions, constants, type declarations (tree-sitter-go@0.21.2)
+- **tree-sitter Rust** — full AST parsing: impl blocks, structs, enums, traits, type aliases, macros, use declarations (tree-sitter-rust@0.21.0)
+- **Fuzzy word-overlap scoring** — "createPO" now finds "createPurchaseOrder" via camelCase/snake_case word splitting with +25 per matching word
+- **Module-level route_handler** — JS files with `router.post()` at module scope now get tagged by scanning source lines and attributing to enclosing symbols
+
+### Changed
+- **6 tree-sitter languages** (was 3) — JS, TS, TSX, Python, Go, Rust all get full AST with nested symbol extraction
+- **262 tests** across 17 suites (was 211 across 16)
+- Python removed from regex fallback — now uses tree-sitter for full symbol depth
+
 ## [1.1.0] - 2026-03-19
 
 ### Added

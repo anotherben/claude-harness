@@ -235,3 +235,83 @@ describe('Tagger', () => {
     });
   });
 });
+
+// ── Module-level route_handler via tagSourceSymbols ─────────────────────────
+// Tests for the new tagSourceSymbols() method which attributes module-level
+// router.post/get calls to the enclosing symbol by line number.
+
+describe('tagSourceSymbols — module-level route attribution', () => {
+  let tagger;
+  beforeAll(() => { tagger = new Tagger(); });
+
+  function makeSymbol(name, startLine, endLine) {
+    return { name, kind: 'function', signature: 'function ' + name + '()', startLine, endLine, exported: false, async: false };
+  }
+
+  it('tags a factory function that contains router.post() as route_handler', () => {
+    const lines = [
+      'function registerRoutes(router) {',
+      '  router.post("/orders", async (req, res) => {',
+      '    res.json({});',
+      '  });',
+      '}',
+    ];
+    const code = lines.join('\n');
+    const symbols = [makeSymbol('registerRoutes', 1, 5)];
+    const tags = tagger.tagSourceSymbols(symbols, code);
+    expect(tags.get('registerRoutes')).toContain('route_handler');
+  });
+
+  it('tags a symbol that contains a router.get() call inside its line range', () => {
+    const lines = [
+      'const handleOrders = async (req, res) => {',
+      '  router.get("/orders", async (innerReq, innerRes) => {',
+      '    innerRes.json([]);',
+      '  });',
+      '};',
+    ];
+    const code = lines.join('\n');
+    const symbols = [makeSymbol('handleOrders', 1, 5)];
+    const tags = tagger.tagSourceSymbols(symbols, code);
+    expect(tags.get('handleOrders')).toContain('route_handler');
+  });
+
+  it('does NOT tag a symbol when the router.post() line is outside its range', () => {
+    const lines = [
+      'function helper() {',
+      '  return 42;',
+      '}',
+      'router.post("/x", (req, res) => res.json({}));',
+    ];
+    const code = lines.join('\n');
+    const symbols = [makeSymbol('helper', 1, 3)];
+    const tags = tagger.tagSourceSymbols(symbols, code);
+    expect((tags.get('helper') || []).includes('route_handler')).toBe(false);
+  });
+
+  it('does not duplicate route_handler when multiple route lines are in same symbol', () => {
+    const lines = [
+      'function allRoutes(router) {',
+      '  router.post("/a", (req, res) => res.json({}));',
+      '  router.get("/b", (req, res) => res.json({}));',
+      '}',
+    ];
+    const code = lines.join('\n');
+    const symbols = [makeSymbol('allRoutes', 1, 4)];
+    const tags = tagger.tagSourceSymbols(symbols, code);
+    const routeTags = (tags.get('allRoutes') || []).filter(t => t === 'route_handler');
+    expect(routeTags.length).toBe(1);
+  });
+
+  it('returns empty map when no symbols are provided', () => {
+    const code = 'router.post("/x", (req, res) => res.json({}));';
+    const tags = tagger.tagSourceSymbols([], code);
+    expect(tags.size).toBe(0);
+  });
+
+  it('existing TS decorator tagSource tests still work independently', () => {
+    const tsCode = "@Post('/users')\nasync createUser(@Body() dto) {\n  return null;\n}";
+    const sourceTags = tagger.tagSource(tsCode);
+    expect(sourceTags.some(t => t.tag === 'route_handler')).toBe(true);
+  });
+});

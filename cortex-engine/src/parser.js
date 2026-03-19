@@ -1,6 +1,9 @@
 const TreeSitter = require('tree-sitter');
 const JavaScript = require('tree-sitter-javascript');
 const TypeScriptLang = require('tree-sitter-typescript');
+const Python = require('tree-sitter-python');
+const Go = require('tree-sitter-go');
+const Rust = require('tree-sitter-rust');
 
 const EXTENSION_TO_LANGUAGE = {
   '.js': 'javascript',
@@ -10,6 +13,8 @@ const EXTENSION_TO_LANGUAGE = {
   '.ts': 'typescript',
   '.tsx': 'tsx',
   '.py': 'python',
+  '.go': 'go',
+  '.rs': 'rust',
   '.sh': 'bash',
   '.bash': 'bash',
   '.sql': 'sql',
@@ -31,10 +36,10 @@ const EXTENSION_TO_LANGUAGE = {
 };
 
 // Languages with tree-sitter AST support
-const TREE_SITTER_LANGUAGES = new Set(['javascript', 'typescript', 'tsx']);
+const TREE_SITTER_LANGUAGES = new Set(['javascript', 'typescript', 'tsx', 'python', 'go', 'rust']);
 
 // Languages using regex fallback
-const REGEX_LANGUAGES = new Set(['python', 'bash', 'sql', 'css', 'text']);
+const REGEX_LANGUAGES = new Set(['bash', 'sql', 'css', 'text']);
 
 class Parser {
   constructor() {
@@ -42,6 +47,9 @@ class Parser {
       javascript: JavaScript,
       typescript: TypeScriptLang.typescript,
       tsx: TypeScriptLang.tsx,
+      python: Python,
+      go: Go,
+      rust: Rust,
     };
     this._lastLang = null;
     this._parser = null;
@@ -103,6 +111,8 @@ class Parser {
 
     // Track whether this node defines a new scope for nested children
     let newScope = parentScope;
+    // Set to true for nodes whose extractors already handle child iteration
+    let skipChildRecurse = false;
 
     switch (node.type) {
       case 'function_declaration':
@@ -124,9 +134,9 @@ class Parser {
         this._extractExpressionImport(node, content, imports);
         break;
 
-      // TypeScript-specific: import declarations
+      // TypeScript / Python import declarations
       case 'import_statement':
-        this._extractTsImport(node, imports);
+        this._extractImportStatement(node, imports);
         break;
 
       // TypeScript-specific: type aliases, interfaces, enums
@@ -167,7 +177,111 @@ class Parser {
         }
         break;
       }
+
+      // --- Python-specific node types ---
+      case 'class_definition':
+        this._extractPyClass(node, content, symbols, parentScope);
+        newScope = this._getNodeName(node) || parentScope;
+        skipChildRecurse = true; // _extractPyClass handles methods
+        break;
+
+      case 'function_definition':
+        this._extractPyFunction(node, content, symbols, parentScope);
+        newScope = this._getNodeName(node) || parentScope;
+        break;
+
+      case 'decorated_definition': {
+        // decorated_definition wraps a function_definition or class_definition
+        const definition = node.childForFieldName('definition');
+        if (definition) {
+          const decorators = [];
+          for (let i = 0; i < node.childCount; i++) {
+            if (node.child(i).type === 'decorator') {
+              decorators.push(node.child(i).text);
+            }
+          }
+          if (definition.type === 'function_definition') {
+            this._extractPyFunction(definition, content, symbols, parentScope, decorators);
+            newScope = this._getNodeName(definition) || parentScope;
+          } else if (definition.type === 'class_definition') {
+            this._extractPyClass(definition, content, symbols, parentScope, decorators);
+            newScope = this._getNodeName(definition) || parentScope;
+          }
+        }
+        skipChildRecurse = true; // handled above
+        break;
+      }
+
+      case 'import_from_statement':
+        this._extractPyFromImport(node, imports);
+        break;
+
+      // --- Go-specific node types ---
+      case 'method_declaration':
+        this._extractGoMethod(node, content, symbols);
+        newScope = this._getNodeName(node) || parentScope;
+        break;
+
+      case 'type_declaration':
+        this._extractGoTypeDecl(node, content, symbols, parentScope);
+        break;
+
+      case 'const_declaration':
+      case 'var_declaration':
+        this._extractGoVarConst(node, content, symbols, parentScope);
+        break;
+
+      case 'import_declaration':
+        this._extractGoImport(node, imports);
+        break;
+
+      // --- Rust-specific node types ---
+      case 'function_item':
+        this._extractRustFunction(node, content, symbols, parentScope);
+        newScope = this._getNodeName(node) || parentScope;
+        break;
+
+      case 'impl_item':
+        this._extractRustImpl(node, content, symbols);
+        newScope = this._getRustImplName(node) || parentScope;
+        skipChildRecurse = true; // _extractRustImpl handles methods
+        break;
+
+      case 'struct_item':
+        this._extractRustStruct(node, content, symbols, parentScope);
+        break;
+
+      case 'enum_item':
+        this._extractRustEnum(node, content, symbols, parentScope);
+        skipChildRecurse = true; // _extractRustEnum handles variants
+        break;
+
+      case 'trait_item':
+        this._extractRustTrait(node, content, symbols, parentScope);
+        newScope = this._getNodeName(node) || parentScope;
+        skipChildRecurse = true; // _extractRustTrait handles methods
+        break;
+
+      case 'type_item':
+        this._extractRustTypeAlias(node, content, symbols, parentScope);
+        break;
+
+      case 'const_item':
+      case 'static_item':
+        this._extractRustConstStatic(node, content, symbols, parentScope);
+        break;
+
+      case 'macro_definition':
+        this._extractRustMacro(node, content, symbols, parentScope);
+        break;
+
+      case 'use_declaration':
+        this._extractRustUse(node, imports);
+        break;
     }
+
+    // Skip recursion for nodes whose extractors already handle child iteration
+    if (skipChildRecurse) return;
 
     // Recurse into children -- we now recurse into ALL node types to find nested symbols.
     for (let i = 0; i < node.childCount; i++) {
@@ -180,7 +294,17 @@ class Parser {
           node.type === 'function_expression' ||
           node.type === 'interface_declaration' ||
           node.type === 'enum_declaration' ||
-          node.type === 'variable_declarator') {
+          node.type === 'variable_declarator' ||
+          // Python scope nodes
+          node.type === 'class_definition' ||
+          node.type === 'function_definition' ||
+          node.type === 'decorated_definition' ||
+          // Go scope nodes
+          node.type === 'method_declaration' ||
+          // Rust scope nodes
+          node.type === 'impl_item' ||
+          node.type === 'trait_item' ||
+          node.type === 'function_item') {
         this._walk(child, content, symbols, imports, newScope);
       } else {
         this._walk(child, content, symbols, imports, parentScope);
@@ -462,14 +586,533 @@ class Parser {
     }
   }
 
+  // --- Python-specific extractors ---
+
+  _extractPyClass(node, content, symbols, parentScope, decorators = []) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const sig = decorators.length
+      ? `${decorators.join('\n')}\nclass ${nameNode.text}`
+      : `class ${nameNode.text}`;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'class',
+      signature: sig,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    // Extract methods from the class body
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'function_definition') {
+          this._extractPyFunction(member, content, symbols, nameNode.text);
+        } else if (member.type === 'decorated_definition') {
+          const def = member.childForFieldName('definition');
+          if (def && def.type === 'function_definition') {
+            const decos = [];
+            for (let j = 0; j < member.childCount; j++) {
+              if (member.child(j).type === 'decorator') {
+                decos.push(member.child(j).text);
+              }
+            }
+            this._extractPyFunction(def, content, symbols, nameNode.text, decos);
+          }
+        }
+      }
+    }
+  }
+
+  _extractPyFunction(node, content, symbols, parentScope, decorators = []) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const isAsync = node.children.some((c) => c.type === 'async');
+    const params = node.childForFieldName('parameters');
+    const paramText = params ? params.text.replace(/^\(|\)$/g, '') : '';
+
+    // Determine if it's a method (inside a class) by checking parentScope
+    const kind = parentScope ? 'method' : 'function';
+
+    const sig = decorators.length
+      ? `${decorators.join('\n')}\ndef ${nameNode.text}(${paramText})`
+      : `def ${nameNode.text}(${paramText})`;
+
+    symbols.push({
+      name: nameNode.text,
+      kind,
+      signature: sig,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: isAsync,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractPyFromImport(node, imports) {
+    // from module import name1, name2
+    const moduleNode = node.childForFieldName('module_name');
+    if (!moduleNode) return;
+    const source = moduleNode.text;
+
+    const identifiers = [];
+    for (let i = 0; i < node.childCount; i++) {
+      const child = node.child(i);
+      if (child.type === 'dotted_name' && child !== moduleNode) {
+        identifiers.push(child.text);
+      } else if (child.type === 'aliased_import') {
+        const nameNode = child.childForFieldName('name');
+        if (nameNode) identifiers.push(nameNode.text);
+      }
+    }
+
+    imports.push({ source, identifiers, line: node.startPosition.row + 1 });
+  }
+
+  // Handles both TS import_statement and Python import_statement
+  _extractImportStatement(node, imports) {
+    // TS: import { x } from 'y' -- has a 'source' field
+    const sourceNode = node.childForFieldName('source');
+    if (sourceNode) {
+      // TypeScript-style import
+      this._extractTsImport(node, imports);
+      return;
+    }
+
+    // Python: import os, import os.path -- has a 'name' field with dotted_name
+    const nameNode = node.childForFieldName('name');
+    if (nameNode) {
+      const identifiers = [nameNode.text];
+      // Check for additional imported names (import os, sys)
+      for (let i = 0; i < node.childCount; i++) {
+        const child = node.child(i);
+        if (child.type === 'dotted_name' && child !== nameNode) {
+          identifiers.push(child.text);
+        }
+      }
+      imports.push({
+        source: nameNode.text,
+        identifiers,
+        line: node.startPosition.row + 1,
+      });
+    }
+  }
+
+  // --- Go-specific extractors ---
+
+  _extractGoMethod(node, content, symbols) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    // Extract the receiver type name
+    const receiver = node.childForFieldName('receiver');
+    let receiverType = null;
+    if (receiver) {
+      for (let i = 0; i < receiver.childCount; i++) {
+        const param = receiver.child(i);
+        if (param.type === 'parameter_declaration') {
+          const typeNode = param.childForFieldName('type');
+          if (typeNode) {
+            // Strip pointer (*) to get the base type name
+            receiverType = typeNode.text.replace(/^\*/, '');
+          }
+        }
+      }
+    }
+
+    const params = node.childForFieldName('parameters');
+    const paramText = params ? params.text.replace(/^\(|\)$/g, '') : '';
+    const result = node.childForFieldName('result');
+    const sig = result
+      ? `func (${receiver ? receiver.text.replace(/^\(|\)$/g, '') : ''}) ${nameNode.text}(${paramText}) ${result.text}`
+      : `func (${receiver ? receiver.text.replace(/^\(|\)$/g, '') : ''}) ${nameNode.text}(${paramText})`;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'method',
+      signature: sig,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: receiverType || null,
+      children: [],
+    });
+  }
+
+  _extractGoTypeDecl(node, content, symbols, parentScope) {
+    // type_declaration contains type_spec children
+    for (let i = 0; i < node.childCount; i++) {
+      const spec = node.child(i);
+      if (spec.type !== 'type_spec') continue;
+
+      const nameNode = spec.childForFieldName('name');
+      const typeNode = spec.childForFieldName('type');
+      if (!nameNode) continue;
+
+      let kind = 'type';
+      let sig = `type ${nameNode.text}`;
+
+      if (typeNode) {
+        if (typeNode.type === 'struct_type') {
+          kind = 'class'; // struct as class equivalent
+          sig = `type ${nameNode.text} struct`;
+        } else if (typeNode.type === 'interface_type') {
+          kind = 'interface';
+          sig = `type ${nameNode.text} interface`;
+
+          // Extract interface method signatures
+          for (let j = 0; j < typeNode.childCount; j++) {
+            const member = typeNode.child(j);
+            if (member.type === 'method_elem') {
+              const methodName = member.childForFieldName('name');
+              if (methodName) {
+                const params = member.childForFieldName('parameters');
+                const result = member.childForFieldName('result');
+                const methodSig = result
+                  ? `${methodName.text}(${params ? params.text.replace(/^\(|\)$/g, '') : ''}) ${result.text}`
+                  : `${methodName.text}(${params ? params.text.replace(/^\(|\)$/g, '') : ''})`;
+                symbols.push({
+                  name: methodName.text,
+                  kind: 'method',
+                  signature: methodSig,
+                  startLine: member.startPosition.row + 1,
+                  endLine: member.endPosition.row + 1,
+                  exported: false,
+                  async: false,
+                  parentClass: nameNode.text,
+                  children: [],
+                });
+              }
+            }
+          }
+        } else {
+          sig = `type ${nameNode.text} ${typeNode.text}`;
+        }
+      }
+
+      symbols.push({
+        name: nameNode.text,
+        kind,
+        signature: sig,
+        startLine: spec.startPosition.row + 1,
+        endLine: spec.endPosition.row + 1,
+        exported: false,
+        async: false,
+        parentClass: parentScope || null,
+        children: [],
+      });
+    }
+  }
+
+  _extractGoVarConst(node, content, symbols, parentScope) {
+    const isConst = node.type === 'const_declaration';
+    for (let i = 0; i < node.childCount; i++) {
+      const spec = node.child(i);
+      if (spec.type !== 'const_spec' && spec.type !== 'var_spec') continue;
+
+      const nameNode = spec.childForFieldName('name');
+      if (!nameNode) continue;
+
+      symbols.push({
+        name: nameNode.text,
+        kind: isConst ? 'constant' : 'variable',
+        signature: this._getSignature(spec, content),
+        startLine: spec.startPosition.row + 1,
+        endLine: spec.endPosition.row + 1,
+        exported: false,
+        async: false,
+        parentClass: parentScope || null,
+        children: [],
+      });
+    }
+  }
+
+  _extractGoImport(node, imports) {
+    for (let i = 0; i < node.childCount; i++) {
+      const child = node.child(i);
+      if (child.type === 'import_spec') {
+        const pathNode = child.children.find((c) => c.type === 'interpreted_string_literal');
+        if (pathNode) {
+          const source = pathNode.text.replace(/^"|"$/g, '');
+          imports.push({ source, identifiers: [], line: child.startPosition.row + 1 });
+        }
+      } else if (child.type === 'import_spec_list') {
+        for (let j = 0; j < child.childCount; j++) {
+          const spec = child.child(j);
+          if (spec.type === 'import_spec') {
+            const pathNode = spec.children.find((c) => c.type === 'interpreted_string_literal');
+            if (pathNode) {
+              const source = pathNode.text.replace(/^"|"$/g, '');
+              imports.push({ source, identifiers: [], line: spec.startPosition.row + 1 });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // --- Rust-specific extractors ---
+
+  _extractRustFunction(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const params = node.childForFieldName('parameters');
+    const paramText = params ? params.text.replace(/^\(|\)$/g, '') : '';
+    const returnType = node.childForFieldName('return_type');
+    const sig = returnType
+      ? `fn ${nameNode.text}(${paramText}) -> ${returnType.text}`
+      : `fn ${nameNode.text}(${paramText})`;
+
+    // Check if this is inside an impl block
+    const isMethod = parentScope != null;
+    // Check for &self or &mut self in params to determine method vs associated function
+    const hasSelf = params && params.text.includes('self');
+
+    symbols.push({
+      name: nameNode.text,
+      kind: isMethod ? 'method' : 'function',
+      signature: sig,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: node.children.some((c) => c.type === 'visibility_modifier'),
+      async: node.children.some((c) => c.type === 'async'),
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _getRustImplName(node) {
+    const typeNode = node.childForFieldName('type');
+    return typeNode ? typeNode.text : null;
+  }
+
+  _extractRustImpl(node, content, symbols) {
+    const typeNode = node.childForFieldName('type');
+    if (!typeNode) return;
+
+    const traitNode = node.childForFieldName('trait');
+    const sig = traitNode
+      ? `impl ${traitNode.text} for ${typeNode.text}`
+      : `impl ${typeNode.text}`;
+
+    symbols.push({
+      name: typeNode.text,
+      kind: 'impl',
+      signature: sig,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: null,
+      children: [],
+    });
+
+    // Extract methods from the impl body
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'function_item') {
+          this._extractRustFunction(member, content, symbols, typeNode.text);
+        }
+      }
+    }
+  }
+
+  _extractRustStruct(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'class', // struct as class equivalent
+      signature: `struct ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: node.children.some((c) => c.type === 'visibility_modifier'),
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractRustEnum(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'enum',
+      signature: `enum ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: node.children.some((c) => c.type === 'visibility_modifier'),
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    // Extract enum variants
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const variant = body.child(i);
+        if (variant.type === 'enum_variant') {
+          const variantName = variant.childForFieldName('name');
+          if (variantName) {
+            symbols.push({
+              name: variantName.text,
+              kind: 'enum_member',
+              signature: variant.text.replace(/,$/, '').trim(),
+              startLine: variant.startPosition.row + 1,
+              endLine: variant.endPosition.row + 1,
+              exported: false,
+              async: false,
+              parentClass: nameNode.text,
+              children: [],
+            });
+          }
+        }
+      }
+    }
+  }
+
+  _extractRustTrait(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'trait',
+      signature: `trait ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: node.children.some((c) => c.type === 'visibility_modifier'),
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+
+    // Extract trait method signatures
+    const body = node.childForFieldName('body');
+    if (body) {
+      for (let i = 0; i < body.childCount; i++) {
+        const member = body.child(i);
+        if (member.type === 'function_signature_item' || member.type === 'function_item') {
+          const methodName = member.childForFieldName('name');
+          if (methodName) {
+            const params = member.childForFieldName('parameters');
+            const paramText = params ? params.text.replace(/^\(|\)$/g, '') : '';
+            const returnType = member.childForFieldName('return_type');
+            const sig = returnType
+              ? `fn ${methodName.text}(${paramText}) -> ${returnType.text}`
+              : `fn ${methodName.text}(${paramText})`;
+            symbols.push({
+              name: methodName.text,
+              kind: 'method',
+              signature: sig,
+              startLine: member.startPosition.row + 1,
+              endLine: member.endPosition.row + 1,
+              exported: false,
+              async: false,
+              parentClass: nameNode.text,
+              children: [],
+            });
+          }
+        }
+      }
+    }
+  }
+
+  _extractRustTypeAlias(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'type',
+      signature: this._getSignature(node, content),
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: node.children.some((c) => c.type === 'visibility_modifier'),
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractRustConstStatic(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    const isConst = node.type === 'const_item';
+    symbols.push({
+      name: nameNode.text,
+      kind: isConst ? 'constant' : 'variable',
+      signature: this._getSignature(node, content),
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: node.children.some((c) => c.type === 'visibility_modifier'),
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractRustMacro(node, content, symbols, parentScope) {
+    const nameNode = node.childForFieldName('name');
+    if (!nameNode) return;
+
+    symbols.push({
+      name: nameNode.text,
+      kind: 'macro',
+      signature: `macro_rules! ${nameNode.text}`,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      exported: false,
+      async: false,
+      parentClass: parentScope || null,
+      children: [],
+    });
+  }
+
+  _extractRustUse(node, imports) {
+    // Extract the use path text, stripping 'use' and ';'
+    const text = node.text.replace(/^use\s+/, '').replace(/;$/, '').trim();
+    imports.push({
+      source: text,
+      identifiers: [],
+      line: node.startPosition.row + 1,
+    });
+  }
+
   // --- Parent-child linking ---
 
   _linkChildren(symbols) {
     const byName = new Map();
     // First pass: index all symbols by name, preferring top-level (no parent)
+    // When duplicates exist at top level, prefer class/struct/trait/enum over impl
     for (const sym of symbols) {
       if (!sym.parentClass) {
-        byName.set(sym.name, sym);
+        const existing = byName.get(sym.name);
+        if (!existing) {
+          byName.set(sym.name, sym);
+        } else if (sym.kind !== 'impl' && existing.kind === 'impl') {
+          // Prefer the non-impl symbol for child linking
+          byName.set(sym.name, sym);
+        }
       }
     }
     // Second pass: index remaining symbols that aren't yet indexed

@@ -37,7 +37,7 @@ async function createServer(projectRoot, config = {}) {
   const resolvedConfig = resolveConfig(projectRoot, config);
   const server = new McpServer({
     name: 'cortex-engine',
-    version: '1.1.0',
+    version: '1.2.0',
   });
 
   const engine = new IndexEngine(projectRoot, resolvedConfig);

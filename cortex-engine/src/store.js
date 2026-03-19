@@ -175,10 +175,74 @@ class Store {
     return topLevel;
   }
 
+  /**
+   * Split a camelCase or snake_case identifier into lowercase words.
+   * "createPurchaseOrder" → ["create", "purchase", "order"]
+   * "handle_order_search" → ["handle", "order", "search"]
+   * "createPO" → ["create", "p", "o"]  (each uppercase run is its own word)
+   */
+  _splitIntoWords(name) {
+    // Split on underscores and camelCase boundaries (before each uppercase letter)
+    return name
+      .replace(/([A-Z])/g, ' $1')  // insert space before each uppercase letter
+      .split(/[\s_]+/)              // split on spaces (from above) and underscores
+      .map((w) => w.toLowerCase())
+      .filter((w) => w.length > 0);
+  }
+
+  /**
+   * Count how many words from queryWords appear in symbolWords (case-insensitive,
+   * already lowercased before this call).
+   */
+  _countWordOverlap(queryWords, symbolWords) {
+    const symbolSet = new Set(symbolWords);
+    let count = 0;
+    for (const qw of queryWords) {
+      if (symbolSet.has(qw)) count++;
+    }
+    return count;
+  }
+
   findSymbols({ query, kind, exportedOnly, limit, sourceTypes } = {}) {
     if (!query || typeof query !== 'string') return [];
     // Default to code + query source types for search
     const types = sourceTypes || ['code', 'query'];
+
+    // Split the query into component words for word-overlap scoring.
+    // Handles:
+    //   - space-separated queries: "create order" → ["create", "order"]
+    //   - camelCase tokens: "createPO" → ["create", "p", "o"]
+    //   - snake_case tokens: "handle_order" → ["handle", "order"]
+    const queryWords = query
+      .split(/\s+/)
+      .flatMap((part) => this._splitIntoWords(part))
+      .filter((w) => w.length > 0);
+
+    // Build SQL WHERE clause:
+    //   - Always include the full query substring match (original behaviour).
+    //   - Additionally include per-word substring matches so that "createPO"
+    //     (split to ["create","p","o"]) can surface "createPurchaseOrder" via
+    //     the "create" word even though '%createPO%' does not match it.
+    // This broadens the candidate set; post-processing then rescores and re-sorts.
+    const params = {
+      pattern: `%${query}%`,
+      prefix: `${query}%`,
+      exact: query,
+    };
+
+    // Build per-word LIKE patterns (only for words with length > 1 to avoid
+    // flooding results with single-char matches from short camelCase initials).
+    const wordPatternClauses = [];
+    queryWords.forEach((w, i) => {
+      if (w.length > 1) {
+        params[`wpattern_${i}`] = `%${w}%`;
+        wordPatternClauses.push(`s.name LIKE @wpattern_${i}`);
+      }
+    });
+
+    const whereClause = wordPatternClauses.length > 0
+      ? `(s.name LIKE @pattern OR ${wordPatternClauses.join(' OR ')})`
+      : 's.name LIKE @pattern';
 
     let sql = `
       SELECT s.*, s.source_type AS sourceType, f.path AS filePath,
@@ -198,13 +262,8 @@ class Store {
         END) AS score
       FROM symbols s
       JOIN files f ON f.id = s.file_id
-      WHERE s.name LIKE @pattern
+      WHERE ${whereClause}
     `;
-    const params = {
-      pattern: `%${query}%`,
-      prefix: `${query}%`,
-      exact: query,
-    };
 
     // source_type filter
     if (types.length > 0) {
@@ -220,13 +279,23 @@ class Store {
     if (exportedOnly) {
       sql += ' AND s.exported = 1';
     }
+    // Do not apply LIMIT in SQL when we need to post-process and re-sort.
     sql += ' ORDER BY score DESC, s.name';
-    if (limit) {
-      sql += ' LIMIT @limit';
-      params.limit = limit;
+
+    const rows = this.db.prepare(sql).all(params);
+
+    // Post-processing: add word-overlap bonus (+25 per matching word) and re-sort.
+    // This runs in O(n) on the result set.
+    if (queryWords.length > 0) {
+      for (const row of rows) {
+        const symbolWords = this._splitIntoWords(row.name);
+        const overlap = this._countWordOverlap(queryWords, symbolWords);
+        row.score = (row.score || 0) + overlap * 25;
+      }
+      rows.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
     }
 
-    return this.db.prepare(sql).all(params);
+    return limit ? rows.slice(0, limit) : rows;
   }
 
   findImporters(filePath) {
