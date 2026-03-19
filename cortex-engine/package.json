@@ -18,7 +18,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "better-sqlite3": "^12.8.0",
     "chokidar": "^3.6.0",
     "simple-git": "^3.33.0",
