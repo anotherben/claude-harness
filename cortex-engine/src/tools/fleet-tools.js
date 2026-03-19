@@ -1,16 +1,10 @@
+const { z } = require('zod');
 const { performance } = require('../telemetry');
 
 function registerFleetTools(server, fleet, telemetry) {
-  server.registerTool('cortex_ingest_handover', {
-    description: 'Extract lessons from a worker handover and add to knowledge store',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        markdown: { type: 'string', description: 'Handover markdown content' },
-        worker_id: { type: 'string', description: 'ID of the worker that produced the handover' },
-      },
-      required: ['markdown', 'worker_id'],
-    },
+  server.tool('cortex_ingest_handover', 'Extract lessons from a worker handover and add to knowledge store', {
+    markdown: z.string().describe('Handover markdown content'),
+    worker_id: z.string().describe('ID of the worker that produced the handover'),
   }, async (params) => {
     const t0 = performance.now();
     const count = fleet.ingestHandover(params.markdown, params.worker_id);
@@ -20,10 +14,7 @@ function registerFleetTools(server, fleet, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_learning_report', {
-    description: 'Fleet-wide learning report: annotations, lessons, patterns by author and target',
-    inputSchema: { type: 'object', properties: {} },
-  }, async () => {
+  server.tool('cortex_learning_report', 'Fleet-wide learning report: annotations, lessons, patterns by author and target', {}, async () => {
     const t0 = performance.now();
     const report = fleet.learningReport();
     const result = { content: [{ type: 'text', text: JSON.stringify(report, null, 2) }] };
@@ -32,15 +23,8 @@ function registerFleetTools(server, fleet, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_fleet_mcp_config', {
-    description: 'Get MCP server config for cortex-engine (for conductor dispatch)',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        project_root: { type: 'string', description: 'Project root path' },
-      },
-      required: ['project_root'],
-    },
+  server.tool('cortex_fleet_mcp_config', 'Get MCP server config for cortex-engine (for conductor dispatch)', {
+    project_root: z.string().describe('Project root path'),
   }, async (params) => {
     const t0 = performance.now();
     const config = fleet.getMcpConfig(params.project_root);

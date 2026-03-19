@@ -1,15 +1,10 @@
+const { z } = require('zod');
 const { estimateTokens, performance } = require('../telemetry');
 
 function registerFileTools(server, engine, telemetry) {
-  server.registerTool('cortex_tree', {
-    description: 'File tree with optional path prefix filter',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        path_prefix: { type: 'string', description: 'Filter by path prefix' },
-        depth: { type: 'number', description: 'Max depth' },
-      },
-    },
+  server.tool('cortex_tree', 'File tree with optional path prefix filter', {
+    path_prefix: z.string().optional().describe('Filter by path prefix'),
+    depth: z.number().optional().describe('Max depth'),
   }, async (params) => {
     const t0 = performance.now();
     const files = engine.getTree(params.path_prefix, params.depth);
@@ -19,15 +14,8 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_outline', {
-    description: 'List symbols in a file with kind, signature, line range',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        file_path: { type: 'string', description: 'Relative file path' },
-      },
-      required: ['file_path'],
-    },
+  server.tool('cortex_outline', 'List symbols in a file with kind, signature, line range', {
+    file_path: z.string().describe('Relative file path'),
   }, async (params) => {
     const t0 = performance.now();
     const outline = engine.getOutline(params.file_path);
@@ -43,16 +31,9 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
-  server.registerTool('cortex_read_symbol', {
-    description: 'Read the full source code of a single symbol',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        file_path: { type: 'string', description: 'Relative file path' },
-        symbol_name: { type: 'string', description: 'Symbol name' },
-      },
-      required: ['file_path', 'symbol_name'],
-    },
+  server.tool('cortex_read_symbol', 'Read the full source code of a single symbol', {
+    file_path: z.string().describe('Relative file path'),
+    symbol_name: z.string().describe('Symbol name'),
   }, async (params) => {
     const t0 = performance.now();
     const source = engine.readSymbol(params.file_path, params.symbol_name);
@@ -73,25 +54,11 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
-  server.registerTool('cortex_read_symbols', {
-    description: 'Batch read multiple symbols',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        specs: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              filePath: { type: 'string' },
-              symbolName: { type: 'string' },
-            },
-          },
-          description: 'Array of {filePath, symbolName} to read',
-        },
-      },
-      required: ['specs'],
-    },
+  server.tool('cortex_read_symbols', 'Batch read multiple symbols', {
+    specs: z.array(z.object({
+      filePath: z.string(),
+      symbolName: z.string(),
+    })).describe('Array of {filePath, symbolName} to read'),
   }, async (params) => {
     const t0 = performance.now();
     const results = engine.readSymbols(params.specs);
@@ -114,17 +81,10 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.registerTool('cortex_read_range', {
-    description: 'Read a specific line range from a file',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        file_path: { type: 'string' },
-        start_line: { type: 'number' },
-        end_line: { type: 'number' },
-      },
-      required: ['file_path', 'start_line', 'end_line'],
-    },
+  server.tool('cortex_read_range', 'Read a specific line range from a file', {
+    file_path: z.string().describe('File path'),
+    start_line: z.number().describe('Start line'),
+    end_line: z.number().describe('End line'),
   }, async (params) => {
     const t0 = performance.now();
     const text = engine.readRange(params.file_path, params.start_line, params.end_line);
@@ -145,16 +105,9 @@ function registerFileTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, fileTokens, responseTokens, elapsed);
   });
 
-  server.registerTool('cortex_context', {
-    description: 'Get a symbol with its imports and file outline',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        file_path: { type: 'string' },
-        symbol_name: { type: 'string' },
-      },
-      required: ['file_path', 'symbol_name'],
-    },
+  server.tool('cortex_context', 'Get a symbol with its imports and file outline', {
+    file_path: z.string().describe('File path'),
+    symbol_name: z.string().describe('Symbol name'),
   }, async (params) => {
     const t0 = performance.now();
     const ctx = engine.getContext(params.file_path, params.symbol_name);

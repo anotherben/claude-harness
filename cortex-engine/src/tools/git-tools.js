@@ -1,10 +1,8 @@
+const { z } = require('zod');
 const { performance } = require('../telemetry');
 
 function registerGitTools(server, gitIntegration, telemetry) {
-  server.registerTool('cortex_git_status', {
-    description: 'Current branch, uncommitted changes, staged files',
-    inputSchema: { type: 'object', properties: {} },
-  }, async () => {
+  server.tool('cortex_git_status', 'Current branch, uncommitted changes, staged files', {}, async () => {
     const t0 = performance.now();
     const status = await gitIntegration.status();
     const result = { content: [{ type: 'text', text: JSON.stringify(status, null, 2) }] };
@@ -13,16 +11,10 @@ function registerGitTools(server, gitIntegration, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_git_diff', {
-    description: 'Diff vs branch/commit. Omit params for uncommitted changes.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        from: { type: 'string', description: 'Base branch or commit' },
-        to: { type: 'string', description: 'Target branch or commit (default: HEAD)' },
-        file: { type: 'string', description: 'Specific file to diff' },
-      },
-    },
+  server.tool('cortex_git_diff', 'Diff vs branch/commit. Omit params for uncommitted changes.', {
+    from: z.string().optional().describe('Base branch or commit'),
+    to: z.string().optional().describe('Target branch or commit (default: HEAD)'),
+    file: z.string().optional().describe('Specific file to diff'),
   }, async (params) => {
     const t0 = performance.now();
     const diff = await gitIntegration.diff(params);
@@ -32,15 +24,8 @@ function registerGitTools(server, gitIntegration, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_git_blame', {
-    description: 'Who last changed each line of a file and why',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        file_path: { type: 'string', description: 'File to blame' },
-      },
-      required: ['file_path'],
-    },
+  server.tool('cortex_git_blame', 'Who last changed each line of a file and why', {
+    file_path: z.string().describe('File to blame'),
   }, async (params) => {
     const t0 = performance.now();
     try {
@@ -57,15 +42,9 @@ function registerGitTools(server, gitIntegration, telemetry) {
     }
   });
 
-  server.registerTool('cortex_git_log', {
-    description: 'Recent commits, optionally filtered by file',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        file: { type: 'string', description: 'Filter to commits touching this file' },
-        max_count: { type: 'number', description: 'Max commits to return (default: 20)' },
-      },
-    },
+  server.tool('cortex_git_log', 'Recent commits, optionally filtered by file', {
+    file: z.string().optional().describe('Filter to commits touching this file'),
+    max_count: z.number().optional().describe('Max commits to return (default: 20)'),
   }, async (params) => {
     const t0 = performance.now();
     const log = await gitIntegration.log({
@@ -78,15 +57,9 @@ function registerGitTools(server, gitIntegration, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_git_hotspots', {
-    description: 'Files with most edits and bug fixes in recent history',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        days: { type: 'number', description: 'Lookback period in days (default: 30)' },
-        limit: { type: 'number', description: 'Max results (default: 20)' },
-      },
-    },
+  server.tool('cortex_git_hotspots', 'Files with most edits and bug fixes in recent history', {
+    days: z.number().optional().describe('Lookback period in days (default: 30)'),
+    limit: z.number().optional().describe('Max results (default: 20)'),
   }, async (params) => {
     const t0 = performance.now();
     const hotspots = await gitIntegration.hotspots({

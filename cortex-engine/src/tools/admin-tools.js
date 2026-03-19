@@ -1,10 +1,8 @@
+const { z } = require('zod');
 const { performance } = require('../telemetry');
 
 function registerAdminTools(server, engine, telemetry) {
-  server.registerTool('cortex_status', {
-    description: 'Index health: file count, symbol count, staleness',
-    inputSchema: { type: 'object', properties: {} },
-  }, async () => {
+  server.tool('cortex_status', 'Index health: file count, symbol count, staleness', {}, async () => {
     const t0 = performance.now();
     const stats = engine.getStatus();
     const result = { content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }] };
@@ -13,14 +11,8 @@ function registerAdminTools(server, engine, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_reindex', {
-    description: 'Force reindex of a specific file or all files',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        file_path: { type: 'string', description: 'Specific file to reindex (optional — omit for all)' },
-      },
-    },
+  server.tool('cortex_reindex', 'Force reindex of a specific file or all files', {
+    file_path: z.string().optional().describe('Specific file to reindex (optional - omit for all)'),
   }, async (params) => {
     const t0 = performance.now();
     engine.reindex(params.file_path);
@@ -30,10 +22,7 @@ function registerAdminTools(server, engine, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_telemetry', {
-    description: 'Cumulative token-savings telemetry: queries, tokens saved, cost avoided',
-    inputSchema: { type: 'object', properties: {} },
-  }, async () => {
+  server.tool('cortex_telemetry', 'Cumulative token-savings telemetry: queries, tokens saved, cost avoided', {}, async () => {
     const t0 = performance.now();
     if (!telemetry) {
       return { content: [{ type: 'text', text: JSON.stringify({ error: 'Telemetry not initialized' }, null, 2) }] };
@@ -44,10 +33,7 @@ function registerAdminTools(server, engine, telemetry) {
     return telemetry.wrapTimingOnly(result, elapsed);
   });
 
-  server.registerTool('cortex_diagnostic', {
-    description: 'Run diagnostic checks on the cortex-engine index to verify it is working correctly',
-    inputSchema: { type: 'object', properties: {} },
-  }, async () => {
+  server.tool('cortex_diagnostic', 'Run diagnostic checks on the cortex-engine index to verify it is working correctly', {}, async () => {
     const status = engine.getStatus();
     const db = engine.store.db;
     const checks = [];

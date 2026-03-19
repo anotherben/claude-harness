@@ -60,11 +60,8 @@ module.exports = { useFoo };
     // Collect tool registrations
     tools = {};
     const mockServer = {
-      tool: (name, schema, handler) => {
-        tools[name] = { schema, handler };
-      },
-      registerTool: (name, config, handler) => {
-        tools[name] = { schema: config, handler };
+      tool: (name, description, zodShape, handler) => {
+        tools[name] = { description, zodShape, handler };
       },
     };
 

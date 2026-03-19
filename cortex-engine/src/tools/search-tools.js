@@ -1,23 +1,13 @@
+const { z } = require('zod');
 const { estimateTokens, performance } = require('../telemetry');
 
 function registerSearchTools(server, engine, telemetry) {
-  server.registerTool('cortex_find_symbol', {
-    description: 'Search symbols by name across all indexed files',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        query: { type: 'string', description: 'Search query (substring match)' },
-        kind: { type: 'string', description: 'Filter by kind: function, class, method, variable' },
-        exported_only: { type: 'boolean', description: 'Only exported symbols' },
-        limit: { type: 'number', description: 'Max results' },
-        source_types: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Filter by source type: code, config, query, docs, markup, style. Defaults to [code, query].',
-        },
-      },
-      required: ['query'],
-    },
+  server.tool('cortex_find_symbol', 'Search symbols by name across all indexed files', {
+    query: z.string().describe('Search query (substring match)'),
+    kind: z.string().optional().describe('Filter by kind: function, class, method, variable'),
+    exported_only: z.boolean().optional().describe('Only exported symbols'),
+    limit: z.number().optional().describe('Max results'),
+    source_types: z.array(z.string()).optional().describe('Filter by source type: code, config, query, docs, markup, style. Defaults to [code, query].'),
   }, async (params) => {
     const t0 = performance.now();
     const results = engine.findSymbol(params.query, {
@@ -45,16 +35,9 @@ function registerSearchTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.registerTool('cortex_find_text', {
-    description: 'Regex/literal search across indexed file contents',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        pattern: { type: 'string', description: 'Search pattern (regex)' },
-        case_sensitive: { type: 'boolean' },
-      },
-      required: ['pattern'],
-    },
+  server.tool('cortex_find_text', 'Regex/literal search across indexed file contents', {
+    pattern: z.string().describe('Search pattern (regex)'),
+    case_sensitive: z.boolean().optional().describe('Case sensitive search'),
   }, async (params) => {
     const t0 = performance.now();
     const results = engine.findText(params.pattern, {
@@ -79,15 +62,8 @@ function registerSearchTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.registerTool('cortex_find_references', {
-    description: 'Find all references to an identifier across files',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        identifier: { type: 'string', description: 'Identifier to search for' },
-      },
-      required: ['identifier'],
-    },
+  server.tool('cortex_find_references', 'Find all references to an identifier across files', {
+    identifier: z.string().describe('Identifier to search for'),
   }, async (params) => {
     const t0 = performance.now();
     const results = engine.findReferences(params.identifier);
@@ -109,15 +85,8 @@ function registerSearchTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.registerTool('cortex_find_importers', {
-    description: 'Find files that import a given file',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        file_path: { type: 'string', description: 'File path to find importers of' },
-      },
-      required: ['file_path'],
-    },
+  server.tool('cortex_find_importers', 'Find files that import a given file', {
+    file_path: z.string().describe('File path to find importers of'),
   }, async (params) => {
     const t0 = performance.now();
     const results = engine.findImporters(params.file_path);
@@ -137,16 +106,9 @@ function registerSearchTools(server, engine, telemetry) {
     return telemetry.wrapResult(result, totalFileTokens, responseTokens, elapsed);
   });
 
-  server.registerTool('cortex_find_by_tag', {
-    description: 'Find symbols by semantic tag (db_read, db_write, unscoped_query, route_handler, etc.)',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        tag: { type: 'string', description: 'Semantic tag to search for' },
-        limit: { type: 'number', description: 'Max results' },
-      },
-      required: ['tag'],
-    },
+  server.tool('cortex_find_by_tag', 'Find symbols by semantic tag (db_read, db_write, unscoped_query, route_handler, etc.)', {
+    tag: z.string().describe('Semantic tag to search for'),
+    limit: z.number().optional().describe('Max results'),
   }, async (params) => {
     const t0 = performance.now();
     const results = engine.findByTag(params.tag, params.limit);
