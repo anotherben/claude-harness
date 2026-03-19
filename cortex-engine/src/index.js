@@ -144,6 +144,7 @@ class IndexEngine {
   }
 
   readRange(filePath, startLine, endLine) {
+    if (!filePath || typeof filePath !== "string") return null;
     let content = this._contentCache.get(filePath);
     if (!content) {
       const absPath = path.join(this.projectRoot, filePath);

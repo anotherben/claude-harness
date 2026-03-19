@@ -176,6 +176,7 @@ class Store {
   }
 
   findSymbols({ query, kind, exportedOnly, limit, sourceTypes } = {}) {
+    if (!query || typeof query !== 'string') return [];
     // Default to code + query source types for search
     const types = sourceTypes || ['code', 'query'];
 
@@ -221,6 +222,7 @@ class Store {
   }
 
   findImporters(filePath) {
+    if (!filePath || typeof filePath !== 'string') return [];
     const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
 
     let base = filePath;
