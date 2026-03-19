@@ -2,86 +2,267 @@
 
 **Vibe prompt in, enterprise quality out.**
 
-A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
+A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) and [Codex CLI](https://github.com/openai/codex) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
 
-Now with **Cortex Engine** — a code intelligence MCP server that makes agents 100x faster at understanding your codebase.
+Built-in **Cortex Engine** — a code intelligence MCP server that makes agents 100x faster at understanding any codebase, in any language.
+
+---
+
+## Architecture
 
 ```
-You: "Add invoice PDF export"
+claude-harness/
+├── cortex-engine/        # Code intelligence MCP server (25 tools, real-time index)
+├── hooks/                # 29 shell hooks — quality gates that block bad actions
+├── skills/               # 30 Claude Code skills — enterprise dev pipeline
+├── conductor/            # Fleet orchestration — multi-agent dispatch + merge
+├── plugins/              # Domain-specific guard skills (Shopify, REX SOAP, SQL)
+├── templates/            # Review lenses, prompt templates
+├── tiers/                # Enforcement level configs (lite, standard, full)
+├── install.sh            # One-command project setup
+└── harness.json          # Harness metadata
+```
 
-claude-harness enforces:
-discover → brainstorm → plan → contract → build → review → verify → compound
-    |           |          |        |         |        |         |         |
-  learn      design     steps   test spec   TDD    separate   evidence  capture
-  codebase   the idea   + files  first      red→    agent     50+ suites learning
-                                 green      reviews  passing
+### How It All Fits Together
+
+```
+                    ┌─────────────────────────────┐
+                    │       Your Project           │
+                    │  (any language, any stack)    │
+                    └──────────┬──────────────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+     ┌────────▼──────┐ ┌──────▼───────┐ ┌──────▼──────┐
+     │  Cortex Engine │ │   29 Hooks   │ │  30 Skills  │
+     │  (MCP server)  │ │ (shell gates)│ │ (workflow)  │
+     └────────┬──────┘ └──────┬───────┘ └──────┬──────┘
+              │                │                │
+              │    ┌───────────┼────────────┐   │
+              │    │     Obsidian Vault      │   │
+              │    │  (work items, evidence, │   │
+              │    │   knowledge, standards) │   │
+              │    └────────────────────────┘   │
+              │                                 │
+              └──────────┬──────────────────────┘
+                         │
+                ┌────────▼────────┐
+                │    Conductor    │
+                │ (fleet dispatch │
+                │  multi-agent)   │
+                └─────────────────┘
 ```
 
 ---
 
-## What's Inside
+## Cortex Engine
 
-### Cortex Engine — Code Intelligence MCP
+**The Problem:** AI agents waste 96% of tokens reading entire files when they need one function.
 
-Your AI agent reads a 400-line file. That's ~4,000 tokens. It needed one 15-line function — 150 tokens. **96% waste on every read.**
+**The Solution:** A real-time code intelligence index. Agents query specific symbols instead of reading files. <1ms per query.
 
-Cortex Engine indexes your entire codebase into a SQLite store with AST parsing, semantic tags, and a real-time file watcher. Agents query specific symbols instead of reading files.
+| Feature | What It Does |
+|---------|-------------|
+| **25 MCP tools** | File reading, symbol search, git context, semantic tags, knowledge store, fleet coordination |
+| **Real-time watcher** | Index updates in milliseconds after edits — no manual reindex |
+| **20 file types** | JS, TS, TSX, JSX, Python, Bash, SQL, CSS, JSON, YAML, GraphQL, Markdown, TOML, XML, HTML, Vue, Svelte, SCSS, LESS + configurable |
+| **Nested symbols** | Factory methods, local helpers, inner types, interface members — not just top-level exports |
+| **Semantic tags** | `route_handler`, `db_write`, `db_read`, `unscoped_query`, `auth`, `validated` — deterministic, free, configurable |
+| **Symbol categories** | `code`, `config`, `docs`, `markup`, `style`, `query` — search filters by type |
+| **Import graph** | Who imports this file? Cross-extension resolution (.js→.ts), barrel exports |
+| **Git integration** | Blame, hotspots, diff, log — "who changed this and why?" |
+| **Knowledge store** | Persistent annotations that survive across sessions — agents learn from each other |
+| **Fleet support** | Handover ingestion, learning reports, MCP config generation for worker agents |
 
-| | Without Cortex | With Cortex |
-|---|---|---|
-| **Read a function** | `Read` entire file (4,000 tokens) | `cortex_read_symbol` (150 tokens) |
-| **Find a handler** | Grep + read 5 files (~20,000 tokens) | `cortex_find_symbol` (<1ms, 200 tokens) |
-| **Check data safety** | Manual code review | `cortex_find_by_tag("unscoped_query")` |
-| **After editing** | Manual reindex | Real-time watcher updates in milliseconds |
-| **Cross-session memory** | Gone on restart | `cortex_annotate` persists knowledge forever |
+### Quick Start
 
-**25 MCP tools** across 6 categories — file reading, symbol search, git context, semantic tags, knowledge persistence, and fleet coordination. Full details in [`cortex-engine/README.md`](cortex-engine/README.md).
-
-### Enforcement Hooks — Quality Gates That Can't Be Skipped
-
-Every action Claude takes passes through shell hooks. Exit code 2 = hard block. No exceptions.
-
-| When | What's Enforced |
-|------|----------------|
-| Edit source file | Tests must exist. Plan must be approved. |
-| `git commit` | Fresh test evidence. Lint clean. Matching HEAD. |
-| `git merge` | Must read both sides of conflicts. Must test between merges. |
-| Invoke review skill | Builder cannot review their own work. |
-| Invoke enterprise skill | Pipeline stages cannot be skipped. |
-
-12-26 hooks depending on your tier. All shell scripts, all auditable, all customizable.
-
-### Enterprise Pipeline — 9 Stages from Idea to Shipped
-
-| Stage | Skill | What It Does |
-|-------|-------|-------------|
-| 1 | `/enterprise-discover` | Learn the codebase — produces stack profile |
-| 2 | `/enterprise-brainstorm` | Turn vague ideas into Technical Design Documents |
-| 3 | `/enterprise-plan` | Granular steps with exact file paths and code |
-| 4 | `/enterprise-contract` | Mechanical spec — every postcondition traceable to a test |
-| 5 | `/enterprise-build` | Strict TDD: write test, fail, write code, pass |
-| 6 | `/enterprise-review` | Two-stage: spec compliance then code quality |
-| 7 | `/enterprise-forge` | Adversarial review with 5 attack lenses |
-| 8 | `/enterprise-verify` | Evidence-based verification (7-check sequence) |
-| 9 | `/enterprise-compound` | Capture institutional knowledge for future sessions |
-
-Or just run **`/enterprise`** and the orchestrator handles routing.
-
-### Evidence System — Proof, Not Claims
-
-```
-run tests → auto-capture JSON evidence → edit source → evidence auto-stales
-  → try to commit → hook reads JSON → stale? BLOCKED. Wrong HEAD? BLOCKED.
+```bash
+npm install   # in cortex-engine/
 ```
 
-No markdown. No `/tmp` markers. Hooks parse JSON — they can't be fooled by natural language.
+**Claude Code** — add to `~/.claude.json`:
+```json
+{
+  "mcpServers": {
+    "cortex-engine": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/claude-harness/cortex-engine/src/server.js"]
+    }
+  }
+}
+```
+
+**Codex CLI:**
+```bash
+codex mcp add cortex-engine -- node /path/to/claude-harness/cortex-engine/src/server.js
+```
+
+No project path needed — Cortex uses the working directory automatically.
+
+### Dependencies
+
+| Package | Version | Why |
+|---------|---------|-----|
+| `@modelcontextprotocol/sdk` | ^1.27.1 | MCP protocol (stdio transport) |
+| `better-sqlite3` | ^12.8.0 | Embedded DB, WAL mode, synchronous reads |
+| `chokidar` | ^3.6.0 | Real-time file watcher (pinned v3 — v5 is ESM-only) |
+| `simple-git` | ^3.33.0 | Git blame, log, diff, status |
+| `tree-sitter` | ^0.21.1 | AST parsing for JS/TS/TSX (pinned — peer deps) |
+| `tree-sitter-javascript` | ^0.21.4 | JS grammar |
+| `tree-sitter-typescript` | ^0.23.2 | TS + TSX grammars |
+| `jest` | ^30.3.0 | Test runner (dev only, maxWorkers=14 for tree-sitter isolation) |
+
+Full details: [`cortex-engine/README.md`](cortex-engine/README.md)
+
+### Benchmarks (vs jcodemunch)
+
+Tested on helpdesk (JS, 7,320 files) and firearm-systems (TS, 754 files):
+
+| Metric | Cortex Engine | jcodemunch |
+|--------|:---:|:---:|
+| **Query speed** | <1ms | 11-43ms |
+| **Symbol search (createPurchaseOrder)** | 5 hits | 2 hits |
+| **Import graph (purchasing.js)** | 8 importers | 0 importers |
+| **Index freshness** | Real-time watcher | Manual reindex |
+| **Semantic tags** | 6 tag types, configurable | None |
+| **Knowledge persistence** | Annotations + Obsidian sync | None |
+| **Git awareness** | Blame, hotspots, diff, log | None |
+| **File types** | 20 | 7 |
+| **Symbol categories** | 6 (code, config, docs, markup, style, query) | 1 |
+| **Languages (tree-sitter)** | JS, TS, TSX | JS, TS, TSX, + 30 via jcodemunch |
+| **Languages (regex fallback)** | Python, Bash, SQL, CSS, JSON, YAML, GraphQL, MD, TOML, XML, HTML, Vue, Svelte | N/A |
+
+---
+
+## Hooks (29 Shell Scripts)
+
+Every action passes through hooks. Exit code 2 = hard block. No exceptions.
+
+### Lifecycle Hooks
+
+| Hook | Trigger | What It Enforces |
+|------|---------|-----------------|
+| `require-tdd-before-source-edit.sh` | Edit/Write source file | Tests must exist or be staged |
+| `require-plan-before-edits.sh` | Edit/Write source file | Plan must be approved first |
+| `require-vault-for-edits.sh` | Edit/Write source file | Vault context must be loaded |
+| `protect-files.sh` | Edit/Write any file | .env, auth.js, evidence files blocked |
+| `require-test-evidence.sh` | git commit | Fresh JSON evidence, matching HEAD |
+| `require-lint-clean.sh` | git commit | Linter must pass on staged files |
+| `pre-commit-gate.sh` | git commit (3+ files) | Test files or evidence required |
+| `require-vault-update.sh` | git commit/push | Vault must be updated for source changes |
+| `enforce-merge-protocol.sh` | git merge | Must read both sides of conflicts |
+| `pre-merge-test-check.sh` | git merge | Must test between merges |
+| `post-merge-test-gate.sh` | After git merge | Flags merge-pending-test state |
+| `require-independent-review.sh` | Invoke enterprise-review | Builder cannot review own work |
+| `enforce-enterprise-pipeline.sh` | Invoke enterprise-* skill | Pipeline stages cannot be skipped |
+| `enforce-vault-context.sh` | Invoke enterprise-* skill | Must run /vault-context first |
+| `suggest-cortex.sh` | Read source file >50 lines | Suggests cortex-engine MCP instead |
+| `cortex-reindex.sh` | After Edit/Write source file | Notes cortex has real-time watcher |
+| `record-test-evidence.sh` | After test commands | Auto-records JSON evidence |
+| `invalidate-after-git-op.sh` | After git operations | Auto-marks evidence stale |
+| `mark-plan-approved.sh` | After ExitPlanMode | Sets plan-approved marker |
+| `mark-skill-invoked.sh` | After Skill invocation | Tracks skill usage |
+| `context-inject.sh` | Before Bash commands | Injects relevant context |
+| `context-fade.sh` | After any tool use | Manages context window |
+| `refine-prompt.sh` | User prompt submit | LLM-driven clarity check |
+| `auto-format.sh` | After Edit/Write | Auto-formats changed files |
+| `post-compact-handover.sh` | After context compaction | Escalates handover urgency |
+| `ensure-environment.sh` | Session start | Validates environment setup |
+| `pre-agent-dispatch.sh` | Before agent dispatch | Validates dispatch parameters |
+| `post-agent-checklist.sh` | After agent completes | Validates agent output |
+
+### Fleet Hooks (in `hooks/fleet/`)
+
+Multi-agent orchestration hooks for the conductor system.
+
+---
+
+## Skills (30 Claude Code Skills)
+
+### Enterprise Pipeline (9 stages)
+
+The core development workflow — from vague idea to shipped, tested, reviewed code:
+
+```
+/enterprise-discover  →  Learn codebase (stack profile)
+/enterprise-brainstorm → Design (Technical Design Document)
+/enterprise-plan      →  Implementation steps (exact file paths + code)
+/enterprise-contract  →  Mechanical spec (every postcondition traceable)
+/enterprise-build     →  Strict TDD (RED → GREEN for every postcondition)
+/enterprise-review    →  Two-stage review (spec compliance → code quality)
+/enterprise-forge     →  Adversarial review (5 attack lenses)
+/enterprise-verify    →  Evidence-based verification (7-check sequence)
+/enterprise-compound  →  Capture institutional knowledge
+```
+
+Or just run **`/enterprise`** — the orchestrator handles routing, mode selection (Solo/Subagent/Swarm), and stage transitions.
+
+### Quick-Start Workflows
+
+| Skill | What It Does |
+|-------|-------------|
+| `/full-cycle` | Interactive planning → autonomous execution with review checkpoints |
+| `/full-cycle-tdd` | TDD-first — every task starts with a failing test |
+| `/full-cycle-fast` | Lightweight — analyze, plan, build, verify. No ceremony. |
+| `/full-cycle-research` | 8+ parallel research agents before writing any code |
+
+### Vault Management
+
+| Skill | What It Does |
+|-------|-------------|
+| `/vault-context` | Pre-session project briefing from Obsidian vault |
+| `/vault-capture` | Quick-capture bugs, tasks, ideas into the right queue |
+| `/vault-update` | Move items through lifecycle (close, block, archive) |
+| `/vault-status` | Cross-project dashboard — all queues at a glance |
+| `/vault-triage` | Walk through inbox items one-by-one |
+| `/vault-sweep` | Weekly accountability — stale items, dead branches |
+| `/vault-init` | Bootstrap new project with full vault+enterprise ecosystem |
+| `/vault-process` | Autonomous queue processor — picks up and works items |
+
+### Code Quality
+
+| Skill | What It Does |
+|-------|-------------|
+| `/enterprise-debug` | 4-phase systematic debugging with blast radius scan |
+| `/scope-check` | Verify no scope creep before commit |
+| `/contract-manager` | Produce mechanical spec before any implementation |
+| `/patch-or-fix` | Evaluate if a fix addresses root cause or just patches |
+| `/run-verification` | Full verification pipeline (lint, tests, E2E) |
+
+### Architecture & Planning
+
+| Skill | What It Does |
+|-------|-------------|
+| `/senior-architect` | System design, tech stack decisions, architecture diagrams |
+| `/but-why` | Drill down to root causes before acting |
+| `/enterprise-harness` | Orchestrator-facing 10-check quality gate |
+
+### Domain Guards (Plugins)
+
+| Skill | What It Does |
+|-------|-------------|
+| `/sql-guard` | Multi-tenant scoping, parameterized queries, type-safe joins |
+| `/shopify-integration` | HMAC verification, idempotency, rate limits, fulfillment state machine |
+| `/rex-soap-protocol` | Dual SOAP protocol detection, three-endpoint architecture |
+| `/deploy-checklist` | Migrations, env vars, rollback plan |
+| `/create-migration` | Numbered SQL migration following project conventions |
+
+### Session Management
+
+| Skill | What It Does |
+|-------|-------------|
+| `/session-heartbeat` | Progress review, scope drift detection, task switching |
+| `/handover-writer` | Save state when approaching context limits |
+| `/fleet-commander` | Multi-agent dispatch with model routing and merge coordination |
+| `/cortex-index` | Index or reindex current project with cortex-engine |
 
 ---
 
 ## Tiers
 
-| | Lite | Standard | Full |
-|---|:---:|:---:|:---:|
+| Feature | Lite | Standard | Full |
+|---------|:---:|:---:|:---:|
 | Obsidian vault integration | * | * | * |
 | TDD enforcement | * | * | * |
 | Evidence system (JSON proof, auto-staleness) | * | * | * |
@@ -94,7 +275,62 @@ No markdown. No `/tmp` markers. Hooks parse JSON — they can't be fooled by nat
 | Context management (injection + fade + handover) | | | * |
 | **Cortex Engine** (code intelligence MCP) | | | * |
 | Fleet orchestration (multi-agent dispatch) | | | * |
-| Prompt refinement (LLM-driven clarity check) | | | * |
+| Prompt refinement (clarity check) | | | * |
+
+---
+
+## Evidence System
+
+The harness doesn't trust claims. It verifies them mechanically.
+
+```
+Developer runs tests
+       │
+       ▼
+record-test-evidence.sh captures JSON:
+  suite count, pass/fail, git HEAD, test mode, timestamp
+       │
+       ▼
+Writes to .claude/evidence/last-test-run.json
+       │
+       ▼
+Developer edits source file
+       │
+       ▼
+Evidence auto-marked stale (file mod time > evidence time)
+       │
+       ▼
+Developer tries to commit
+       │
+       ▼
+require-test-evidence.sh reads JSON:
+  Stale? → BLOCKED
+  Wrong HEAD? → BLOCKED
+  Not enough suites? → BLOCKED
+  All green? → ALLOWED
+```
+
+---
+
+## Conductor (Fleet Orchestration)
+
+Dispatch multiple agents working in parallel on isolated worktrees:
+
+```
+/fleet-commander → analyze tasks → assign models → create worktrees → dispatch agents
+                                                                           │
+                                                           ┌───────────────┼───────────────┐
+                                                           │               │               │
+                                                      Agent 1         Agent 2         Agent 3
+                                                      (Opus)         (Sonnet)         (Haiku)
+                                                    feat/auth      feat/api        feat/tests
+                                                           │               │               │
+                                                           └───────────────┼───────────────┘
+                                                                           │
+                                                                    merge coordinator
+```
+
+Each agent gets: isolated git worktree, cortex-engine MCP, vault claim, skill set.
 
 ---
 
@@ -104,73 +340,24 @@ No markdown. No `/tmp` markers. Hooks parse JSON — they can't be fooled by nat
 # Clone
 git clone https://github.com/anotherben/claude-harness.git ~/claude-harness
 
-# Install into your project
+# Install cortex-engine
+cd ~/claude-harness/cortex-engine && npm install
+
+# Install harness into your project
 cd your-project
 ~/claude-harness/install.sh
-
-# The installer:
-# 1. Detects your project type (Node, Python, Go, Rust)
-# 2. Asks you to choose a tier
-# 3. Copies hooks and skills to .claude/
-# 4. Generates settings.json
-# 5. Updates CLAUDE.md
-```
-
-### Add Cortex Engine
-
-```json
-// ~/.claude.json → mcpServers
-{
-  "cortex-engine": {
-    "type": "stdio",
-    "command": "node",
-    "args": ["~/claude-harness/cortex-engine/src/server.js", "/path/to/your/project"]
-  }
-}
-```
-
----
-
-## What Gets Installed
-
-```
-your-project/
-└── .claude/
-    ├── hooks/              # Shell hooks that enforce quality gates
-    ├── skills/             # Claude Code skills for enterprise workflow
-    ├── evidence/           # JSON test evidence (auto-populated by hooks)
-    ├── enterprise-state/   # Pipeline state machine
-    └── settings.json       # Hook wiring
-```
-
-## Writing Custom Hooks
-
-Hooks are shell scripts that receive JSON on stdin:
-
-```bash
-#!/bin/bash
-INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | python3 -c "
-  import sys,json
-  print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))
-")
-
-if [ some_condition ]; then
-  echo "BLOCKED: reason"
-  exit 2  # hard block — Claude cannot proceed
-fi
-
-exit 0  # allow
 ```
 
 ## Requirements
 
-- [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) CLI
-- [Obsidian](https://obsidian.md/) (work item tracking + knowledge capture)
-- `python3` (hooks use it for JSON parsing)
-- `git`
-- Your project's test runner and linter
-- Node.js 20+ (for Cortex Engine)
+| Requirement | Why |
+|---|---|
+| [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) or [Codex CLI](https://github.com/openai/codex) | Host environment |
+| [Obsidian](https://obsidian.md/) | Work item tracking + knowledge capture |
+| Node.js 20+ | Cortex Engine runtime |
+| `python3` | Hooks use it for JSON parsing |
+| `git` | Version control, worktrees |
+| Your project's test runner + linter | Evidence system hooks into whatever you use |
 
 ## License
 
