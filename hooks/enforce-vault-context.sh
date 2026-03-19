@@ -24,6 +24,14 @@ esac
 
 # Check if vault-context was already loaded this session
 MARKER="/tmp/claude-vault-context-${SESSION_ID}"
+
+# Stale marker check: marker must be less than 2 hours old
+if [ -f "$MARKER" ]; then
+  MARKER_AGE=$(( $(date +%s) - $(stat -f %m "$MARKER" 2>/dev/null || stat -c %Y "$MARKER" 2>/dev/null || echo 0) ))
+  if [ "$MARKER_AGE" -gt 7200 ]; then
+    rm -f "$MARKER"  # Stale marker — remove it
+  fi
+fi
 if [ -f "$MARKER" ]; then
   exit 0
 fi

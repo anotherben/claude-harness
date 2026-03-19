@@ -12,6 +12,14 @@ if [ -z "$SESSION_ID" ]; then exit 0; fi
 
 # Check if parent has vault context
 PARENT_VAULT_MARKER="/tmp/claude-vault-context-${SESSION_ID}"
+
+# Stale marker check: marker must be less than 2 hours old
+if [ -f "$MARKER" ]; then
+  MARKER_AGE=$(( $(date +%s) - $(stat -f %m "$MARKER" 2>/dev/null || stat -c %Y "$MARKER" 2>/dev/null || echo 0) ))
+  if [ "$MARKER_AGE" -gt 7200 ]; then
+    rm -f "$MARKER"  # Stale marker — remove it
+  fi
+fi
 if [ ! -f "$PARENT_VAULT_MARKER" ]; then
   echo "WARNING: Dispatching agent without vault context. Subagent will be blocked from editing source files." >&2
   echo "Run /vault-context or /vault-capture first, then dispatch." >&2
