@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
 const IndexEngine = require('./index');
@@ -12,17 +14,38 @@ const Fleet = require('./fleet');
 const { registerFleetTools } = require('./tools/fleet-tools');
 const { Telemetry } = require('./telemetry');
 
+function resolveConfig(projectRoot, config = {}) {
+  const resolved = {
+    dbPath: '.cortex/index.db',
+    ...config,
+  };
+
+  const projectConfigPath = path.join(projectRoot, 'cortex.config.js');
+  if (fs.existsSync(projectConfigPath)) {
+    Object.assign(resolved, require(projectConfigPath));
+    Object.assign(resolved, config);
+  }
+
+  return resolved;
+}
+
+function resolveProjectRoot(projectRoot, env = process.env, cwd = process.cwd()) {
+  return projectRoot || env.PWD || env.INIT_CWD || cwd;
+}
+
 async function createServer(projectRoot, config = {}) {
+  const resolvedConfig = resolveConfig(projectRoot, config);
   const server = new McpServer({
     name: 'cortex-engine',
     version: '1.0.0',
   });
 
-  const engine = new IndexEngine(projectRoot, config);
-  await engine.ready();
+  const engine = new IndexEngine(projectRoot, resolvedConfig);
+  // Don't await ready() here — let the MCP connection establish first.
+  // engine.ready() is called in the startup sequence below.
 
   const git = new GitIntegration(projectRoot);
-  const knowledge = new Knowledge(projectRoot, config);
+  const knowledge = new Knowledge(projectRoot, resolvedConfig);
   const fleet = new Fleet(knowledge);
   const telemetry = new Telemetry(projectRoot);
 
@@ -47,14 +70,16 @@ async function createServer(projectRoot, config = {}) {
 
 // Run as MCP stdio server if invoked directly
 if (require.main === module) {
-  const projectRoot = process.argv[2] || process.cwd();
-  createServer(projectRoot).then(async ({ server }) => {
+  const projectRoot = resolveProjectRoot(process.argv[2]);
+  createServer(projectRoot).then(async ({ server, engine }) => {
     const transport = new StdioServerTransport();
     await server.connect(transport);
+    // Index AFTER MCP handshake so we don't timeout
+    await engine.ready();
   }).catch((err) => {
     console.error('Failed to start cortex-engine:', err);
     process.exit(1);
   });
 }
 
-module.exports = { createServer };
+module.exports = { createServer, resolveConfig, resolveProjectRoot };
