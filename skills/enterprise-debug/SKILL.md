@@ -27,9 +27,9 @@ Three rules:
 3. **Prove the fix with TDD.** A fix without a failing test is a guess.
 
 ```
-/enterprise-debug PO double receipt — receiveItems called twice in saveAndReceive.js
-/enterprise-debug test failure: syncAlertService.test.js "rejects empty category" now fails
-/enterprise-debug users report wrong stock quantities on product detail page
+/enterprise-debug order duplication — processOrder called twice in orderHandler.js
+/enterprise-debug test failure: userService.test.js "rejects empty email" now fails
+/enterprise-debug users report wrong totals on dashboard page
 ```
 
 ---
@@ -114,6 +114,30 @@ Verification: [how to test the hypothesis — a query, a log check, a test]
 ```
 
 Run the verification. If the hypothesis is wrong, form a new one. Do not proceed to Phase 2 until the hypothesis is verified.
+
+### Step 3b: Challenge the Hypothesis (But-Why)
+
+Before accepting your hypothesis, drill into it:
+
+```
+HYPOTHESIS CHALLENGE
+════════════════════
+1. "Why do I think this is the root cause and not a symptom?"
+   → If you can't distinguish, you're looking at a symptom. Go deeper.
+
+2. "Why would this only break now / in this case?"
+   → If you can't explain the trigger, the hypothesis is incomplete.
+
+3. "What would I expect to see if this hypothesis is WRONG?"
+   → Look for that counter-evidence. If you find it, hypothesis is wrong.
+
+4. "Says who?" — Is my evidence from actual code/data, or from assumption?
+   → Re-read the actual code. Don't trust your memory of it.
+```
+
+Only proceed to Phase 2 when:
+- You can answer all 4 questions concretely
+- OR you've explicitly marked the hypothesis as "weak — needs blast radius to confirm"
 
 ### Step 4: Find Working Examples
 
@@ -268,6 +292,28 @@ Verification: fixing this one thing fixes ALL of the following:
   3. [blast radius finding 2]
   ...
 ```
+
+### Root Cause Chain (Drill Until Bedrock)
+
+Trace the root cause through successive "why" questions until you hit bedrock:
+
+```
+ROOT CAUSE CHAIN
+════════════════
+"Why does [bug] happen?"
+→ Because [immediate cause]
+   "Why does [immediate cause] happen?"
+   → Because [deeper cause]
+      "Why does [deeper cause] exist?"
+      → Because [design decision / missing guard / copied code / etc.]
+         "Why was that decision made?"
+         → [BEDROCK: deliberate trade-off / nobody knew / legacy / constraint]
+```
+
+**Interpret the bedrock:**
+- **"Nobody knew" or "legacy"** — that's a process gap, note it in Prevention
+- **"Deliberate trade-off"** — the fix must respect the original constraint
+- **"Copied from X"** — X is in the blast radius (Phase 2 should have caught it)
 
 ### Verify the Root Cause
 
