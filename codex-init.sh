@@ -1,0 +1,407 @@
+#!/bin/bash
+set -euo pipefail
+
+# codex-init — Set up Codex agent infrastructure in any repo
+# Usage: ~/claude-harness/codex-init.sh [--auto] [target-dir]
+#        ~/claude-harness/codex-init.sh --auto           # non-interactive (for Codex/CI)
+#        ~/claude-harness/codex-init.sh --auto /path/to  # non-interactive + target
+#        ~/claude-harness/codex-init.sh                  # interactive (for humans)
+#
+# Creates:
+#   .codex/enterprise-state/         — agent session state
+#   .codex/repo-skills/              — project-prefixed enterprise skills
+#   AGENTS.md                        — Codex guardrails
+#   .codex/enterprise-state/local-machine.json  — machine-specific config
+#
+# Updates existing installations when re-run (skills refreshed, AGENTS.md preserved)
+
+VERSION="1.0.0"
+HARNESS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AUTO=false
+
+# Parse args
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --auto|-y|--yes) AUTO=true; shift ;;
+    *) break ;;
+  esac
+done
+
+TARGET_DIR="${1:-.}"
+TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
+
+# --- Colors ---
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+info()  { echo -e "${BLUE}→${NC} $1"; }
+ok()    { echo -e "${GREEN}✓${NC} $1"; }
+warn()  { echo -e "${YELLOW}!${NC} $1"; }
+err()   { echo -e "${RED}✗${NC} $1"; }
+
+echo ""
+echo -e "${CYAN}codex-init${NC} v${VERSION}"
+echo "Set up Codex agent infrastructure in any repo."
+echo ""
+
+# --- Preflight ---
+
+# Check harness repo has skills
+if [ ! -d "$HARNESS_DIR/skills" ]; then
+  err "Harness skills not found at $HARNESS_DIR/skills"
+  exit 1
+fi
+ok "Harness repo: $HARNESS_DIR ($(ls "$HARNESS_DIR/skills/" | wc -l | tr -d ' ') skills)"
+
+# Check target is a git repo
+if [ ! -d "$TARGET_DIR/.git" ]; then
+  err "$TARGET_DIR is not a git repository"
+  exit 1
+fi
+ok "Target repo: $TARGET_DIR"
+
+# Check python3
+if ! command -v python3 &>/dev/null; then
+  err "Python 3 is required (for JSON generation)"
+  exit 1
+fi
+ok "Python 3: $(python3 --version 2>&1)"
+
+# --- Detect project ---
+
+detect_project_name() {
+  local name
+  name=$(cd "$TARGET_DIR" && git remote get-url origin 2>/dev/null | sed 's/.*\///' | sed 's/\.git$//' || true)
+  if [ -n "$name" ]; then echo "$name"; return; fi
+  basename "$TARGET_DIR"
+}
+
+detect_project_type() {
+  if [ -f "$TARGET_DIR/package.json" ]; then echo "node"
+  elif [ -f "$TARGET_DIR/pyproject.toml" ] || [ -f "$TARGET_DIR/setup.py" ]; then echo "python"
+  elif [ -f "$TARGET_DIR/go.mod" ]; then echo "go"
+  elif [ -f "$TARGET_DIR/Cargo.toml" ]; then echo "rust"
+  else echo "unknown"
+  fi
+}
+
+detect_vault_path() {
+  for p in \
+    "$HOME/Documents/Product Ideas" \
+    "$HOME/Documents/Vault" \
+    "$HOME/Vault" \
+    "$HOME/Documents/Obsidian"; do
+    if [ -d "$p/.obsidian" ]; then echo "$p"; return; fi
+  done
+  # Search for any .obsidian directory
+  local found
+  found=$(find "$HOME/Documents" -maxdepth 3 -name ".obsidian" -type d 2>/dev/null | head -1)
+  if [ -n "$found" ]; then dirname "$found"; return; fi
+  echo ""
+}
+
+PROJECT_NAME=$(detect_project_name)
+PROJECT_TYPE=$(detect_project_type)
+PROJECT_SLUG=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+VAULT_PATH=$(detect_vault_path)
+
+echo ""
+info "Project:  $PROJECT_NAME ($PROJECT_TYPE)"
+info "Slug:     $PROJECT_SLUG"
+info "Vault:    ${VAULT_PATH:-<not found>}"
+echo ""
+
+# --- Allow override (interactive only) ---
+if [ "$AUTO" = false ]; then
+  read -rp "Project name [$PROJECT_NAME]: " USER_NAME
+  PROJECT_NAME="${USER_NAME:-$PROJECT_NAME}"
+  PROJECT_SLUG=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+else
+  info "Auto mode — using detected name: $PROJECT_NAME"
+fi
+
+# --- Create directory structure ---
+
+info "Creating .codex/ structure..."
+mkdir -p "$TARGET_DIR/.codex/enterprise-state/agent-sessions"
+mkdir -p "$TARGET_DIR/.codex/repo-skills"
+ok ".codex/enterprise-state/"
+ok ".codex/repo-skills/"
+
+# --- Generate local-machine.json ---
+
+MACHINE_FILE="$TARGET_DIR/.codex/enterprise-state/local-machine.json"
+if [ ! -f "$MACHINE_FILE" ]; then
+  info "Generating local-machine.json..."
+  python3 -c "
+import json, subprocess, os, datetime
+
+def which(cmd):
+    try:
+        return subprocess.check_output(['which', cmd], stderr=subprocess.DEVNULL).decode().strip()
+    except:
+        return None
+
+available = {}
+missing = []
+for cmd in ['node', 'npm', 'python3', 'npx', 'psql', 'git']:
+    path = which(cmd)
+    if path:
+        available[cmd] = path
+    else:
+        missing.append(cmd)
+
+machine = {
+    'generated_at': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'hostname': os.uname().nodename,
+    'available_commands': available,
+    'missing_commands': missing,
+    'obsidian': {
+        'vault_name': os.path.basename('${VAULT_PATH}') if '${VAULT_PATH}' else '',
+        'vault_path': '${VAULT_PATH}',
+    },
+    'notes': [
+        'Generated by codex-init v${VERSION}',
+        'Edit this file for machine-specific overrides.',
+    ]
+}
+print(json.dumps(machine, indent=2))
+" > "$MACHINE_FILE"
+  ok "local-machine.json"
+else
+  warn "local-machine.json already exists — skipping"
+fi
+
+# --- Copy and prefix enterprise skills ---
+
+info "Copying enterprise skills as ${PROJECT_SLUG}-enterprise-*..."
+SKILL_COUNT=0
+
+# List of enterprise skills to copy
+ENTERPRISE_SKILLS=(
+  enterprise
+  enterprise-brainstorm
+  enterprise-build
+  enterprise-compound
+  enterprise-contract
+  enterprise-debug
+  enterprise-discover
+  enterprise-forge
+  enterprise-harness
+  enterprise-plan
+  enterprise-review
+  enterprise-verify
+)
+
+for skill_name in "${ENTERPRISE_SKILLS[@]}"; do
+  SOURCE="$HARNESS_DIR/skills/$skill_name/SKILL.md"
+  if [ ! -f "$SOURCE" ]; then
+    warn "Skill $skill_name not found in harness — skipping"
+    continue
+  fi
+
+  DEST_DIR="$TARGET_DIR/.codex/repo-skills/${PROJECT_SLUG}-${skill_name}"
+  mkdir -p "$DEST_DIR"
+
+  if [ "$skill_name" = "enterprise" ]; then
+    # The orchestrator skill gets a repo-local overlay wrapper
+    cat > "$DEST_DIR/SKILL.md" << OVERLAY
+---
+name: ${PROJECT_SLUG}-enterprise
+description: Use when working in the ${PROJECT_NAME} repo and workflow decisions must be anchored to the repo-local profile, traps, and source-of-truth docs
+---
+# ${PROJECT_NAME} Enterprise
+
+Repo-local overlay for the ${PROJECT_NAME} repository.
+
+## Required Context
+
+- Read \`.codex/enterprise-state/repo-profile.json\`
+- Read \`.codex/enterprise-state/repo-traps.json\`
+- Read \`.codex/enterprise-state/repo-best-practices.json\` if it exists
+- Read \`.codex/enterprise-state/local-machine.json\` only when command availability or this computer matters
+- Read your own gitignored agent-session file under \`.codex/enterprise-state/agent-sessions/<agent-id>.json\` once stage work begins
+
+## Required Workflow
+
+1. Prefer this repo-local family over the generic \`enterprise-*\` skills for work in this repo.
+2. Resolve commands, relative paths, workspace packages, and source-of-truth docs from the committed repo profile.
+OVERLAY
+  else
+    # All other skills: copy from harness (includes LEARNED BEHAVIORS gate)
+    cp "$SOURCE" "$DEST_DIR/SKILL.md"
+  fi
+  SKILL_COUNT=$((SKILL_COUNT + 1))
+done
+
+ok "${SKILL_COUNT} skills copied"
+
+# --- Generate manifest ---
+
+info "Generating skill manifest..."
+python3 -c "
+import json, os
+
+slug = '${PROJECT_SLUG}'
+skills = [
+$(for s in "${ENTERPRISE_SKILLS[@]}"; do echo "    '${PROJECT_SLUG}-${s}',"; done)
+]
+
+manifest = {
+    'repo_slug': slug,
+    'repo_display_name': '${PROJECT_NAME}',
+    'generated_skills': skills,
+    'profile_path': '.codex/enterprise-state/repo-profile.json',
+    'traps_path': '.codex/enterprise-state/repo-traps.json',
+    'best_practices_path': '.codex/enterprise-state/repo-best-practices.json',
+    'machine_path': '.codex/enterprise-state/local-machine.json',
+    'agent_session_root': '.codex/enterprise-state/agent-sessions',
+}
+print(json.dumps(manifest, indent=2))
+" > "$TARGET_DIR/.codex/repo-skills/${PROJECT_SLUG}-enterprise-manifest.json"
+ok "Manifest: ${PROJECT_SLUG}-enterprise-manifest.json"
+
+# --- Create/update AGENTS.md ---
+
+AGENTS_FILE="$TARGET_DIR/AGENTS.md"
+if [ -f "$AGENTS_FILE" ]; then
+  warn "AGENTS.md already exists — not overwriting (check manually for updates)"
+else
+  info "Creating AGENTS.md..."
+  cat > "$AGENTS_FILE" << 'AGENTSEOF'
+# AGENTS.md - Codex Workspace Guardrails
+
+## Codex Cortex-First Rule (Non-Negotiable)
+
+Before any direct codebase reads/searches (`rg`, `cat`, `sed`, file-by-file exploration), Codex must query `cortex-engine` first.
+
+Required sequence for each new task:
+
+1. `mcp__cortex-engine__cortex_status`
+2. If the index is missing or stale: `mcp__cortex-engine__cortex_reindex()`
+3. Run at least one scoped lookup:
+   - `mcp__cortex-engine__cortex_find_symbol`
+   - `mcp__cortex-engine__cortex_find_text`
+   - `mcp__cortex-engine__cortex_tree`
+   - `mcp__cortex-engine__cortex_outline`
+4. Post a short `Cortex Context` summary
+5. Only then use direct filesystem/code search tools
+
+## Fallback
+
+If `cortex-engine` is unavailable or errors:
+
+- State the exact failure reason first
+- Then proceed with direct code search as fallback
+
+## Always-On Skills Workflow (Claude-Style)
+
+For every user turn, Codex must run skill selection and execution by default without requiring user reminders.
+
+Required sequence:
+
+1. Check available skills and identify all applicable skills before any implementation action.
+2. If a process skill applies (for example: `brainstorming`, `systematic-debugging`, `test-driven-development`), run it first.
+3. Then run domain/task skills that match the request.
+4. Announce active skills in a short `Skills in use` line before substantial work.
+5. Follow each invoked skill's workflow requirements exactly unless blocked by missing files/tools.
+6. If no skill applies, state that briefly and continue with normal execution.
+
+Non-negotiable:
+
+- Do not skip applicable skills because the task seems simple.
+- Do not require the user to repeat "use skills" in future turns.
+
+## Scope
+
+This file is for Codex behavior in this workspace.
+
+## Repo-Local Enterprise Overlay Skills (Non-Negotiable)
+
+If committed repo-local skills exist under `.codex/repo-skills/*/SKILL.md`, Codex must treat them as available repo-scoped overlay skills for this repo.
+
+Required behavior:
+
+- prefer matching repo-local `<repo>-enterprise*` overlay skills over user-level `enterprise-*` and `cortex-*` for work in this repo
+- open the repo-local overlay skill first, then the referenced generic skill if both apply
+- keep portable repo facts in committed `.codex/enterprise-state/` files
+- keep machine-specific facts in gitignored `.codex/enterprise-state/local-machine.json`
+- keep live workflow state in gitignored `.codex/enterprise-state/agent-sessions/<agent-id>.json`
+- never use repo-global in-progress state or another agent's session file to satisfy stage gates
+- when `enterprise-discover` refreshes the repo profile, regenerate the repo-local overlay family before relying on stale wrappers
+
+## Learned Behaviors
+
+Codex should check `.cortex/knowledge.jsonl` at session start for accumulated corrections. Entries tagged with `feedback` + `auto-enforce` are non-negotiable behavioral rules learned from prior corrections. Apply them without being asked.
+AGENTSEOF
+  ok "AGENTS.md created"
+fi
+
+# --- Update .gitignore ---
+
+info "Checking .gitignore..."
+GITIGNORE="$TARGET_DIR/.gitignore"
+ENTRIES_TO_ADD=()
+
+for entry in \
+  ".codex/enterprise-state/agent-sessions/" \
+  ".codex/enterprise-state/local-machine.json"; do
+  if [ -f "$GITIGNORE" ] && grep -qF "$entry" "$GITIGNORE" 2>/dev/null; then
+    continue
+  fi
+  ENTRIES_TO_ADD+=("$entry")
+done
+
+if [ ${#ENTRIES_TO_ADD[@]} -gt 0 ]; then
+  echo "" >> "$GITIGNORE"
+  echo "# Codex agent state (gitignored)" >> "$GITIGNORE"
+  for entry in "${ENTRIES_TO_ADD[@]}"; do
+    echo "$entry" >> "$GITIGNORE"
+  done
+  ok ".gitignore updated (${#ENTRIES_TO_ADD[@]} entries added)"
+else
+  ok ".gitignore already has Codex entries"
+fi
+
+# --- MCP server check ---
+
+echo ""
+info "MCP Server Status:"
+
+# Check cortex-engine
+if [ -f "$TARGET_DIR/.cortex/index.db" ]; then
+  ok "cortex-engine: indexed ($(stat -f%z "$TARGET_DIR/.cortex/index.db" 2>/dev/null || stat -c%s "$TARGET_DIR/.cortex/index.db" 2>/dev/null) bytes)"
+else
+  warn "cortex-engine: not indexed yet"
+  echo "    Run: cd $TARGET_DIR && cortex-engine index ."
+  echo "    Or from Claude: /cortex-index"
+fi
+
+# Check vault-index
+if [ -n "$VAULT_PATH" ] && [ -d "$VAULT_PATH/.obsidian" ]; then
+  ok "vault: $VAULT_PATH"
+else
+  warn "vault: no Obsidian vault detected"
+  echo "    Run: /vault-init from Claude to set up"
+fi
+
+# --- Summary ---
+
+echo ""
+echo -e "${CYAN}═══════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}Codex setup complete for ${PROJECT_NAME}${NC}"
+echo ""
+echo "  Skills:    ${SKILL_COUNT} enterprise skills in .codex/repo-skills/"
+echo "  Config:    .codex/enterprise-state/local-machine.json"
+echo "  Guardrails: AGENTS.md"
+echo ""
+echo "Next steps:"
+echo "  1. Run enterprise-discover to generate repo-profile.json:"
+echo "     codex 'read .codex/repo-skills/${PROJECT_SLUG}-enterprise-discover/SKILL.md and run discovery'"
+echo "  2. Index with cortex-engine if not already done"
+echo "  3. Commit .codex/repo-skills/ and AGENTS.md"
+echo -e "${CYAN}═══════════════════════════════════════════════════${NC}"

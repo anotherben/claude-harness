@@ -3,6 +3,18 @@ name: enterprise-build
 description: "Strict TDD implementation following the contract. Write test first, watch it fail, write minimal code to pass. No production code without a failing test. Interleave RED→GREEN cycles — one test, one piece of code, repeat. Supports Solo, Subagent, and Swarm execution modes."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:BUILD')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-build","note":"<correction>","author":"enterprise-build","tags":["feedback","feedback:BUILD","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Build
 
 You are implementing code from a contract. Every postcondition becomes a test. Every test is written BEFORE the code it tests. This is non-negotiable.

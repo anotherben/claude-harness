@@ -3,6 +3,18 @@ name: enterprise-compound
 description: "Captures institutional knowledge after solving problems. Documents what was solved, how, and how to prevent it. Searchable by tags and categories. Builds organizational memory that compounds over time. Use after fixes are verified or features are complete."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:COMPOUND')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-compound","note":"<correction>","author":"enterprise-compound","tags":["feedback","feedback:COMPOUND","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Compound — Institutional Knowledge Capture
 
 ## Philosophy

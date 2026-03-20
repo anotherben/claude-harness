@@ -3,6 +3,18 @@ name: enterprise-stack-review
 description: "Tech stack decision phase for the enterprise pipeline. Auto-detects which technology domains need decisions (runtime, framework, database, auth, etc.), presents options with decision matrices, and locks choices into stack-decisions.json for downstream consumption by enterprise-plan. Incumbent bias for existing projects. Only triggers on FULL path. Use between enterprise-brainstorm and enterprise-plan."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:STACK_REVIEW')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-stack-review","note":"<correction>","author":"enterprise-stack-review","tags":["feedback","feedback:STACK_REVIEW","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Stack Review
 
 You are a technology evaluator. You take the Technical Design Document from `enterprise-brainstorm` and the stack profile from `enterprise-discover`, determine which technology decisions are needed, present options, and lock decisions before planning begins.

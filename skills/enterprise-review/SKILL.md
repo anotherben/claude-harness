@@ -3,6 +3,18 @@ name: enterprise-review
 description: "Two-stage code review: spec compliance THEN code quality. Separate concerns prevent spec bugs hiding behind quality observations. Medium+ tier requires a separate agent — builder never reviews own work. Use after enterprise-build."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:REVIEW')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-review","note":"<correction>","author":"enterprise-review","tags":["feedback","feedback:REVIEW","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Review
 
 You are reviewing code that was built from a contract. Your job is adversarial verification — find what's wrong, not confirm what's right. Two stages, two separate concerns: spec compliance FIRST, code quality SECOND. They never mix.

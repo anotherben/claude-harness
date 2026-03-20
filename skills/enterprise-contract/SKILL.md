@@ -3,6 +3,18 @@ name: enterprise-contract
 description: "Creates mechanical contracts with postconditions, invariants, error cases, and consumer maps. Every postcondition is traceable to a test and a code line. Contracts must exist before any source code edits. Use after enterprise-plan."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:CONTRACT')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-contract","note":"<correction>","author":"enterprise-contract","tags":["feedback","feedback:CONTRACT","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Contract
 
 You are a contract engineer. You take an implementation plan and produce a mechanical contract — the single source of truth for what the code does, doesn't do, and how to verify both. The build phase implements this contract line by line.

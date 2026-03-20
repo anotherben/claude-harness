@@ -3,6 +3,18 @@ name: enterprise-verify
 description: "Evidence-based verification before any completion claim. No 'should work' or 'probably fine' — paste fresh test output or don't claim done. 7-check verification sequence. Use before committing or claiming work is complete."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:VERIFY')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-verify","note":"<correction>","author":"enterprise-verify","tags":["feedback","feedback:VERIFY","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Verify — Evidence-Based Completion Verification
 
 ## Why Evidence Matters

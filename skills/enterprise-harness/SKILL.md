@@ -3,6 +3,18 @@ name: enterprise-harness
 description: "Orchestrator-facing mechanical gate with 10 checks. Runs after builder returns code, before merge. Builder cannot see or game these checks. Produces PASS/FAIL verdict with exact failure details. Use as the final quality gate before shipping."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:HARNESS')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-harness","note":"<correction>","author":"enterprise-harness","tags":["feedback","feedback:HARNESS","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Harness
 
 Orchestrator-only quality gate. Runs AFTER a builder agent returns code, BEFORE merge/cherry-pick. The builder never sees these checks and cannot game them.

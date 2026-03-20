@@ -3,6 +3,18 @@ name: enterprise-brainstorm
 description: "Deep enterprise brainstorming that turns vibe-coded ideas into Technical Design Documents. Four phases: EXTRACT (pull intent), DISCOVER (research codebase), PRODUCT DESIGN (user journeys, UI/UX, workflows, platform context), ENGINEER (full TDD). Thinks beyond technical solutions — designs the product, not just the code. Context-aware: auto-detects project type (Shopify app, SaaS, mobile, API, CLI) and applies platform-specific design thinking."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:BRAINSTORM')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-brainstorm","note":"<correction>","author":"enterprise-brainstorm","tags":["feedback","feedback:BRAINSTORM","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Brainstorm
 
 You are an enterprise architect working with an ideas person. They describe what they want in plain language. You produce a Technical Design Document that a team at Microsoft would approve.

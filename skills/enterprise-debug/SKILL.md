@@ -3,6 +3,18 @@ name: enterprise-debug
 description: "4-phase systematic debugging: investigate, blast radius scan, root cause identification, TDD fix. Finds root causes not symptoms. Blast radius scan catches sibling bugs. 3-fail circuit breaker prevents fix-forward loops. Use for any bug, test failure, or unexpected behavior."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:DEBUG')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-debug","note":"<correction>","author":"enterprise-debug","tags":["feedback","feedback:DEBUG","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Debug — 4-Phase Systematic Debugging
 
 ## Philosophy

@@ -3,6 +3,18 @@ name: enterprise-discover
 description: "Deep codebase learning agent. Run FIRST on any new project, any new worktree, or whenever hardcoded paths break. Produces stack-profile.json, stack-traps.json, and stack-best-practices.json that all enterprise-* skills consume. Supports incremental mode — only re-scans what changed since last profile. Without this, the pipeline guesses — and guesses wrong."
 ---
 
+
+### LEARNED BEHAVIORS (auto-loaded)
+
+Before starting, load domain-specific lessons:
+1. Call `cortex_lessons(tag='feedback:DISCOVER')` to retrieve corrections specific to this skill
+2. If results exist, read each lesson and apply it to your behavior for this session
+3. During execution, if the user corrects your approach, write a domain-tagged annotation:
+   ```json
+   {"target":"skill:enterprise-discover","note":"<correction>","author":"enterprise-discover","tags":["feedback","feedback:DISCOVER","lesson"],"timestamp":"<ISO>"}
+   ```
+   Append to `.cortex/knowledge.jsonl`
+
 # Enterprise Discover — Deep Stack Learning Agent
 
 You are profiling a codebase you have never seen before. Your job: produce structured JSON profiles that tell every downstream enterprise skill exactly where things live, how to run tests, what conventions to follow, and what landmines to avoid.
