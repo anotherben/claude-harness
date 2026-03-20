@@ -20,10 +20,11 @@ You are a planning engineer. You take a Technical Design Document (TDD) from `en
 ## BEFORE YOU START
 
 1. **Read the TDD** — understand the full scope, data model, API contracts, architecture.
-2. **Read the codebase** — verify every file path in the TDD exists. Check current state of files that will be modified. Note line numbers.
-3. **Query memory** — recall context for [task keywords], coding gotchas, PRE-CODE checklist (use whichever memory backend is available)
-4. **Read MEMORY.md** — check for relevant active work, pending migrations, known issues.
-5. **Identify the tier** — Micro/Small/Medium/Large from the TDD or enterprise-dev triage.
+2. **Read stack-decisions.json** — if `.claude/enterprise-state/stack-decisions.json` exists, load it. Use the decided technologies, packages, and versions in every step. Do not propose alternatives to locked decisions. If no stack-decisions.json exists (QUICK/STANDARD path), infer from stack-profile.json or codebase.
+3. **Read the codebase** — verify every file path in the TDD exists. Check current state of files that will be modified. Note line numbers.
+4. **Query memory** — recall context for [task keywords], coding gotchas, PRE-CODE checklist (use whichever memory backend is available)
+5. **Read MEMORY.md** — check for relevant active work, pending migrations, known issues.
+6. **Identify the tier** — Micro/Small/Medium/Large from the TDD or enterprise-dev triage.
 
 ---
 

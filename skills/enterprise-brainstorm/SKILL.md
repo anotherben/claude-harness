@@ -575,3 +575,12 @@ Or do you want to review/change anything first?
 | Skip discovery because the task "seems simple" | Simple tasks in complex systems have hidden connections |
 | Design for hypothetical future requirements | Solve the stated problem. Note future possibilities in "Open Questions" |
 | Propose new patterns when existing ones work | Reuse aggressively. New patterns need strong justification. |
+
+---
+
+## HANDOFF
+
+When the TDD is complete and approved, the next stage depends on the pipeline path:
+
+- **FULL path:** Proceed to `/enterprise-stack-review` — technology decisions are locked before planning begins. The stack review reads this TDD to determine which decision domains are needed.
+- **QUICK/STANDARD path:** Skip stack review, proceed directly to `/enterprise-plan`.

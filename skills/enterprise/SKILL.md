@@ -134,7 +134,7 @@ Assess signals to choose a path. Match ceremony to complexity.
 ```
 QUICK    (Micro, or Small <3 files):   CONTRACT(inline) → BUILD → verify.sh → COMPLETE
 STANDARD (Small-Medium, clear scope):  CONTRACT → BUILD → verify.sh → COMPLETE
-FULL     (Medium-Large, ambiguous):    DISCOVER → BRAINSTORM → PLAN → CONTRACT → BUILD → REVIEW → FORGE → VERIFY → COMPOUND → COMPLETE
+FULL     (Medium-Large, ambiguous):    DISCOVER → BRAINSTORM → STACK REVIEW → PLAN → CONTRACT → BUILD → REVIEW → FORGE → VERIFY → COMPOUND → COMPLETE
 CRITICAL (production broken):          CONTRACT(inline) → BUILD → verify.sh → DEPLOY → COMPOUND
 ```
 
@@ -159,7 +159,7 @@ node -e "
     tier: '<tier>', mode: '<mode-or-pending>', branch: '<branch>',
     stages: {
       discover:{status:'pending'}, brainstorm:{status:'pending'},
-      plan:{status:'pending'}, contract:{status:'pending'},
+      stack_review:{status:'pending'}, plan:{status:'pending'}, contract:{status:'pending'},
       build:{status:'pending'}, review:{status:'pending'},
       forge:{status:'pending'}, verify:{status:'pending'},
       compound:{status:'pending'}
@@ -190,8 +190,10 @@ node -e "
 ### FULL PATH
 ```
 /enterprise-discover    → stack-profile.json + stack-traps.json + project-profile.md
-/enterprise-brainstorm  → docs/designs/YYYY-MM-DD-<slug>-tdd.md
-/enterprise-plan        → docs/plans/YYYY-MM-DD-<slug>-plan.md
+/enterprise-brainstorm     → docs/designs/YYYY-MM-DD-<slug>-tdd.md
+/enterprise-stack-review   → .claude/enterprise-state/stack-decisions.json + docs/designs/YYYY-MM-DD-<slug>-stack.md
+  └── SKIP if existing project + all domains resolved in stack-profile.json
+/enterprise-plan           → docs/plans/YYYY-MM-DD-<slug>-plan.md
   └── MODE SELECTION happens here (see below)
 /enterprise-contract    → docs/contracts/YYYY-MM-DD-<slug>-contract.md
 /enterprise-build       → code + tests (TDD)
@@ -260,7 +262,8 @@ See `references/artifact-validation.md` for the full artifact→skill mapping.
 |-------|------------------|
 | enterprise-discover | None |
 | enterprise-brainstorm | stack-profile.json (optional, from discover) |
-| enterprise-plan | TDD at `docs/designs/*-tdd.md` |
+| enterprise-stack-review | TDD at `docs/designs/*-tdd.md` (skippable — see skill for auto-skip logic) |
+| enterprise-plan | TDD at `docs/designs/*-tdd.md` + stack-decisions.json (if stack review ran) |
 | enterprise-contract | Plan at `docs/plans/*-plan.md` |
 | enterprise-build | Contract with status LOCKED |
 | enterprise-review | Changed files + passing tests |
