@@ -1,5 +1,5 @@
 #!/bin/bash
-# PostToolUse hook — records skill invocations for session tracking.
+# PostToolUse hook — records skill invocations for session tracking and telemetry.
 
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_id',''))" 2>/dev/null)
@@ -8,17 +8,23 @@ SKILL_NAME=$(echo "$INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin)
 
 if [ -n "$SKILL_NAME" ]; then
   SKILLS_FILE="/tmp/claude-skills-invoked-${SESSION_ID}"
-  echo "$(date +%H:%M:%S) $SKILL_NAME" >> "$SKILLS_FILE"
+  TIMESTAMP=$(date +%H:%M:%S)
+  ISO_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  PLATFORM_ROOT="${AGENT_PLATFORM_ROOT:-$HOME/.agent-platform}"
+  TELEMETRY_DIR="$PLATFORM_ROOT/telemetry"
+
+  echo "${TIMESTAMP} ${SKILL_NAME}" >> "$SKILLS_FILE"
+  mkdir -p "$TELEMETRY_DIR"
+  printf '{"timestamp":"%s","session_id":"%s","skill":"%s"}\n' "$ISO_TIMESTAMP" "$SESSION_ID" "$SKILL_NAME" >> "$TELEMETRY_DIR/skill-usage.ndjson"
   echo "Skill invoked: $SKILL_NAME"
 
-  # Mark vault-context as loaded for enforce-vault-context.sh and require-vault-for-edits.sh gates
-  # Both vault-context (load state) and vault-capture (create item) unlock editing
+  # Mark vault-context as loaded for vault gates and edit gates.
   if [ "$SKILL_NAME" = "vault-context" ] || [ "$SKILL_NAME" = "vault-capture" ]; then
     touch "/tmp/claude-vault-context-${SESSION_ID}"
   fi
 
-  # Mark plan as approved for require-plan-before-edits.sh gate
-  if [ "$SKILL_NAME" = "enterprise-plan" ] || [ "$SKILL_NAME" = "enterprise-contract" ] || [ "$SKILL_NAME" = "enterprise" ]; then
+  # Mark plan as approved for require-plan-before-edits.sh gate.
+  if echo "$SKILL_NAME" | grep -qE '^enterprise(-plan|-contract|-build|-forge|-debug|-review|-verify|-discover|-brainstorm|-compound|-harness|-stack-review)?$'; then
     touch "/tmp/claude-plan-approved-${SESSION_ID}"
   fi
 fi

@@ -4,7 +4,7 @@
 
 A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) and [Codex CLI](https://github.com/openai/codex) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
 
-Two built-in MCP servers. An Obsidian vault as the shared brain. 30 code intelligence tools. 47 enterprise skills. 36 quality gate hooks. Zero escape hatches.
+Three built-in MCP servers. An Obsidian vault as the shared brain. 57 MCP tools across code, vault, and skill retrieval. 42 current enterprise skills. 37 quality gate hooks. Zero escape hatches.
 
 ---
 
@@ -14,12 +14,13 @@ AI coding tools are powerful but undisciplined. Left to defaults, they:
 - Write code without tests, skip planning, claim "tests pass" without running them
 - Review their own work and approve it, commit without tracking what changed
 - Read entire files when they need one function, burning tokens and money
+- Load full skill libraries and giant `SKILL.md` files when they only need one section
 
 **claude-harness** makes it physically impossible to cut corners — and makes agents 100x more efficient at understanding code.
 
 ---
 
-## The Three Pillars
+## The Four Pillars
 
 ### 1. Cortex Engine — Code Intelligence MCP
 
@@ -42,7 +43,30 @@ cortex_read_symbol("src/routes/orders.js", "POST /orders")
 
 [Full Cortex Engine documentation →](cortex-engine/README.md)
 
-### 2. Obsidian Vault — The Shared Brain
+### 2. Skills Index — Token-Optimized Skill Retrieval
+
+The harness skill library is powerful but expensive if every conversation loads the entire catalog and every skill invocation reads the full `SKILL.md`.
+
+**skills-index** indexes skills and policy notes into typed markdown sections so agents can:
+- search skills without injecting the full catalog
+- read only `Workflow`, `Checklist`, or `Template` sections
+- compile fast local policy bundles for hook decisions
+- track token savings from section reads and blocked full-file reads
+
+```
+skill_search("sql migration tenant query")
+→ sql-guard, create-migration
+
+skill_outline("sql-guard")
+→ Overview, When To Use, Workflow, Guardrails
+
+skill_read_section("sql-guard", "workflow")
+→ 1 section instead of the full skill body
+```
+
+**7 MCP tools** | section-level retrieval | compiled policy bundles | telemetry-aware
+
+### 3. Obsidian Vault — The Shared Brain
 
 Every bug, task, idea, and decision lives in an [Obsidian](https://obsidian.md/) vault. Two MCP servers connect agents to this brain:
 
@@ -82,9 +106,9 @@ Agent annotates learnings → cortex knowledge store → syncs to Obsidian
 Next agent reads vault + knowledge → starts with full context
 ```
 
-### 3. Quality Gate Hooks — Can't Be Bypassed
+### 4. Quality Gate Hooks — Can't Be Bypassed
 
-28 shell hooks intercept every action. Exit code 2 = hard block. The agent cannot proceed until the requirement is met.
+37 shell hooks intercept every action. Exit code 2 = hard block. The agent cannot proceed until the requirement is met.
 
 ```
 You: "Just push the fix"
@@ -111,12 +135,18 @@ Hook chain:
          ┌─────────────┼─────────────┐
          │             │             │
 ┌────────▼──────┐ ┌────▼─────┐ ┌────▼──────┐
-│ Cortex Engine │ │ 36 Hooks │ │ 47 Skills │
+│ Cortex Engine │ │ 37 Hooks │ │ 47 Skills │
 │  (30 tools)   │ │  (gates) │ │(workflow) │
 │  MCP server   │ │  shell   │ │ markdown  │
 └────────┬──────┘ └────┬─────┘ └────┬──────┘
          │             │             │
          │    ┌────────┴────────┐    │
+         │    │  Skills Index    │    │
+         │    │   (7 tools)      │    │
+         │    │  MCP server      │    │
+         │    └────────┬────────┘    │
+         │             │             │
+         │    ┌────────▼────────┐    │
          │    │  Obsidian Vault  │    │
          │    │  + vault-index   │    │
          │    │  MCP server      │    │
@@ -135,8 +165,9 @@ Hook chain:
 ```
 claude-harness/
 ├── cortex-engine/        # Code intelligence MCP (30 tools, 8 languages)
+├── skills-index/         # Skill + policy retrieval MCP (7 tools, section-aware)
 ├── vault-index/          # Obsidian vault query MCP (20 tools, claim coordination)
-├── hooks/                # 36 shell hooks — quality gates
+├── hooks/                # 37 shell hooks — quality gates
 ├── skills/               # 47 Claude Code skills — enterprise workflow
 ├── conductor/            # Fleet orchestration — multi-agent dispatch
 ├── plugins/              # Domain guards (authoring guide)
@@ -154,6 +185,7 @@ claude-harness/
 ```bash
 git clone https://github.com/anotherben/claude-harness.git ~/claude-harness
 cd ~/claude-harness/cortex-engine && npm install
+cd ~/claude-harness/skills-index && npm install
 cd ~/claude-harness/vault-index && npm install
 ```
 
@@ -168,6 +200,11 @@ cd ~/claude-harness/vault-index && npm install
       "command": "node",
       "args": ["/path/to/claude-harness/cortex-engine/src/server.js"]
     },
+    "skills-index": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/claude-harness/skills-index/src/server.js"]
+    },
     "vault-index": {
       "type": "stdio",
       "command": "node",
@@ -180,6 +217,7 @@ cd ~/claude-harness/vault-index && npm install
 **Codex CLI:**
 ```bash
 codex mcp add cortex-engine -- node ~/claude-harness/cortex-engine/src/server.js
+codex mcp add skills-index -- node ~/claude-harness/skills-index/src/server.js
 codex mcp add vault-index -- node ~/claude-harness/vault-index/src/server.js
 ```
 
@@ -330,7 +368,7 @@ At scale: 100 reads/session = ~200K tokens saved = **$3/session on Opus**.
 
 ---
 
-## Skills — 47 Enterprise Workflows
+## Skills — 42 Current Enterprise Workflows
 
 ### The Enterprise Pipeline (9 stages + auto-bootstrap)
 
@@ -349,14 +387,6 @@ Every `/enterprise` invocation first runs a **HARNESS CHECK** — verifies hooks
 ```
 
 Run **`/enterprise`** to orchestrate the full pipeline with automatic mode selection (Solo/Subagent/Swarm).
-
-### Quick-Start Workflows
-| Skill | What | When |
-|-------|------|------|
-| `/full-cycle` | Interactive plan → autonomous execution + review | Features, bug fixes |
-| `/full-cycle-tdd` | TDD-first — every task starts with a failing test | Correctness-critical |
-| `/full-cycle-fast` | Lightweight — analyze, plan, build, verify | Small features, config |
-| `/full-cycle-research` | 8+ research agents before any code | New territory |
 
 ### Vault Management
 | Skill | What |
@@ -391,7 +421,6 @@ Run **`/enterprise`** to orchestrate the full pipeline with automatic mode selec
 |-------|------|
 | `/session-heartbeat` | Progress review, scope drift detection |
 | `/handover-writer` | Save state when context is getting full |
-| `/fleet-commander` | Multi-agent dispatch with model routing |
 | `/conductor-resume` | Resume a fleet dispatch from checkpoint |
 
 ### Domain Guards
@@ -416,7 +445,7 @@ Run **`/enterprise`** to orchestrate the full pipeline with automatic mode selec
 
 ---
 
-## Hooks — 36 Quality Gates
+## Hooks — 37 Quality Gates
 
 ### Source File Protection
 | Hook | When | Enforces |
@@ -461,6 +490,7 @@ Run **`/enterprise`** to orchestrate the full pipeline with automatic mode selec
 | `mark-plan-approved.sh` | After ExitPlanMode | Unlocks source edits |
 | `mark-skill-invoked.sh` | After Skill | Tracks skill usage |
 | `cortex-reindex.sh` | After Edit/Write source | Notes cortex has real-time watcher |
+| `suggest-skill.sh` | Before Edit/Write | Suggests domain skills from indexed hints |
 | `auto-format.sh` | After Edit/Write | Auto-formats changed files |
 | `context-inject.sh` | Before Bash commands | Injects relevant context |
 | `context-fade.sh` | After any tool use | Manages context window |
@@ -489,7 +519,6 @@ Choose your enforcement level:
 | Independent review (builder != reviewer) | | * | * |
 | Context management (inject + fade + handover) | | | * |
 | **Cortex Engine** (30 tools, 8 languages) | | | * |
-| Fleet orchestration (multi-agent dispatch) | | | * |
 | Prompt refinement (clarity check) | | | * |
 
 ---
@@ -537,23 +566,9 @@ Total tokens: ~1,930 (vs ~57,300 without Cortex) — 97% reduction, $0.83 saved 
 
 ---
 
-## Conductor — Fleet Orchestration
+## Conductor — Dispatch Utilities
 
-Dispatch multiple agents on isolated worktrees:
-
-```
-/fleet-commander
-→ Analyze tasks → assign models → create worktrees → dispatch
-
-  Agent 1 (Opus)     Agent 2 (Sonnet)    Agent 3 (Haiku)
-  feat/auth          feat/api            feat/tests
-       │                  │                   │
-       └──────────────────┼───────────────────┘
-                          │
-                   Merge coordinator
-```
-
-Each agent gets: isolated worktree, cortex-engine MCP, vault claim, full skill set, knowledge store access.
+The repo still ships conductor scripts for manual multi-agent coordination and `/conductor-resume` for resuming prior dispatches.
 
 ```bash
 # Fleet scripts
@@ -612,11 +627,12 @@ require-test-evidence.sh reads JSON:
 
 | Component | Count |
 |-----------|-------|
-| MCP servers | 2 (cortex-engine + vault-index) |
+| MCP servers | 3 (cortex-engine + skills-index + vault-index) |
 | MCP tools (Cortex Engine) | 30 |
+| MCP tools (skills-index) | 7 |
 | MCP tools (vault-index) | 20 |
-| Skills (enterprise workflows) | 47 |
-| Hooks (quality gates) | 36 |
+| Skills (enterprise workflows) | 42 |
+| Hooks (quality gates) | 37 |
 | Tree-sitter languages | 8 |
 | File types indexed | 22 |
 | Source categories | 7 |

@@ -69,7 +69,7 @@ echo ""
 echo "Choose your tier:"
 echo "  [1] Lite     — TDD + evidence + lint + merge protocol"
 echo "  [2] Standard — + vault integration, plan gate, independent review"
-echo "  [3] Full     — + fleet orchestration, context injection, cortex-engine, prompt refinement"
+echo "  [3] Full     — + context injection, cortex-engine, skills-index, prompt refinement"
 echo ""
 read -rp "Tier [1/2/3]: " TIER_CHOICE
 case "$TIER_CHOICE" in
@@ -160,9 +160,6 @@ if [ ! -d "$VAULT_PATH" ]; then
   ok "Created vault at ${VAULT_PATH}"
 fi
 
-# cortex-engine auto-detects project — no manual repo ID needed
-JCODEMUNCH_REPO_ID=""
-
 # --- Create directory structure ---
 echo ""
 info "Creating directory structure..."
@@ -215,6 +212,7 @@ get_hooks_for_tier() {
       context-fade.sh
       refine-prompt.sh
       suggest-cortex.sh
+      suggest-skill.sh
       cortex-reindex.sh
       post-compact-handover.sh
       ensure-environment.sh
@@ -239,7 +237,6 @@ for hook in $(get_hooks_for_tier "$TIER"); do
       -e "s|{{MIN_TEST_TIER}}|${MIN_TEST_TIER}|g" \
       -e "s|{{VAULT_PATH}}|${VAULT_PATH}|g" \
       -e "s|{{VAULT_EVIDENCE_PATH}}|${VAULT_EVIDENCE_PATH}|g" \
-      -e "s|{{JCODEMUNCH_REPO_ID}}|${JCODEMUNCH_REPO_ID}|g" \
       "$HARNESS_DIR/hooks/$hook" > "$CLAUDE_DIR/hooks/$hook"
     chmod +x "$CLAUDE_DIR/hooks/$hook"
     HOOK_COUNT=$((HOOK_COUNT + 1))
@@ -262,7 +259,6 @@ get_skills_for_tier() {
     enterprise-plan enterprise-contract enterprise-build
     enterprise-review enterprise-forge enterprise-verify
     enterprise-compound enterprise-debug enterprise-harness
-    full-cycle full-cycle-tdd full-cycle-fast full-cycle-research
     contract-manager scope-check patch-or-fix but-why
     handover-writer session-heartbeat run-verification
     senior-architect deploy-checklist create-migration
@@ -276,7 +272,7 @@ get_skills_for_tier() {
 
   # Full adds
   if [ "$tier" = "full" ]; then
-    skills+=(fleet-commander conductor-resume)
+    skills+=(conductor-resume)
   fi
 
   echo "${skills[@]}"
@@ -295,7 +291,7 @@ info "Generating settings.json..."
 
 generate_settings() {
   local tier="$1"
-  local hook_prefix='"$CLAUDE_PROJECT_DIR"/.claude/hooks'
+  local hook_prefix='$CLAUDE_PROJECT_DIR/.claude/hooks'
 
   cat <<SETTINGS_EOF
 {
@@ -328,6 +324,12 @@ STANDARD_BASH
 ,
           { "type": "command", "command": "${hook_prefix}/require-plan-before-edits.sh", "timeout": 5 }
 STANDARD_EDIT
+  fi)
+$(if [ "$tier" = "full" ]; then
+    cat <<FULL_EDIT_PRE
+,
+          { "type": "command", "command": "${hook_prefix}/suggest-skill.sh", "timeout": 5 }
+FULL_EDIT_PRE
   fi)
         ]
       },
@@ -576,11 +578,25 @@ else
   warn "cortex-engine not found at ${CORTEX_DIR} — install manually"
 fi
 
+# --- Install skills-index MCP server ---
+info "Setting up skills-index MCP server..."
+SKILLS_INDEX_DIR="$HOME/claude-harness/skills-index"
+if [ -d "$SKILLS_INDEX_DIR" ] && [ -f "$SKILLS_INDEX_DIR/package.json" ]; then
+  if [ ! -d "$SKILLS_INDEX_DIR/node_modules" ]; then
+    (cd "$SKILLS_INDEX_DIR" && npm install --production 2>/dev/null)
+    ok "skills-index dependencies installed"
+  else
+    ok "skills-index already set up"
+  fi
+else
+  warn "skills-index not found at ${SKILLS_INDEX_DIR} — install manually"
+fi
+
 # --- Register MCP servers in project .mcp.json ---
 info "Registering MCP servers..."
 MCP_JSON="$TARGET_DIR/.mcp.json"
 if [ -f "$MCP_JSON" ]; then
-  # Add cortex-engine and vault-index if not present
+  # Add cortex-engine, vault-index, and skills-index if not present
   python3 -c "
 import json, sys
 with open('$MCP_JSON') as f:
@@ -599,6 +615,13 @@ if 'vault-index' not in servers:
         'type': 'stdio',
         'command': 'node',
         'args': ['$VAULT_INDEX_DIR/src/server.js']
+    }
+    changed = True
+if 'skills-index' not in servers:
+    servers['skills-index'] = {
+        'type': 'stdio',
+        'command': 'node',
+        'args': ['$SKILLS_INDEX_DIR/src/server.js']
     }
     changed = True
 if changed:
@@ -622,6 +645,11 @@ else
       "type": "stdio",
       "command": "node",
       "args": ["$VAULT_INDEX_DIR/src/server.js"]
+    },
+    "skills-index": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["$SKILLS_INDEX_DIR/src/server.js"]
     }
   }
 }
@@ -637,7 +665,7 @@ echo ""
 echo "  Hooks:  ${HOOK_COUNT} installed in .claude/hooks/"
 echo "  Skills: ${SKILL_COUNT} installed in .claude/skills/"
 echo "  Config: .claude/settings.json generated"
-echo "  MCP:    cortex-engine + vault-index registered"
+echo "  MCP:    cortex-engine + vault-index + skills-index registered"
 echo "  Docs:   CLAUDE.md enforcement section added"
 echo ""
 echo "Run /enterprise to start your first enforced development cycle."

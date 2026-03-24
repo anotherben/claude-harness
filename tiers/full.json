@@ -1,13 +1,19 @@
 {
   "name": "Full",
-  "description": "Standard + fleet orchestration, context injection, jcodemunch, prompt refinement.",
+  "description": "Standard + context injection, cortex-engine, skills-index, prompt refinement.",
   "extends": "standard",
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Read",
         "hooks": [
-          { "hook": "suggest-jcodemunch.sh", "timeout": 5 }
+          { "hook": "suggest-cortex.sh", "timeout": 5 }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "hook": "suggest-skill.sh", "timeout": 5 }
         ]
       }
     ],
@@ -15,7 +21,7 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "hook": "jcodemunch-reindex.sh", "timeout": 5 }
+          { "hook": "cortex-reindex.sh", "timeout": 5 }
         ]
       },
       {
@@ -47,9 +53,7 @@
     ]
   },
   "skills_add": [
-    "fleet-commander"
+    "conductor-resume"
   ],
-  "templates_required": [
-    "JCODEMUNCH_REPO_ID"
-  ]
+  "templates_required": []
 }

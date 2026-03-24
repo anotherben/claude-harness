@@ -1,0 +1,25 @@
+{
+  "name": "skills-index",
+  "version": "0.1.0",
+  "description": "Token-optimized skill and policy retrieval MCP server",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "compile": "node src/cli.js compile",
+    "index": "node src/cli.js index",
+    "search": "node src/cli.js search",
+    "status": "node src/cli.js status",
+    "watch": "node src/cli.js watch",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "better-sqlite3": "^12.6.2",
+    "chokidar": "^4.0.3",
+    "sqlite-vec": "0.1.7-alpha.2",
+    "yaml": "^2.8.1",
+    "zod": "^4.3.6"
+  }
+}

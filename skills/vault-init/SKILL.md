@@ -1,6 +1,6 @@
 ---
 name: vault-init
-description: Auto-setup skill that configures a new project with the full vault+enterprise ecosystem. Checks and installs Obsidian CLI, plugins, kepano/obsidian-skills, enterprise skills, vault-index MCP, vault folder structure, standards files, project mapping, and cortex-engine indexing. Run this on first entry to any new project directory, or when the user says "init", "setup vault", "bootstrap project", or invokes /vault-init.
+description: Auto-setup skill that configures a new project with the full vault+enterprise ecosystem. Checks and installs Obsidian CLI, plugins, kepano/obsidian-skills, enterprise skills, vault-index MCP, skills-index MCP, vault folder structure, standards files, project mapping, and cortex-engine indexing. Run this on first entry to any new project directory, or when the user says "init", "setup vault", "bootstrap project", or invokes /vault-init.
 ---
 
 # vault-init
@@ -213,6 +213,32 @@ codex mcp add cortex-engine -- node /Users/ben/claude-harness/cortex-engine/src/
 If `jcodemunch` is present in `mcpServers`, **remove it** — cortex-engine is the replacement. Delete the entire `jcodemunch` entry from `~/.claude.json`.
 
 Verify the engine works by calling `mcp__cortex-engine__cortex_status()`. If it returns file/symbol counts, the index is live.
+
+### 11b. Skills Index MCP Registered
+
+Check if skills-index is configured as an MCP server:
+
+Read `~/.claude.json` and check for a `skills-index` entry in `mcpServers`.
+
+- **Found**: PASS
+- **Not found**: FIX — Add skills-index MCP entry to `~/.claude.json`:
+
+```json
+"skills-index": {
+  "type": "stdio",
+  "command": "node",
+  "args": ["/Users/ben/claude-harness/skills-index/src/server.js"]
+}
+```
+
+Merge into existing `mcpServers` — do NOT overwrite other entries.
+
+Also add to Codex if available:
+```bash
+codex mcp add skills-index -- node /Users/ben/claude-harness/skills-index/src/server.js
+```
+
+Verify the engine works by calling `mcp__skills-index__skill_status()`. If it returns counts and freshness data, the index is live.
 
 ### 12. Master Dashboard
 
