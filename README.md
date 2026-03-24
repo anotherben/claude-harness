@@ -4,6 +4,10 @@
 
 A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) and [Codex CLI](https://github.com/openai/codex) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
 
+**Current release:** `v1.9.0`
+
+This release adds the `skills-index` MCP server, removes the retired `fleet-commander` and `full-cycle*` skill paths, and adds repo-level `cortex.config.js` ignores for `.codex`, `.agents`, `.runs`, and `.playwright-cli`.
+
 Three built-in MCP servers. An Obsidian vault as the shared brain. 57 MCP tools across code, vault, and skill retrieval. 42 current enterprise skills. 37 quality gate hooks. Zero escape hatches.
 
 ---

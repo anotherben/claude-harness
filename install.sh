@@ -5,7 +5,7 @@ set -euo pipefail
 # Usage: curl -fsSL https://raw.githubusercontent.com/<your-org>/claude-harness/main/install.sh | bash
 # Or:    cd my-project && ~/claude-harness/install.sh
 
-VERSION="1.0.0"
+VERSION="1.9.0"
 HARNESS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="${1:-.}"
 CLAUDE_DIR="$TARGET_DIR/.claude"
