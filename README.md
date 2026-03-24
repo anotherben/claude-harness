@@ -4,7 +4,7 @@
 
 A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) and [Codex CLI](https://github.com/openai/codex) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
 
-Two built-in MCP servers. An Obsidian vault as the shared brain. 30 code intelligence tools. 29 enterprise skills. 30 quality gate hooks. Zero escape hatches.
+Two built-in MCP servers. An Obsidian vault as the shared brain. 30 code intelligence tools. 47 enterprise skills. 36 quality gate hooks. Zero escape hatches.
 
 ---
 
@@ -111,7 +111,7 @@ Hook chain:
          ┌─────────────┼─────────────┐
          │             │             │
 ┌────────▼──────┐ ┌────▼─────┐ ┌────▼──────┐
-│ Cortex Engine │ │ 28 Hooks │ │ 29 Skills │
+│ Cortex Engine │ │ 36 Hooks │ │ 47 Skills │
 │  (30 tools)   │ │  (gates) │ │(workflow) │
 │  MCP server   │ │  shell   │ │ markdown  │
 └────────┬──────┘ └────┬─────┘ └────┬──────┘
@@ -135,10 +135,11 @@ Hook chain:
 ```
 claude-harness/
 ├── cortex-engine/        # Code intelligence MCP (30 tools, 8 languages)
-├── hooks/                # 30 shell hooks — quality gates
-├── skills/               # 29 Claude Code skills — enterprise workflow
+├── vault-index/          # Obsidian vault query MCP (20 tools, claim coordination)
+├── hooks/                # 36 shell hooks — quality gates
+├── skills/               # 47 Claude Code skills — enterprise workflow
 ├── conductor/            # Fleet orchestration — multi-agent dispatch
-├── plugins/              # Domain guards (Shopify, REX SOAP, SQL safety)
+├── plugins/              # Domain guards (authoring guide)
 ├── templates/            # Review lenses, prompt templates
 ├── tiers/                # Enforcement level configs (lite/standard/full)
 └── install.sh            # One-command project setup
@@ -151,8 +152,9 @@ claude-harness/
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/your-org/claude-harness.git ~/claude-harness
+git clone https://github.com/anotherben/claude-harness.git ~/claude-harness
 cd ~/claude-harness/cortex-engine && npm install
+cd ~/claude-harness/vault-index && npm install
 ```
 
 ### 2. Register MCP servers
@@ -169,7 +171,7 @@ cd ~/claude-harness/cortex-engine && npm install
     "vault-index": {
       "type": "stdio",
       "command": "node",
-      "args": ["/path/to/.vault-index/src/server.js"]
+      "args": ["/path/to/claude-harness/vault-index/src/server.js"]
     }
   }
 }
@@ -178,7 +180,7 @@ cd ~/claude-harness/cortex-engine && npm install
 **Codex CLI:**
 ```bash
 codex mcp add cortex-engine -- node ~/claude-harness/cortex-engine/src/server.js
-codex mcp add vault-index -- node ~/.vault-index/src/server.js
+codex mcp add vault-index -- node ~/claude-harness/vault-index/src/server.js
 ```
 
 No project path needed — Cortex uses the working directory automatically. For multi-repo: `node src/server.js /path/to/repo1 /path/to/repo2`
@@ -328,7 +330,7 @@ At scale: 100 reads/session = ~200K tokens saved = **$3/session on Opus**.
 
 ---
 
-## Skills — 29 Enterprise Workflows
+## Skills — 47 Enterprise Workflows
 
 ### The Enterprise Pipeline (9 stages + auto-bootstrap)
 
@@ -392,18 +394,29 @@ Run **`/enterprise`** to orchestrate the full pipeline with automatic mode selec
 | `/fleet-commander` | Multi-agent dispatch with model routing |
 | `/conductor-resume` | Resume a fleet dispatch from checkpoint |
 
-### Domain Guards (Plugins)
-| Plugin | What It Guards |
-|--------|---------------|
+### Domain Guards
+| Skill | What It Guards |
+|-------|---------------|
 | `/sql-guard` | Multi-tenant scoping, parameterized queries, type-safe joins |
 | `/shopify-integration` | HMAC verification, idempotency, rate limits, fulfillment state machine |
 | `/rex-soap-protocol` | Dual SOAP protocol detection, three-endpoint architecture |
+| `/integration-guard` | Pre-code checklist for any external integration (routes to specialized guards) |
+| `/sync-worker` | Atomic queue claims, exponential backoff, checkpoint persistence, echo detection |
 | `/deploy-checklist` | Migrations, env vars, rollback plan |
 | `/create-migration` | Numbered SQL migration following conventions |
 
+### Setup & Maintenance
+| Skill | What |
+|-------|------|
+| `/harness-init` | Install harness into a new project — hooks, skills, settings, MCP servers |
+| `/harness-update` | Pull latest skills from harness repo |
+| `/cortex-index` | Index or reindex project with cortex-engine |
+| `/worktree-cleanup` | Audit and clean stale git worktrees |
+| `/prompt-intelligence` | Load learned behaviors from cortex annotations at session start |
+
 ---
 
-## Hooks — 30 Quality Gates
+## Hooks — 36 Quality Gates
 
 ### Source File Protection
 | Hook | When | Enforces |
@@ -436,6 +449,8 @@ Run **`/enterprise`** to orchestrate the full pipeline with automatic mode selec
 |------|------|----------|
 | `enforce-enterprise-pipeline.sh` | Invoke enterprise-* | Stages cannot be skipped |
 | `enforce-vault-context.sh` | Invoke enterprise-* | Must load vault context first |
+| `vault-gates.sh` | Invoke enterprise-* | 4 gates: vault-context first, stale inbox check, vault-update before verify, claim ownership |
+| `vault-sweep-reminder.sh` | Session start | Warns if vault sweep is >7 days overdue |
 | `require-independent-review.sh` | Invoke enterprise-review | Builder cannot review own work |
 
 ### Automation
@@ -597,16 +612,18 @@ require-test-evidence.sh reads JSON:
 
 | Component | Count |
 |-----------|-------|
+| MCP servers | 2 (cortex-engine + vault-index) |
 | MCP tools (Cortex Engine) | 30 |
-| Skills (enterprise workflows) | 29 |
-| Hooks (quality gates) | 30 |
+| MCP tools (vault-index) | 20 |
+| Skills (enterprise workflows) | 47 |
+| Hooks (quality gates) | 36 |
 | Tree-sitter languages | 8 |
 | File types indexed | 22 |
 | Source categories | 7 |
 | Semantic tags | 11 |
-| Tests | 333 |
+| Tests (Cortex Engine) | 333 |
 | Tiers | 3 |
-| Domain guard plugins | 3 |
+| Domain guard skills | 5 |
 
 ## License
 

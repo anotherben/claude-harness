@@ -1,0 +1,18 @@
+{
+  "name": "vault-index",
+  "version": "0.1.0",
+  "description": "MCP server for structured Obsidian vault indexing and search",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "better-sqlite3": "^12.6.2",
+    "sqlite-vec": "0.1.7-alpha.2",
+    "zod": "^4.3.6"
+  }
+}

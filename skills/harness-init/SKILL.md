@@ -171,6 +171,8 @@ auto-format.sh
 require-vault-for-edits.sh
 require-vault-update.sh
 enforce-vault-context.sh
+vault-gates.sh
+vault-sweep-reminder.sh
 ```
 
 **Standard adds:**
@@ -219,8 +221,11 @@ chmod +x *.sh
 
 Copy all skill directories from `~/claude-harness/skills/` to `.claude/skills/`.
 
-- **Lite/Standard**: skip `fleet-commander`
+All tiers get all skills EXCEPT:
+- **Lite/Standard**: skip `fleet-commander` and `conductor-resume`
 - **Full**: copy everything
+
+This includes vault skills (vault-capture, vault-context, vault-init, vault-process, vault-status, vault-sweep, vault-triage, vault-update), domain guards (integration-guard, sql-guard, sync-worker, rex-soap-protocol, shopify-integration), and utilities (worktree-cleanup, cortex-index, prompt-intelligence, harness-update).
 
 ## Step 5: Generate settings.json
 

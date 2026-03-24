@@ -69,7 +69,7 @@ echo ""
 echo "Choose your tier:"
 echo "  [1] Lite     — TDD + evidence + lint + merge protocol"
 echo "  [2] Standard — + vault integration, plan gate, independent review"
-echo "  [3] Full     — + fleet orchestration, context injection, jcodemunch"
+echo "  [3] Full     — + fleet orchestration, context injection, cortex-engine, prompt refinement"
 echo ""
 read -rp "Tier [1/2/3]: " TIER_CHOICE
 case "$TIER_CHOICE" in
@@ -160,12 +160,8 @@ if [ ! -d "$VAULT_PATH" ]; then
   ok "Created vault at ${VAULT_PATH}"
 fi
 
-# jcodemunch repo ID (Full)
+# cortex-engine auto-detects project — no manual repo ID needed
 JCODEMUNCH_REPO_ID=""
-if [ "$TIER" = "full" ]; then
-  read -rp "jcodemunch repo ID (leave blank to auto-detect later): " JCODEMUNCH_REPO_ID
-  JCODEMUNCH_REPO_ID="${JCODEMUNCH_REPO_ID:-UNCONFIGURED}"
-fi
 
 # --- Create directory structure ---
 echo ""
@@ -196,6 +192,8 @@ get_hooks_for_tier() {
     require-vault-for-edits.sh
     require-vault-update.sh
     enforce-vault-context.sh
+    vault-gates.sh
+    vault-sweep-reminder.sh
     pre-agent-dispatch.sh
     post-agent-checklist.sh
   )
@@ -216,8 +214,8 @@ get_hooks_for_tier() {
       context-inject.sh
       context-fade.sh
       refine-prompt.sh
-      suggest-jcodemunch.sh
-      jcodemunch-reindex.sh
+      suggest-cortex.sh
+      cortex-reindex.sh
       post-compact-handover.sh
       ensure-environment.sh
     )
@@ -258,7 +256,7 @@ SKILL_COUNT=0
 # Get skill list from tier JSON
 get_skills_for_tier() {
   local tier="$1"
-  # Base skills (all tiers)
+  # Base skills (all tiers — vault is core to the harness)
   local skills=(
     enterprise enterprise-discover enterprise-brainstorm
     enterprise-plan enterprise-contract enterprise-build
@@ -268,6 +266,12 @@ get_skills_for_tier() {
     contract-manager scope-check patch-or-fix but-why
     handover-writer session-heartbeat run-verification
     senior-architect deploy-checklist create-migration
+    vault-capture vault-context vault-init vault-process
+    vault-status vault-sweep vault-triage vault-update
+    worktree-cleanup cortex-index
+    integration-guard sql-guard sync-worker
+    rex-soap-protocol shopify-integration
+    prompt-intelligence harness-update
   )
 
   # Full adds
@@ -331,7 +335,8 @@ STANDARD_EDIT
         "matcher": "Skill",
         "hooks": [
           { "type": "command", "command": "${hook_prefix}/enforce-enterprise-pipeline.sh", "timeout": 5 },
-          { "type": "command", "command": "${hook_prefix}/enforce-vault-context.sh", "timeout": 5 }$(
+          { "type": "command", "command": "${hook_prefix}/enforce-vault-context.sh", "timeout": 5 },
+          { "type": "command", "command": "${hook_prefix}/vault-gates.sh", "timeout": 10 }$(
   if [ "$tier" = "standard" ] || [ "$tier" = "full" ]; then
     cat <<STANDARD_SKILL
 ,
@@ -352,7 +357,7 @@ STANDARD_SKILL
       {
         "matcher": "Read",
         "hooks": [
-          { "type": "command", "command": "${hook_prefix}/suggest-jcodemunch.sh", "timeout": 5 }
+          { "type": "command", "command": "${hook_prefix}/suggest-cortex.sh", "timeout": 5 }
         ]
       }
 FULL_READ
@@ -374,7 +379,7 @@ FULL_READ
   if [ "$tier" = "full" ]; then
     cat <<FULL_EDIT_POST
 ,
-          { "type": "command", "command": "${hook_prefix}/jcodemunch-reindex.sh", "timeout": 5 }
+          { "type": "command", "command": "${hook_prefix}/cortex-reindex.sh", "timeout": 5 }
 FULL_EDIT_POST
   fi)
         ]
@@ -412,17 +417,23 @@ STANDARD_EXIT_PLAN
       }
 FULL_CONTEXT
   fi)
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "${hook_prefix}/vault-sweep-reminder.sh", "timeout": 5 }$(
+  if [ "$tier" = "full" ]; then
+    cat <<FULL_SESSION
+,
+          { "type": "command", "command": "${hook_prefix}/ensure-environment.sh", "timeout": 30 }
+FULL_SESSION
+  fi)
+        ]
+      }
     ]$(
   if [ "$tier" = "full" ]; then
     cat <<FULL_LIFECYCLE
 ,
-    "SessionStart": [
-      {
-        "hooks": [
-          { "type": "command", "command": "${hook_prefix}/ensure-environment.sh", "timeout": 30 }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -517,7 +528,7 @@ STANDARD_ROWS
   # Full adds
   if [ "$tier" = "full" ]; then
     cat <<'FULL_ROWS'
-| **Read** source file >50 lines | `suggest-jcodemunch.sh` | Must use jcodemunch MCP |
+| **Read** source file >50 lines | `suggest-cortex.sh` | Must use cortex-engine MCP |
 | **PostCompact** | `post-compact-handover.sh` | Escalates handover urgency |
 FULL_ROWS
   fi
@@ -540,6 +551,84 @@ else
 fi
 ok "CLAUDE.md updated with enforcement chain"
 
+# --- Install vault-index MCP server ---
+info "Setting up vault-index MCP server..."
+VAULT_INDEX_DIR="$HOME/.vault-index"
+if [ ! -d "$VAULT_INDEX_DIR" ]; then
+  cp -r "$HARNESS_DIR/vault-index" "$VAULT_INDEX_DIR"
+  (cd "$VAULT_INDEX_DIR" && npm install --production 2>/dev/null)
+  ok "vault-index installed at ${VAULT_INDEX_DIR}"
+else
+  info "vault-index already exists at ${VAULT_INDEX_DIR} — skipping"
+fi
+
+# --- Install cortex-engine MCP server ---
+info "Setting up cortex-engine MCP server..."
+CORTEX_DIR="$HOME/claude-harness/cortex-engine"
+if [ -d "$CORTEX_DIR" ] && [ -f "$CORTEX_DIR/package.json" ]; then
+  if [ ! -d "$CORTEX_DIR/node_modules" ]; then
+    (cd "$CORTEX_DIR" && npm install --production 2>/dev/null)
+    ok "cortex-engine dependencies installed"
+  else
+    ok "cortex-engine already set up"
+  fi
+else
+  warn "cortex-engine not found at ${CORTEX_DIR} — install manually"
+fi
+
+# --- Register MCP servers in project .mcp.json ---
+info "Registering MCP servers..."
+MCP_JSON="$TARGET_DIR/.mcp.json"
+if [ -f "$MCP_JSON" ]; then
+  # Add cortex-engine and vault-index if not present
+  python3 -c "
+import json, sys
+with open('$MCP_JSON') as f:
+    data = json.load(f)
+servers = data.setdefault('mcpServers', {})
+changed = False
+if 'cortex-engine' not in servers:
+    servers['cortex-engine'] = {
+        'type': 'stdio',
+        'command': 'node',
+        'args': ['$CORTEX_DIR/src/server.js']
+    }
+    changed = True
+if 'vault-index' not in servers:
+    servers['vault-index'] = {
+        'type': 'stdio',
+        'command': 'node',
+        'args': ['$VAULT_INDEX_DIR/src/server.js']
+    }
+    changed = True
+if changed:
+    with open('$MCP_JSON', 'w') as f:
+        json.dump(data, f, indent=2)
+    print('added')
+else:
+    print('present')
+" 2>/dev/null
+  ok "MCP servers registered in .mcp.json"
+else
+  cat > "$MCP_JSON" <<MCP_EOF
+{
+  "mcpServers": {
+    "cortex-engine": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["$CORTEX_DIR/src/server.js"]
+    },
+    "vault-index": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["$VAULT_INDEX_DIR/src/server.js"]
+    }
+  }
+}
+MCP_EOF
+  ok "Created .mcp.json with MCP servers"
+fi
+
 # --- Summary ---
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -548,6 +637,7 @@ echo ""
 echo "  Hooks:  ${HOOK_COUNT} installed in .claude/hooks/"
 echo "  Skills: ${SKILL_COUNT} installed in .claude/skills/"
 echo "  Config: .claude/settings.json generated"
+echo "  MCP:    cortex-engine + vault-index registered"
 echo "  Docs:   CLAUDE.md enforcement section added"
 echo ""
 echo "Run /enterprise to start your first enforced development cycle."
