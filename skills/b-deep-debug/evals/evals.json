@@ -1,0 +1,58 @@
+{
+  "skill_name": "deep-debug",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "hey, the product sync from REX is pulling in products but some of them have the wrong supplier assigned. like product SKU 'HTN-BOARD-001' is showing supplier 'Generic' instead of 'Rip Curl'. this worked fine last week. can you figure out what's going on?",
+      "expected_output": "A structured root cause analysis report with natural-depth Why chain, flow trace through the REX sync pipeline, blast radius assessment, edge cases, specific fix directions, and verification queries.",
+      "files": [],
+      "expectations": [
+        "Output contains a clear Symptom Statement",
+        "Output contains a Flow Trace with file:line references",
+        "Output contains a Why chain that stops at natural root cause depth (not forced to exactly 5)",
+        "Output contains a Blast Radius rating",
+        "Output contains Edge Cases section",
+        "Output does NOT contain code modifications or file edits",
+        "Output mentions the UUID vs integer type trap for supplier IDs",
+        "Output identifies at least 3 files in the sync pipeline",
+        "Suggested Fix Direction names specific files, functions, and the exact SQL/code change needed",
+        "Output includes Verification Queries section with runnable SQL to confirm root cause and measure impact"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "we're getting a 500 error on the admin page for viewing order details. it happens on some orders but not others. the error log says 'Cannot read properties of null (reading map)'. order ID 4521 crashes but order 4520 works fine.",
+      "expected_output": "A structured analysis tracing the order detail API endpoint through to the React component, identifying what null value causes the crash and why some orders have it while others don't. Specific fix directions and verification queries.",
+      "files": [],
+      "expectations": [
+        "Output contains a clear Symptom Statement mentioning specific order IDs",
+        "Output traces from the API route through to the frontend component",
+        "Output contains a Why chain that reaches a structural cause at natural depth",
+        "Output identifies what specific property is null and why",
+        "Output contains a Blast Radius section checking for similar null patterns",
+        "Output does NOT contain any code edits or Write/Edit tool calls",
+        "Output includes edge cases for null/undefined data",
+        "Confidence level is explicitly stated",
+        "Suggested Fix Direction specifies exact files and line numbers to change",
+        "Output includes Verification Queries (SQL to check schema state, count affected orders)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "shopify webhooks for order creation are sometimes getting processed twice. we end up with duplicate fulfillment records. it doesn't happen on every order, maybe 1 in 20. the webhook endpoint returns 200 OK but shopify sends it again anyway.",
+      "expected_output": "A deep analysis of the webhook processing pipeline examining idempotency, race conditions, and Shopify retry behavior. Specific fix directions and verification queries for detecting existing double-counted records.",
+      "files": [],
+      "expectations": [
+        "Output contains a Symptom Statement about intermittent duplicate processing",
+        "Output traces the Shopify webhook route through to fulfillment record creation",
+        "Output contains a Why chain examining idempotency mechanisms at natural depth",
+        "Output examines race conditions and concurrency as potential causes",
+        "Output maps blast radius to downstream systems (fulfillment, inventory, REX)",
+        "Output does NOT modify any code",
+        "Output identifies timing/concurrency edge cases",
+        "Suggested Fix Direction is specific enough to implement (names files, functions, SQL patterns)",
+        "Output includes Verification Queries to detect existing double-counted fulfillment records"
+      ]
+    }
+  ]
+}

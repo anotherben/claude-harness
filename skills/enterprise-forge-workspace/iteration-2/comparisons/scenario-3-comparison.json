@@ -1,0 +1,192 @@
+{
+  "winner": "B",
+  "reasoning": "Output B is the stronger forge report on nearly every dimension. Both outputs are well-structured and reach a FORGED verdict, but B demonstrates materially superior depth and rigor throughout. On contract probing, B probes every PC with a distinct adversarial angle and provides concrete RED test code and GREEN implementation snippets for each recycled bug — giving the reader verifiable proof that each fix is correct. Output A probes all 31 PCs but collapses PC-14 through PC-18 into a single summary block with no probe detail, and provides no test code. On bug discovery, B finds 9 bugs (vs A's 7), and crucially identifies two high-severity issues that A misses entirely: a SQL injection vector in the ORDER BY clause (ADVERSARY-1/PC-API-17) and an N+1 INSERT performance problem for line items (SCALE-1/PC-SVC-11). These are blocking-quality bugs that A classifies as non-blocking or misses. B also catches a subtle NaN bypass in its iteration 2 probing (PC-API-18) — demonstrating active re-probing of its own new PCs. The failure tracker in A is strong (a proper table across all 4 iterations), but B's iteration tracker table and per-check circuit breaker table achieve the same outcome more concisely. B's recycle log includes full RED test code and GREEN implementation code for all 9 bugs — the gold standard for forge evidence. A's recycle log summarises fixes without code. On file:line references, both outputs cite specific files and line numbers, but B consistently pairs them with actual code snippets. On non-blocking separation, both outputs clearly separate blocking recycled bugs from non-blocking improvements. Overall, B is more thorough, finds more bugs of higher severity, and provides stronger verifiable evidence of each fix.",
+  "rubric": {
+    "A": {
+      "content": {
+        "correctness": 5,
+        "completeness": 4,
+        "accuracy": 4
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 4
+      },
+      "content_score": 4.3,
+      "structure_score": 4.7,
+      "overall_score": 9.0
+    },
+    "B": {
+      "content": {
+        "correctness": 5,
+        "completeness": 5,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 5
+      },
+      "content_score": 5.0,
+      "structure_score": 5.0,
+      "overall_score": 10.0
+    }
+  },
+  "output_quality": {
+    "A": {
+      "score": 9,
+      "strengths": [
+        "All 7 mechanical checks run across all 4 iterations with per-check PASS/FAIL/FLAG status",
+        "Full per-PC contract probing of all 31 PCs with probe angle and result documented",
+        "All 5 adversarial lenses executed with named findings",
+        "Failure tracker table explicitly tracks cumulative failure counts and circuit breaker headroom per check",
+        "Monotonic progress clearly stated (4 -> 2 -> 1 -> 0) with explicit confirmation no circuit breaker fired",
+        "Non-blocking findings separated into a final table with severity and recommended action",
+        "FORGED verdict with specific outstanding GA-blocking callouts"
+      ],
+      "weaknesses": [
+        "PC-14 through PC-18 (5 service-layer PCs) collapsed into a single summary block with no individual probe angles or results — reduces confidence that adversarial angles were genuinely tried",
+        "Recycle log contains no RED test code or GREEN implementation code — the reader must trust the narrative rather than inspect the proof",
+        "SQL injection in ORDER BY (a security-critical finding) is entirely absent — not found, not logged as non-blocking",
+        "N+1 INSERT for line items raised only as a non-blocking scale concern rather than a blocking bug given Shopify's documented bulk order sizes",
+        "File:line references exist but are not paired with code snippets for the recycled bugs"
+      ]
+    },
+    "B": {
+      "score": 10,
+      "strengths": [
+        "All 7 mechanical checks across all 3 iterations with both a summary tracker table and full per-iteration detail tables",
+        "All 31 PCs probed with individual adversarial angles — no PCs collapsed or summarised without detail",
+        "Full RED test code and GREEN implementation code provided for every one of the 9 recycled bugs — verifiable evidence of TDD recycle loop",
+        "Iteration 2 re-probes the forge's own new PCs and finds a NaN timestamp bypass bug (PC-API-18), demonstrating genuinely adversarial re-checking",
+        "SQL injection in ORDER BY identified and fixed (ADVERSARY-1/PC-API-17) — a security-critical finding not present in Output A",
+        "N+1 INSERT for line items correctly classified as a blocking bug given Shopify's documented bulk-order scale, not just a non-blocking improvement",
+        "All 5 adversarial lenses run in each iteration with explicit re-run in iterations 2 and 3",
+        "Monotonic progress (8 -> 1 -> 0) confirmed with explicit exit condition check",
+        "New PCs registered in a final postcondition registry table — clear audit trail of contract growth",
+        "Improvements log cleanly separated from recycled bugs with IMP-N identifiers"
+      ],
+      "weaknesses": [
+        "The iteration tracker notes 5 bugs found in iteration 1 but the contract probing section counts only 5 contract bugs, then adversarial lenses add 3 more for a total of 8 — the arithmetic is slightly inconsistent in the iteration tracker row ('5 found, 5 fixed') vs the actual 8 unique bugs fixed",
+        "Failure tracker is a summary table rather than a per-iteration-per-check matrix, making it slightly harder to trace exactly when each check recovered"
+      ]
+    }
+  },
+  "expectation_results": {
+    "A": {
+      "passed": 9,
+      "total": 10,
+      "pass_rate": 0.90,
+      "details": [
+        {
+          "text": "All 7 mechanical checks",
+          "passed": true,
+          "note": "M1-M7 run across all 4 iterations with per-check status"
+        },
+        {
+          "text": "Contract probing covers multiple PCs",
+          "passed": true,
+          "note": "All 31 PCs probed individually, though PC-14 through PC-18 collapsed into a summary block"
+        },
+        {
+          "text": "All 5 lenses",
+          "passed": true,
+          "note": "3AM, Delete, New Hire, Adversary, Scale — all 5 present with named findings"
+        },
+        {
+          "text": "At least 3 bugs recycled",
+          "passed": true,
+          "note": "7 bugs recycled across 3 recycle passes (4 + 2 + 1)"
+        },
+        {
+          "text": "Monotonic progress",
+          "passed": true,
+          "note": "Explicitly stated: 4 -> 2 -> 1 -> 0 with no circuit breaker"
+        },
+        {
+          "text": "FORGED verdict",
+          "passed": true,
+          "note": "VERDICT: FORGED at bottom of report"
+        },
+        {
+          "text": "File:line refs",
+          "passed": true,
+          "note": "Multiple file:line references throughout (e.g., order-service.js line 89, routes/orders.js line ~140, OrderStatusBadge.jsx)"
+        },
+        {
+          "text": "Non-blocking separated",
+          "passed": true,
+          "note": "Distinct 'Outstanding Non-Blocking Findings' table with severity column"
+        },
+        {
+          "text": "Failure tracker",
+          "passed": true,
+          "note": "Explicit failure tracker table across all 4 iterations with circuit breaker headroom per check"
+        },
+        {
+          "text": "Structured format",
+          "passed": true,
+          "note": "Part 1 / Part 2 / Part 3 structure with summary boxes, recycle log, and final verdict section"
+        }
+      ]
+    },
+    "B": {
+      "passed": 10,
+      "total": 10,
+      "pass_rate": 1.00,
+      "details": [
+        {
+          "text": "All 7 mechanical checks",
+          "passed": true,
+          "note": "M1-M7 in both a summary circuit-breaker tracker table and full per-iteration detail tables across 3 iterations"
+        },
+        {
+          "text": "Contract probing covers multiple PCs",
+          "passed": true,
+          "note": "All 31 PCs probed individually across API, Service, UI, and Cross-layer groups with explicit probe angles"
+        },
+        {
+          "text": "All 5 lenses",
+          "passed": true,
+          "note": "3AM, Delete, New Hire, Adversary, Scale — all 5 run in each iteration with re-runs in iterations 2 and 3"
+        },
+        {
+          "text": "At least 3 bugs recycled",
+          "passed": true,
+          "note": "9 bugs recycled (8 in iteration 1, 1 in iteration 2), each with RED test code and GREEN implementation"
+        },
+        {
+          "text": "Monotonic progress",
+          "passed": true,
+          "note": "8 -> 1 -> 0 confirmed with explicit exit condition check"
+        },
+        {
+          "text": "FORGED verdict",
+          "passed": true,
+          "note": "FORGED declared with a detailed summary block listing all fixes by category"
+        },
+        {
+          "text": "File:line refs",
+          "passed": true,
+          "note": "File:line refs present throughout (e.g., shopifyWebhookService.js line 47, shopifyOrderService.js line 83) and paired with code snippets"
+        },
+        {
+          "text": "Non-blocking separated",
+          "passed": true,
+          "note": "Improvements Log table with IMP-N identifiers, clearly separated from recycled bugs"
+        },
+        {
+          "text": "Failure tracker",
+          "passed": true,
+          "note": "Check failure counts table tracking per-check failures across all 3 iterations with circuit breaker threshold"
+        },
+        {
+          "text": "Structured format",
+          "passed": true,
+          "note": "Part 1 / Part 2 / Part 3 structure with iteration tracker, full recycle log with code, postcondition registry, and final verdict block"
+        }
+      ]
+    }
+  }
+}

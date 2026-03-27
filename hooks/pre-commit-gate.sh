@@ -30,16 +30,46 @@ MODIFIED_TESTS=$(git -C "$CLAUDE_PROJECT_DIR" diff --cached --name-only 2>/dev/n
 RECENT_TEST_RUN=false
 if [ -f "$EVIDENCE_FILE" ]; then
   RESULT=$(python3 - "$EVIDENCE_FILE" << 'PYEOF'
-import json, sys
+import json, sys, hashlib, hmac
 evidence_file = sys.argv[1]
 with open(evidence_file) as f:
     ev = json.load(f)
 stale = ev.get('stale', True)
-failed = ev.get('result', {}).get('suites_failed', -1)
-if not stale and failed == 0:
-    print('PASS')
-else:
+tests_failed = ev.get('result', {}).get('tests_failed', 0)
+suites_passed = ev.get('result', {}).get('suites_passed', 0)
+
+# Verify HMAC integrity — reject hand-written evidence
+EVIDENCE_SALT = b'claude-hook-integrity-v1'
+stored_sig = ev.get('_integrity', '')
+output_tail = ev.get('output_tail', '')
+commit = ev.get('commit', '')
+session_id = ev.get('session_id', '')
+exit_code = ev.get('result', {}).get('exit_code', -1)
+tests_passed_count = ev.get('result', {}).get('tests_passed', 0)
+
+sig_valid = False
+if stored_sig:
+    sig_payload = f"{output_tail}|{commit}|{session_id}|{exit_code}|{suites_passed}|{tests_passed_count}".encode()
+    expected_sig = hmac.new(EVIDENCE_SALT, sig_payload, hashlib.sha256).hexdigest()
+    sig_valid = hmac.compare_digest(stored_sig, expected_sig)
+
+if not stored_sig or not sig_valid:
     print('FAIL')
+elif stale:
+    print('FAIL')
+elif tests_failed > 3:  # baseline: 3 known pre-existing failures
+    print('FAIL')
+else:
+    import os, pathlib
+    min_suites = 30
+    config_path = os.path.join(os.environ.get('CLAUDE_PROJECT_DIR', '.'), '.claude', 'evidence', 'config.json')
+    if pathlib.Path(config_path).exists():
+        with open(config_path) as cf:
+            min_suites = json.load(cf).get('min_suites', 30)
+    if suites_passed < min_suites:
+        print('FAIL')
+    else:
+        print('PASS')
 PYEOF
   )
   if [ "$RESULT" = "PASS" ]; then

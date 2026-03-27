@@ -1,0 +1,97 @@
+{
+  "expectations": [
+    {
+      "text": "Check 1 correctly identifies the failing test",
+      "passed": true,
+      "evidence": "Lines 19-61 show CHECK 1 — TEST SUITE (ATTEMPT 1) with explicit FAIL result. Test name identified: 'returns current stock quantity' with expected vs received diff (lines 37-38). Exact assertion location: src/services/productService.test.js:49:19"
+    },
+    {
+      "text": "Agent STOPS at check 1 failure instead of continuing",
+      "passed": true,
+      "evidence": "Lines 65-103 show explicit 'STOP — FAILURE RECOVERY' section stating 'Check 1 failed. Per the skill protocol: fix the issue, re-run check 1...'. Agent does not skip to check 2; instead explains root cause, implements fix, and re-runs check 1 in Attempt 2 before continuing"
+    },
+    {
+      "text": "Failure recovery protocol followed (fix, re-run check 1, continue)",
+      "passed": true,
+      "evidence": "Lines 70-103 show complete recovery cycle: Root cause analysis (70-75), Fix Applied section with mock change documented (77-93), Check 1 re-run in Attempt 2 (106-132), then sequence continues from Check 2 onwards (135+)"
+    },
+    {
+      "text": "After fixing, all 7 checks completed",
+      "passed": true,
+      "evidence": "Lines 266-272 show all checks with status: Check 1 PASS, Check 2 PASS, Check 3 PASS, Check 4 SKIPPED (valid skip for backend-only), Check 5 PASS, Check 6 PASS, Check 7 PASS. All checks completed or validly skipped"
+    },
+    {
+      "text": "Postcondition trace maps PCs to specific test names",
+      "passed": true,
+      "evidence": "Lines 136-171 show PC-1 through PC-4, each mapped to specific test name: PC-1 maps to 'productService › getProductDetails › returns current stock quantity'; PC-2 to 'productService › getProductList › includes current_stock in list rows'; PC-3 to null path and edge case tests; PC-4 to 'returns product with correct id'. File locations and line numbers provided for each"
+    },
+    {
+      "text": "Verification report shows failure recovery log",
+      "passed": true,
+      "evidence": "Lines 279-294 show dedicated 'Failure Recovery Summary' section with table format showing: Attempt 1 Check 1 FAIL with reason 'Mock still returns available_stock at L33', FIX row showing action taken, Attempt 2 Check 1 PASS, and sequence completion"
+    },
+    {
+      "text": "Final verdict reflects the recovery (not just the initial failure)",
+      "passed": true,
+      "evidence": "Lines 264-275 show final verdict 'OVERALL: PASS — all checks green (1 valid skip)' reflecting post-recovery state, not initial failure. Line 301 concludes: 'The stock quantity bug fix is verified clean for commit.' Report does not end with the initial failure; it documents the successful recovery path"
+    },
+    {
+      "text": "No banned language in the completion claim",
+      "passed": true,
+      "evidence": "Completion claim (lines 298-301) uses concrete language: 'Verification complete. All 7 checks passed... 19 tests passing, 4/4 postconditions verified, no regressions, 2 files in diff with 0 drift, all imports resolve, no debug artifacts. The stock quantity bug fix is verified clean for commit.' Contains zero instances of hedging words ('seems', 'appears', 'likely', 'probably', 'might', 'should', 'may', 'possibly', 'unclear', 'assume', 'believe', 'hope', 'looks like', 'suggests', 'indicates')"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "output_files": 1,
+    "output_chars": 10468,
+    "transcript_chars": 10468
+  },
+  "claims": [
+    {
+      "claim": "19 tests passing across 7 test suites",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Lines 128-129 show 'Test Suites: 7 passed, 7 total' and 'Tests: 19 passed, 19 total'"
+    },
+    {
+      "claim": "Only 2 files changed in final diff",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Lines 206-209 show 'git diff --stat' with exactly 2 files: productService.js and productService.test.js, 4 insertions, 4 deletions"
+    },
+    {
+      "claim": "Root cause was a stale mock in the test file",
+      "type": "process",
+      "verified": true,
+      "evidence": "Lines 70-75 explain root cause: 'getProductList mock was corrected to return current_stock, but getProductDetails mock was overlooked — it still returns available_stock'. Lines 81-88 show the exact mock fix"
+    },
+    {
+      "claim": "All imports in changed files resolve to real paths",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Lines 233-244 show CHECK 6 — IMPORT RESOLUTION with all imports verified: db.js EXISTS, productFormatter.js EXISTS, productService.js EXISTS"
+    },
+    {
+      "claim": "No debug code (console.log, debugger, TODO, FIXME) in changes",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Lines 250-260 show CHECK 7 output is empty (no matches) for console.log, debugger, TODO, FIXME, HACK, XXX. Explicitly states 'No console.log, debugger, TODO, FIXME, HACK, or XXX in production code diff'"
+    },
+    {
+      "claim": "Zero test regressions after the fix",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Lines 175-188 show CHECK 3 — REGRESSION CHECK: 'Baseline (pre-change): 19 tests across 7 suites. Post-change: 19 tests across 7 suites, 0 failed. New test failures: NONE'"
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Expectations are well-designed and discriminating. They directly test the core requirement (failure detection → recovery → completion) without being trivially satisfied. The sequence of checks (1) failure identification, (2) stop vs continue, (3) recovery protocol, (4) full completion, (5-8) documentation quality ensures the agent genuinely implements failure handling, not just surficial compliance. All expectations require examining actual content and behavior, not just file existence. No improvements needed."
+  }
+}

@@ -32,6 +32,20 @@ Then re-read ONE rule from the Rule Re-injection section — whichever is most r
 
 A Quick Heartbeat is better than no heartbeat. Use the full 6-Point Check at major milestones (before commits, before task switches, after compaction).
 
+## Vault Controller Check
+
+When the session touches vault-backed work, add this quick controller pass:
+
+1. Open or summarize `[[Master Dashboard]]`
+2. Check the relevant `[[Projects/<project>/README]]`
+3. Ask whether the current item has:
+   - canonical `status`
+   - `next_action`
+   - any ghost-work signal (`completed_at` or `handoff_note` while still open)
+   - `proof_state` if proof is the real blocker
+
+If the session status request is really a portfolio request, prefer the controller view over transcript memory.
+
 ## The 6-Point Check
 
 Run these in order. Each takes seconds. Together they catch the problems that slip through in long sessions.
@@ -182,6 +196,7 @@ When the heartbeat detects specific types of work, suggest the relevant skill:
 | Starting a new feature branch | `worktree-cleanup` — check for stale worktrees |
 | Migration being created | `sql-guard` — migration safety section |
 | Code exploration / symbol lookup | `cortex-engine` - status, then outline/read_symbol/find_symbol |
+| Portfolio or task status review | `vault-status` or `vault-context` — prefer the controller over transcript memory |
 
 ## When to Invoke
 

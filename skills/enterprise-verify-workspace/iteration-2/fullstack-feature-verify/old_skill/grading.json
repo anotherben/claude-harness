@@ -1,0 +1,17 @@
+{
+  "eval_id": 3,
+  "eval_name": "fullstack-feature-verify",
+  "configuration": "old_skill",
+  "expectations": [
+    {"text": "Ran 7 manual checks", "passed": true, "evidence": "All 7 checks run manually with commands shown"},
+    {"text": "Check 4 NOT skipped (frontend files changed)", "passed": true, "evidence": "Check 4 shows vite build: 187 modules, 4.21s, explicitly notes REQUIRED for fullstack"},
+    {"text": "Build verification runs vite build and pastes output", "passed": true, "evidence": "Full vite build output pasted with module count and file sizes"},
+    {"text": "Postcondition trace covers all 4 layers", "passed": true, "evidence": "31/31 PCs: API (13), Service (9), UI (6), Cross-layer (3)"},
+    {"text": "Final diff classifies all 12 files", "passed": true, "evidence": "Numbered table with all 12 files classified as REQUIRED with PC references"},
+    {"text": "Import resolution checks both .js and .jsx files", "passed": true, "evidence": "Backend (6 source + 4 test) and Frontend (3 components) imports verified individually"},
+    {"text": "Debug artifact check scans both api and admin", "passed": true, "evidence": "grep command includes '*.jsx', shows '(no output)'"},
+    {"text": "Verification report includes postcondition count (31)", "passed": true, "evidence": "Summary: '31/31 verified (API: 13, Service: 9, UI: 6, Cross-layer: 3)'"},
+    {"text": "No banned belief language", "passed": true, "evidence": "No banned language found"}
+  ],
+  "pass_rate": 1.0
+}

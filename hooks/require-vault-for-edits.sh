@@ -24,8 +24,9 @@ if echo "$FILE" | grep -qE '\.claude/(hooks|skills|plans|evidence|worktrees|ente
   exit 0
 fi
 
-# Check 1: session-level vault-context marker (parent or already-bootstrapped subagent)
+# Check 1: session-level vault-context marker (HMAC-signed by mark-skill-invoked.sh)
 MARKER="/tmp/claude-vault-context-${SESSION_ID}"
+HOOK_SALT="claude-hook-integrity-v1"
 
 # Stale marker check: marker must be less than 2 hours old
 if [ -f "$MARKER" ]; then
@@ -35,7 +36,19 @@ if [ -f "$MARKER" ]; then
   fi
 fi
 if [ -f "$MARKER" ]; then
-  exit 0
+  # Verify HMAC signature — reject unsigned/tampered markers
+  STORED_SIG=$(cat "$MARKER" 2>/dev/null | tr -d '[:space:]')
+  EXPECTED_SIG=$(echo -n "vault-context|${SESSION_ID}|${HOOK_SALT}" | shasum -a 256 | cut -d' ' -f1)
+  if [ "$STORED_SIG" = "$EXPECTED_SIG" ]; then
+    exit 0
+  elif [ -z "$STORED_SIG" ]; then
+    # Empty marker (from touch) — BLOCKED. Must be HMAC-signed.
+    echo "BLOCKED: Vault context marker exists but is unsigned. Agents cannot forge vault context with touch." >&2
+    rm -f "$MARKER"
+  else
+    echo "BLOCKED: Vault context marker has invalid signature — was it hand-written by an agent?" >&2
+    rm -f "$MARKER"
+  fi
 fi
 
 # Check 2: consume a vault pass from parent dispatch (subagent bootstrap)

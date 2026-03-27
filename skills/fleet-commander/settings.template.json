@@ -1,0 +1,59 @@
+{
+  "_comment": "Fleet Commander hook configuration. Merge these entries into your .claude/settings.local.json hooks section.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${SKILL_DIR}/hooks/run-hook.sh enforce-fleet-gate.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "${SKILL_DIR}/hooks/run-hook.sh enforce-merge-protocol.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "${SKILL_DIR}/hooks/run-hook.sh pre-merge-test-check.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "${SKILL_DIR}/hooks/run-hook.sh agent-output-review.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${SKILL_DIR}/hooks/run-hook.sh require-worktree.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${SKILL_DIR}/hooks/run-hook.sh post-merge-test-gate.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "${SKILL_DIR}/hooks/run-hook.sh post-merge-worktree-cleanup.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

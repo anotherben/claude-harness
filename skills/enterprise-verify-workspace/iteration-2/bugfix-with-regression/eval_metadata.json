@@ -1,0 +1,15 @@
+{
+  "eval_id": 2,
+  "eval_name": "bugfix-with-regression",
+  "prompt": "I fixed the stock quantity display bug by switching getProductDetails() and getProductList() from available_stock to current_stock. 2 files changed: productService.js, productService.test.js. One test is failing — the mock still expects the old column name. Run verification.",
+  "assertions": [
+    {"text": "Ran verify.sh script (new skill) OR ran 7 manual checks (old skill)", "type": "process"},
+    {"text": "Check 1 (test suite) correctly identifies the failing test", "type": "correctness"},
+    {"text": "The agent STOPS at check 1 failure instead of continuing all checks", "type": "discipline"},
+    {"text": "Failure recovery protocol followed (fix, re-run, continue)", "type": "process"},
+    {"text": "After fixing, all 7 checks completed", "type": "completeness"},
+    {"text": "Postcondition trace maps PCs to specific test names", "type": "correctness"},
+    {"text": "Verification report shows failure recovery log", "type": "evidence"},
+    {"text": "No banned belief language", "type": "discipline"}
+  ]
+}

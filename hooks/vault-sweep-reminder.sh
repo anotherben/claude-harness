@@ -4,6 +4,11 @@
 
 LAST_SWEEP_FILE="/tmp/claude-vault-last-sweep"
 
+# Suggest morning briefing if it hasn't been run this session
+if [ ! -f /tmp/claude-last-morning-briefing ]; then
+  echo "TIP: Start your day with /morning-briefing for a full status overview."
+fi
+
 if [ ! -f "$LAST_SWEEP_FILE" ]; then
   echo "VAULT SWEEP NEEDED: No sweep has ever been run. Run /vault-sweep to review stale items and get accountability."
   exit 0

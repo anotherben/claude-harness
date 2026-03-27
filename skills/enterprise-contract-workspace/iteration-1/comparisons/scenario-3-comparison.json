@@ -1,0 +1,191 @@
+{
+  "winner": "A",
+  "reasoning": "Output A wins on the critical expectation that postconditions themselves contain specific test names (embedded directly in each PC row). Output B defers test names entirely to the traceability matrix, meaning the postconditions section is not self-contained — a developer reading just the postconditions table cannot see which test covers that condition. Output A also includes complete test assertion skeletons (JavaScript code) for representative postconditions, providing concrete non-tautology proof that Output B entirely omits. Output A also outperforms on blast radius specificity, citing actual existing sibling files (rexWebhookRouter.js:L22, productService.js:L18, supplierService.js:L12) rather than approximate line estimates for new files. Output B wins on overall postcondition count (32 vs 27), error case count (13 vs 11), and on explicitly citing the docs/contracts/ output path in the quality gate footer. Output B also introduces a resync endpoint not mentioned in the eval prompt (5 API endpoints vs the stated 4), which represents scope addition. On the primary rubric — content correctness, completeness, and structure — Output A is more actionable for a developer starting implementation: postconditions are fully self-contained with test names, code references, and runnable skeletons. Output B is well-structured but requires cross-referencing the traceability matrix to find test names for each postcondition, which degrades usability.",
+  "rubric": {
+    "A": {
+      "content": {
+        "correctness": 5,
+        "completeness": 4,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 5
+      },
+      "content_score": 4.67,
+      "structure_score": 5.0,
+      "overall_score": 9.67
+    },
+    "B": {
+      "content": {
+        "correctness": 4,
+        "completeness": 5,
+        "accuracy": 4
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 4
+      },
+      "content_score": 4.33,
+      "structure_score": 4.67,
+      "overall_score": 9.0
+    }
+  },
+  "output_quality": {
+    "A": {
+      "score": 9.7,
+      "strengths": [
+        "Every postcondition row includes an embedded test name AND code location — no cross-referencing needed",
+        "Includes JavaScript test assertion skeletons for 8 representative postconditions with non-tautological assertions",
+        "Blast radius cites actual existing sibling files with real line numbers (rexWebhookRouter.js:L22, productService.js:L18, supplierService.js:L12)",
+        "Transaction boundary defined as a precise pseudocode block with rollback semantics",
+        "Error strategy includes a retry policy section explaining exactly why app-side retries are wrong",
+        "11 error cases with explicit test names in the error cases table itself",
+        "8 NOT in scope exclusions (most comprehensive)",
+        "27 postconditions across 4 layers (API, Service, UI, Cross-layer)"
+      ],
+      "weaknesses": [
+        "Does not mention the docs/contracts/ output path anywhere in the contract",
+        "27 postconditions vs 32 in Output B — misses resync endpoint and some UI edge cases (though resync may be out of scope for the stated plan)",
+        "Invariants table lacks Status/Justification columns present in Output B"
+      ]
+    },
+    "B": {
+      "score": 9.0,
+      "strengths": [
+        "32 postconditions — more comprehensive coverage including resync endpoint and additional UI states",
+        "Quality gate footer explicitly names the docs/contracts/ output file path",
+        "Invariants table includes Status (APPLIES) and Justification columns — more auditable",
+        "13 error cases covering resync-specific failure modes (Shopify API 4xx, timeout, post-fetch DB write failure)",
+        "Postcondition summary block provides a clean at-a-glance count",
+        "Consumer map organized by data output with clear section headings",
+        "6 well-specified NOT in scope exclusions with rationale"
+      ],
+      "weaknesses": [
+        "Postconditions table has only ID and Postcondition columns — test names are only in the traceability matrix, requiring cross-referencing to find the test for each postcondition",
+        "No test assertion skeletons — tautology check is claimed but not demonstrated with code",
+        "Blast radius same-file section discusses new files with no existing siblings, providing only approximate line estimates rather than verified existing sibling references",
+        "Introduces a resync endpoint (5th API endpoint) not mentioned in the eval prompt's stated scope of 4 API endpoints — potential scope drift",
+        "Blast radius cross-file section uses hedging language ('if it exists') for existing sibling webhook handlers rather than confirming their existence"
+      ]
+    }
+  },
+  "expectation_results": {
+    "A": {
+      "passed": 9,
+      "total": 10,
+      "pass_rate": 0.90,
+      "details": [
+        {
+          "text": "Contract file created at docs/contracts/ path",
+          "passed": false,
+          "note": "No docs/contracts/ path mentioned anywhere in the contract document"
+        },
+        {
+          "text": "All postconditions have specific test names",
+          "passed": true,
+          "note": "Each PC row in the postconditions tables includes a Test column with a specific named test (e.g. 'shopifyOrderWebhook.test.js: \"accepts valid orders/create webhook with correct HMAC\"')"
+        },
+        {
+          "text": "Blast radius section is populated with specific function names (not N/A)",
+          "passed": true,
+          "note": "Cites rexWebhookRouter.js:L22, productService.js:L18, supplierService.js:L12, verifyShopifyHmac(), authenticateStaff, sanitizeInput(), handleOrderWebhook()"
+        },
+        {
+          "text": "Consumer map lists specific file:line references",
+          "passed": true,
+          "note": "e.g. apps/admin/src/hooks/useOrders.js:L14, apps/admin/src/components/OrdersTable.jsx:L28"
+        },
+        {
+          "text": "Error cases cover at least validation failure AND database failure",
+          "passed": true,
+          "note": "ERR-8 covers invalid pagination (validation); ERR-9 and ERR-10 cover DB connection failure during webhook and GET"
+        },
+        {
+          "text": "NOT in Scope section has 3+ explicit items",
+          "passed": true,
+          "note": "8 explicit NOT in scope items listed"
+        },
+        {
+          "text": "Quality gate runs and reports a score",
+          "passed": true,
+          "note": "CONTRACT QUALITY GATE section reports Score: 11/11 — LOCKED"
+        },
+        {
+          "text": "Invariants include tenant_id scoping",
+          "passed": true,
+          "note": "INV-1 covers tenant_id in every INSERT; INV-2 covers tenant_id scope in every SELECT/UPDATE/DELETE"
+        },
+        {
+          "text": "Traceability matrix has a Status column",
+          "passed": true,
+          "note": "Matrix has PC, Test File, Test Name, Code File, Code Location, Status columns; all rows show PENDING"
+        },
+        {
+          "text": "Contract has postconditions for multiple layers (API, Service, UI, or Cross-layer)",
+          "passed": true,
+          "note": "4 distinct layers: PC-A (API), PC-S (Service), PC-U (UI), PC-X (Cross-layer)"
+        }
+      ]
+    },
+    "B": {
+      "passed": 8,
+      "total": 10,
+      "pass_rate": 0.80,
+      "details": [
+        {
+          "text": "Contract file created at docs/contracts/ path",
+          "passed": true,
+          "note": "Postcondition Summary block at end cites 'docs/contracts/2026-03-14-shopify-order-ingress-ownership-pilot-contract.md'"
+        },
+        {
+          "text": "All postconditions have specific test names",
+          "passed": false,
+          "note": "The postconditions tables (PC-A, PC-S, PC-U, PC-X) contain only ID and Postcondition columns — no Test column. Test names only appear in the separate traceability matrix. A developer reading just the postconditions cannot find the associated test without cross-referencing."
+        },
+        {
+          "text": "Blast radius section is populated with specific function names (not N/A)",
+          "passed": true,
+          "note": "Cites normalizeOrder(), persistOrder(), getOrders(), getOrderById(), getLineItems(), resyncOrder() with approximate line estimates; also references productService.js and supplierService.js"
+        },
+        {
+          "text": "Consumer map lists specific file:line references",
+          "passed": true,
+          "note": "e.g. apps/admin/src/components/orders/OrdersPanel.jsx:L18, OrderDetailDrawer.jsx:L24, OrderLineItemsTable.jsx:L15"
+        },
+        {
+          "text": "Error cases cover at least validation failure AND database failure",
+          "passed": true,
+          "note": "ERR-12 covers non-integer limit param (validation); ERR-4 and ERR-5 cover DB transaction failure during persistOrder and GET /api/orders"
+        },
+        {
+          "text": "NOT in Scope section has 3+ explicit items",
+          "passed": true,
+          "note": "6 numbered explicit NOT in scope items"
+        },
+        {
+          "text": "Quality gate runs and reports a score",
+          "passed": true,
+          "note": "Quality Gate section reports Score: 11/11 — LOCKED"
+        },
+        {
+          "text": "Invariants include tenant_id scoping",
+          "passed": true,
+          "note": "INV-1 (INSERT must include tenant_id) and INV-2 (SELECT/UPDATE/DELETE must scope to tenant_id) both APPLIES"
+        },
+        {
+          "text": "Traceability matrix has a Status column",
+          "passed": true,
+          "note": "Matrix includes PC, Test File, Test Name, Code File, Code Location, Status columns; all rows show PENDING"
+        },
+        {
+          "text": "Contract has postconditions for multiple layers (API, Service, UI, or Cross-layer)",
+          "passed": true,
+          "note": "4 distinct layers: PC-A (13 API), PC-S (9 Service), PC-U (9 UI), PC-X (3 Cross-layer)"
+        }
+      ]
+    }
+  }
+}

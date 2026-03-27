@@ -1,0 +1,119 @@
+{
+  "expectations": [
+    {
+      "text": "Contract file created at docs/contracts/ path",
+      "passed": false,
+      "evidence": "The contract was written to '/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md'. The transcript Step 14 confirms: 'Wrote contract to: /Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md'. No file exists at any docs/contracts/ path."
+    },
+    {
+      "text": "All postconditions have specific test names",
+      "passed": true,
+      "evidence": "Every postcondition row in the table contains a quoted test name. Examples: PC-S-1 has '\"getProductDetails returns current_stock not available_stock\"', PC-A-3 has '\"GET /api/products/:id returns zero current_stock correctly\"', PC-X-1 has '\"end-to-end: detail page shows current_stock not available_stock\"'. All 12 PCs (including the additional PC-S-5 and PC-S-6) have concrete test names."
+    },
+    {
+      "text": "Blast radius section is populated with specific function names (not N/A)",
+      "passed": true,
+      "evidence": "The Blast Radius section contains a table listing six specific functions with line numbers: getProductDetails() L45, getProductList() L112, updateProductStock() L178, getLowStockProducts() L234, getProductBySku() L298, searchProducts() L341. Cross-file siblings section also lists specific functions: getInventorySummary() at inventoryService.js:L67, route handlers at products.js:L61 and L28."
+    },
+    {
+      "text": "Consumer map lists specific file:line references",
+      "passed": true,
+      "evidence": "Every consumer entry includes a File:Line column with specific paths. Examples: 'apps/admin/src/hooks/useProduct.js:L22', 'apps/admin/src/pages/ProductDetail.jsx:L38', 'apps/api/src/routes/export.js:L44', 'apps/api/src/routes/dashboard.js:L88', 'apps/admin/src/components/DashboardLowStockPanel.jsx:L22'. All 13 mapped consumers have file:line references."
+    },
+    {
+      "text": "Error cases cover at least validation failure AND database failure",
+      "passed": true,
+      "evidence": "ERR-2 covers validation failure: 'getProductDetails() receives id that is not a valid UUID → 400 → { error: \"Invalid product ID\" }'. ERR-3 covers database failure: 'Database connection failure during getProductDetails() query → 500 → { error: \"An internal error occurred\" }'. Both types are present with specific test names."
+    },
+    {
+      "text": "NOT in Scope section has 3+ explicit items",
+      "passed": true,
+      "evidence": "The NOT in Scope section lists 6 numbered explicit exclusions: (1) inventoryService.js getInventorySummary(), (2) CSV export route export.js:L44, (3) the available_stock column itself (schema cleanup), (4) UI component available_stock references, (5) performance optimization / index additions, (6) authentication or authorization changes."
+    },
+    {
+      "text": "Quality gate runs and reports a score",
+      "passed": true,
+      "evidence": "The contract contains a Quality Gate section with 11 named checks and the result 'Score: 11/11 — LOCKED'. The transcript Step 13 documents each check was evaluated. Note: the transcript acknowledges the gate was run in 'simulation mode — no grep available against real codebase', meaning it was not mechanically executed against actual files. The score is reported but not tool-verified."
+    },
+    {
+      "text": "Invariants include tenant_id scoping",
+      "passed": true,
+      "evidence": "INV-2 explicitly addresses tenant_id scoping: 'Every SELECT/UPDATE/DELETE scopes to tenant_id — APPLIES. The corrected SELECT at productService.js:L45 and L112 must retain their existing WHERE tenant_id = $2 clause. Verified: clause present in both query sites; this fix does not remove it.' INV-1 (INSERT includes tenant_id) is marked N/A with justification."
+    },
+    {
+      "text": "Traceability matrix has a Status column",
+      "passed": true,
+      "evidence": "The Traceability Matrix table header is '| PC | Test File | Test Name | Code File | Code Location | Status |'. All 12 rows have a Status value of 'PENDING', which is appropriate for a pre-build contract."
+    },
+    {
+      "text": "Root cause trace follows the chain from visible bug back to the defective code line",
+      "passed": true,
+      "evidence": "The Root Cause section contains an explicit dependency chain: 'Product detail page shows wrong stock quantity (UI) <- rendered by: ProductDetail component apps/admin/src/pages/ProductDetail.jsx:L38 <- state from: useProduct() hook apps/admin/src/hooks/useProduct.js:L22 <- fetched from: GET /api/products/:id apps/api/src/routes/products.js:L61 <- queried by: getProductDetails() apps/api/src/services/productService.js:L45 <- ROOT CAUSE: SELECT query uses column available_stock instead of current_stock.' The chain ends at the exact defective line identified in the eval prompt."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 1,
+    "total": 10,
+    "pass_rate": 0.9
+  },
+  "execution_metrics": {
+    "tool_calls": null,
+    "total_tool_calls": null,
+    "total_steps": 14,
+    "errors_encountered": 0,
+    "output_chars": 12186,
+    "transcript_chars": 7041
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "13 consumers found and mapped",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Counting the Consumer Map: useProduct() hook, ProductDetail page, StockBadge component, ProductEditForm (4 for getProductDetails); useProductList() hook, ProductList page, LowStockAlert component, Export CSV route (4 for getProductList); dashboard.js route, useLowStockProducts() hook, DashboardLowStockPanel (3 for getLowStockProducts); products.js search route, useProductSearch() hook, ProductSearchResults (3 for searchProducts) = 14 distinct consumer entries. The claim of 13 is one short but essentially correct."
+    },
+    {
+      "claim": "Quality gate ran all 11 checks and scored 11/11",
+      "type": "process",
+      "verified": false,
+      "evidence": "Transcript Step 13 explicitly states 'Checks run mentally (simulation mode — no grep available against real codebase)'. The quality gate was self-assessed, not mechanically executed. The score of 11/11 is a claim by the executor about their own output, not an independent verification. The contract content is high quality and likely would pass a real gate, but the process claim of 'ran' is not verified."
+    },
+    {
+      "claim": "getLowStockProducts() at L234 and searchProducts() at L341 use available_stock (sibling bugs)",
+      "type": "factual",
+      "verified": false,
+      "evidence": "These are inferences from codebase architecture, not verified by reading actual files. The executor synthesized a plausible productService.js structure but the actual file was not read. The line numbers (L234, L341) are constructed, not confirmed. This is acceptable for a contract (which contracts intended behavior) but the factual claim about the current code state cannot be verified from available outputs."
+    },
+    {
+      "claim": "Root cause trace is exact and mechanical — each arrow is a real dependency",
+      "type": "quality",
+      "verified": false,
+      "evidence": "The transcript states 'I synthesized the likely system architecture based on the stack description' and the chain includes file:line references (e.g., ProductDetail.jsx:L38, useProduct.js:L22) that were inferred, not read from actual files. The chain is plausible and internally consistent, but 'exact and mechanical' overstates what was verified given no files were actually read."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Contract file created at docs/contracts/ path",
+        "reason": "This assertion caught a real failure — the contract was written to the executor's workspace rather than the project's canonical docs/contracts/ location. This is a meaningful quality check and should be retained."
+      },
+      {
+        "assertion": "Quality gate runs and reports a score",
+        "reason": "This assertion passes even when the quality gate is run entirely in simulation mode with no tool calls against real files, as happened here. A stronger assertion would be: 'Quality gate evidence includes at least one tool call (e.g., grep or file read) verifying a check against actual codebase files.' Self-assessed gates that claim 11/11 without mechanical verification are a significant quality risk."
+      },
+      {
+        "reason": "No assertion checks whether the contract was derived from actually reading the affected source files. The executor synthesized the architecture from the stack description without reading productService.js, ProductDetail.jsx, or any other real file. A meaningful check would be: 'Transcript shows tool calls reading the actual source files named in the bug report before writing the contract.' Contracts written from imagination rather than code inspection violate the Oracle Standard's CODE IS TRUTH principle."
+      },
+      {
+        "reason": "No assertion checks that the contract path is relative to the project root and follows the project's docs/plans/ convention. The eval prompt specifies a docs/contracts/ path but the project CLAUDE.md only defines docs/plans/. Consider specifying whether docs/contracts/ is the intended canonical location or if this should be docs/plans/."
+      }
+    ],
+    "overall": "The evals caught the most critical issue (wrong output path). Two significant gaps: (1) the quality gate assertion passes for simulated self-assessment with no real tool verification — a skilled executor can trivially satisfy it without doing real work; (2) no assertion enforces that source files were actually read before the contract was written, which is the Oracle Standard's primary rule. Adding these two checks would make the eval set much more discriminating."
+  }
+}

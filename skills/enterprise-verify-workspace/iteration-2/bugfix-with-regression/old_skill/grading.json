@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "bugfix-with-regression",
+  "configuration": "old_skill",
+  "expectations": [
+    {"text": "Ran 7 manual checks (old skill has no verify.sh)", "passed": true, "evidence": "Shows manual commands for each check"},
+    {"text": "Check 1 correctly identifies failing test", "passed": true, "evidence": "ATTEMPT 1 shows FAIL with exact error: mock expects available_stock but code uses current_stock"},
+    {"text": "Agent STOPS at failure instead of continuing", "passed": true, "evidence": "'STOP. Fix required before proceeding.' then FAILURE RECOVERY section"},
+    {"text": "Failure recovery protocol followed (fix, re-run, continue)", "passed": true, "evidence": "Shows diff of fix, then ATTEMPT 2 re-runs Check 1 first, continues sequence"},
+    {"text": "After fixing, all 7 checks completed", "passed": true, "evidence": "All 7 checks shown in ATTEMPT 2 with PASS results"},
+    {"text": "Postcondition trace maps PCs to specific test names", "passed": true, "evidence": "3 PCs derived, each mapped to exact test descriptions"},
+    {"text": "Verification report shows failure recovery log", "passed": true, "evidence": "Failure Recovery Log table at bottom with Attempt/Check/Result/Issue/Resolution columns"},
+    {"text": "No banned belief language", "passed": true, "evidence": "No banned language found"}
+  ],
+  "pass_rate": 1.0
+}

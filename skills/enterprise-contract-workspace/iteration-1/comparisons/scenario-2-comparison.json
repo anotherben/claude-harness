@@ -1,0 +1,189 @@
+{
+  "winner": "A",
+  "reasoning": "Output A wins by a narrow but clear margin. Both contracts are high quality and pass the majority of expectations. The decisive differences: (1) Output A's root cause trace is more precise — it correctly identifies the intermediate hook as 'useProductDetail' at a specific line and traces through to the correct ProductDetail component reference, whereas Output B's chain is plausible but names files slightly differently and does not name the deprecation context (migration 0034) in the trace itself. (2) Output A's blast radius is more systematically structured with a dedicated 'Write Site Audit' section that explicitly clears write paths, and its same-file sibling table explicitly states 'CHECKED — not affected' for non-bug functions, making the audit trail cleaner. (3) Output A's quality gate text is more rigorous: it counts all PCs against all gate dimensions explicitly (e.g., '13 PCs, 13 matrix rows, zero orphans') and includes a tautology check section with inline code skeletons adjacent to the postconditions. (4) Output A keeps all blast-radius findings in scope and contracts them (PC-S7, PC-S8, PC-S9) with specific test names and line numbers, whereas Output B flags 'getInventorySummary()' as out of scope but correctly notes 'separate contract' — a reasonable call but it means fewer sibling bugs are contracted. (5) Output A's 'BulkExportService' transitive fix insight is explicit and well-argued. Output B is stronger on consumer map breadth (13 consumers vs 9, with UI-layer rows PC-U-1 and PC-U-2 adding frontend postconditions), and correctly flags the CSV export route as a separate in-scope finding. However, Output B's consumer map notes several items as 'Must be updated' without contracting them, which is an inconsistency — the contract implies those files need changes but does not include postconditions for them. Output A avoids this inconsistency by noting that UI components receive the fix transitively with no component-level changes needed. On the expectations: both pass 9/10; the marginal difference is in root cause chain precision and blast-radius completeness. Output A edges Output B on those criteria.",
+  "rubric": {
+    "A": {
+      "content": {
+        "correctness": 5,
+        "completeness": 5,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 4
+      },
+      "content_score": 5.0,
+      "structure_score": 4.7,
+      "overall_score": 9.7
+    },
+    "B": {
+      "content": {
+        "correctness": 5,
+        "completeness": 4,
+        "accuracy": 4
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 4
+      },
+      "content_score": 4.3,
+      "structure_score": 4.7,
+      "overall_score": 9.0
+    }
+  },
+  "output_quality": {
+    "A": {
+      "score": 10,
+      "strengths": [
+        "Root cause chain traces migration 0034 context inline, giving full provenance",
+        "Blast radius discovers and contracts 4 sibling bugs (getProductByBarcode, searchProducts, getProductsBySupplier, getProductList) all with specific PC IDs and test names",
+        "Write Site Audit section explicitly clears all write paths, leaving no ambiguity about which column is authoritative",
+        "Test skeletons use both positive assertion (toBe(42)) and negative exclusion (not.toBe(99)) — non-tautological by construction",
+        "Quality gate is precise: 13 PCs, 13 matrix rows, zero orphans — counts match",
+        "6 NOT in Scope items with specific scope boundary statement",
+        "INV-2 explicitly mentions tenant_id with grep verification command",
+        "Traceability matrix has Status column with status lifecycle definition"
+      ],
+      "weaknesses": [
+        "Test skeletons only show 4 of 13 (annotates 'rest follow same pattern' — acceptable shorthand but B shows test file paths for all 12)",
+        "Consumer map lists 9 consumers; B maps 13 — B's consumer coverage is broader"
+      ]
+    },
+    "B": {
+      "score": 9,
+      "strengths": [
+        "Consumer map is the most comprehensive: 13 consumers across 4 functions, all with file:line references",
+        "UI-layer postconditions (PC-U-1, PC-U-2) add frontend coverage that A omits",
+        "Traceability matrix includes full test file paths (e.g., apps/api/src/services/__tests__/productService.test.js) — more actionable",
+        "Identifies CSV export route bug proactively and correctly marks it out of scope with justification",
+        "6 NOT in Scope items with specific, well-argued exclusions",
+        "Error cases include input validation (ERR-5, ERR-6) for threshold/query parameters — more comprehensive than A's ERR set",
+        "Quality gate score 11/11 with balanced criterion counts"
+      ],
+      "weaknesses": [
+        "Consumer map marks several components as 'Must be updated' without contracting the postconditions — creates ambiguity about fix scope",
+        "getInventorySummary() sibling bug noted but excluded from scope; A chooses to contract all same-file siblings",
+        "Root cause chain less precise: does not name the schema migration that deprecated available_stock, weakening the provenance trail",
+        "Test skeletons show only 4 examples (same count as A) but the traceability matrix has full paths — inconsistency in where detail lives"
+      ]
+    }
+  },
+  "expectation_results": {
+    "A": {
+      "passed": 9,
+      "total": 10,
+      "pass_rate": 0.90,
+      "details": [
+        {
+          "text": "Contract file created at docs/contracts/ path",
+          "passed": false,
+          "note": "Contract header references docs/plans/ and docs/designs/ paths but does not state a docs/contracts/ output path; the file exists at the workspace output path, not docs/contracts/"
+        },
+        {
+          "text": "All postconditions have specific test names",
+          "passed": true,
+          "note": "All 13 PCs have quoted test name strings in the Test column"
+        },
+        {
+          "text": "Blast radius section is populated with specific function names (not N/A)",
+          "passed": true,
+          "note": "Same-File Siblings table lists getProductList, getProductByBarcode, searchProducts, updateProductStock, getProductsBySupplier, createProduct — all named with line numbers"
+        },
+        {
+          "text": "Consumer map lists specific file:line references",
+          "passed": true,
+          "note": "All 9 consumer rows have File:Line column populated with specific paths and line numbers"
+        },
+        {
+          "text": "Error cases cover at least validation failure AND database failure",
+          "passed": true,
+          "note": "ERR-2 (invalid/null ID = validation failure), ERR-3 (DB connection failure) both present"
+        },
+        {
+          "text": "NOT in Scope section has 3+ explicit items",
+          "passed": true,
+          "note": "6 explicit bullet items in NOT in Scope"
+        },
+        {
+          "text": "Quality gate runs and reports a score",
+          "passed": true,
+          "note": "CONTRACT QUALITY GATE block present, Score: 11/11 — LOCKED"
+        },
+        {
+          "text": "Invariants include tenant_id scoping",
+          "passed": true,
+          "note": "INV-2 explicitly states tenant_id scoping with WHERE tenant_id = $N verification instruction"
+        },
+        {
+          "text": "Traceability matrix has a Status column",
+          "passed": true,
+          "note": "Status column present in all matrix rows, all set to PENDING with lifecycle note"
+        },
+        {
+          "text": "Root cause trace follows the chain from visible bug back to the defective code line",
+          "passed": true,
+          "note": "Chain: ProductDetail.jsx:L87 <- useProductDetail.js:L24 <- GET /api/products/:id <- products.js:L38 <- getProductDetails() <- productService.js:L45 with ROOT CAUSE label and broken SQL shown"
+        }
+      ]
+    },
+    "B": {
+      "passed": 9,
+      "total": 10,
+      "pass_rate": 0.90,
+      "details": [
+        {
+          "text": "Contract file created at docs/contracts/ path",
+          "passed": false,
+          "note": "Contract does not reference a docs/contracts/ output path in the header; no Plan or TDD path links present"
+        },
+        {
+          "text": "All postconditions have specific test names",
+          "passed": true,
+          "note": "All 12 PCs have quoted test name strings in the Test column"
+        },
+        {
+          "text": "Blast radius section is populated with specific function names (not N/A)",
+          "passed": true,
+          "note": "Same-File Siblings table lists getProductDetails, getProductList, updateProductStock, getLowStockProducts, getProductBySku, searchProducts — all named with lines"
+        },
+        {
+          "text": "Consumer map lists specific file:line references",
+          "passed": true,
+          "note": "All 13 consumer rows have File:Line column populated"
+        },
+        {
+          "text": "Error cases cover at least validation failure AND database failure",
+          "passed": true,
+          "note": "ERR-2 (invalid UUID = validation failure), ERR-3 (DB connection failure) both present; also ERR-5/ERR-6 for additional function input validation"
+        },
+        {
+          "text": "NOT in Scope section has 3+ explicit items",
+          "passed": true,
+          "note": "6 numbered explicit items in NOT in Scope"
+        },
+        {
+          "text": "Quality gate runs and reports a score",
+          "passed": true,
+          "note": "CONTRACT QUALITY GATE block present, Score: 11/11 — LOCKED"
+        },
+        {
+          "text": "Invariants include tenant_id scoping",
+          "passed": true,
+          "note": "INV-2 explicitly addresses tenant_id with WHERE tenant_id = $2 clause verification"
+        },
+        {
+          "text": "Traceability matrix has a Status column",
+          "passed": true,
+          "note": "Status column present in all 12 matrix rows, all set to PENDING"
+        },
+        {
+          "text": "Root cause trace follows the chain from visible bug back to the defective code line",
+          "passed": true,
+          "note": "Chain: ProductDetail.jsx:L38 <- useProduct.js:L22 <- GET /api/products/:id <- products.js:L61 <- getProductDetails() <- productService.js:L45 with ROOT CAUSE label"
+        }
+      ]
+    }
+  }
+}

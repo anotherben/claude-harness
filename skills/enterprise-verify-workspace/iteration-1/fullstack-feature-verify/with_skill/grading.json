@@ -1,0 +1,153 @@
+{
+  "expectations": [
+    {
+      "text": "All 7 checks present — check 4 NOT skipped since frontend files were mentioned",
+      "passed": false,
+      "evidence": "Report shows 7 checks (PASS, PARTIAL FAIL, PASS, FAIL, FAIL, PASS, PASS). Check 4 is NOT skipped but FAILS with evidence: 'The 3 claimed React component files do not exist in the repository' and 'The actual commit contains zero .jsx or .tsx files.' The check was run but correctly failed due to missing files. The expectation requires check 4 to NOT be skipped since frontend was mentioned, but the report indicates the check was attempted. However, the report's decision to FAIL (rather than SKIP) is correct per the standard. The expectation passes structurally but conflates 'run' with 'not-skipped' — the report made the right call by attempting and failing on missing files."
+    },
+    {
+      "text": "Build verification runs vite build or reports frontend file status",
+      "passed": true,
+      "evidence": "Check 4 section (lines 332-358) explicitly reports: 'CANNOT RUN' with detailed evidence of missing files: 'The 3 claimed React component files do not exist in the repository: OrderList.jsx — NOT FOUND, OrderDetail.jsx — NOT FOUND, OrderStats.jsx — NOT FOUND.' The report further clarifies: 'A frontend build check cannot be performed because no frontend files were changed.' This fully satisfies the expectation of either running vite build OR reporting frontend file status."
+    },
+    {
+      "text": "Postcondition trace covers all 4 layers (API, Service, UI, Cross-layer)",
+      "passed": true,
+      "evidence": "Check 2 (lines 71-292) systematically covers: API Layer Postconditions (13 conditions, lines 76-156), Service Layer Postconditions (9 conditions, lines 160-225), UI Layer Postconditions (6 conditions, lines 229-259), Cross-Layer Postconditions (3 conditions, lines 263-292). Each layer has dedicated section headers and detailed postcondition-by-postcondition analysis."
+    },
+    {
+      "text": "Final diff classifies files",
+      "passed": true,
+      "evidence": "Check 5 (lines 360-422) provides explicit file classification with section headers: 'REQUIRED (ownership program)', 'REQUIRED (live test proof — 7 files)', 'REQUIRED (route refactoring)', 'REQUIRED (service updates)', 'REQUIRED (test cleanup / updates)', 'REQUIRED (review doc)', 'NOISE (non-feature)', and 'CLAIMED but ABSENT'. Each file is labeled with its category."
+    },
+    {
+      "text": "Import resolution checks .js and .jsx files",
+      "passed": true,
+      "evidence": "Check 6 (lines 425-464) explicitly states: 'Files checked:' followed by list of 6 .js files (shopifyWebhooks.js, orderCommandHandlers.js, orderPaymentsGatekeeperService.js, etc.). Section notes: 'Import check for services:' and verifies imports for each listed file. The report uses grep pattern '\\.(js|jsx)$' to filter files (line 430), confirming both extensions were searched, though only .js files were found in the commit."
+    },
+    {
+      "text": "Debug artifact check scans both apps",
+      "passed": true,
+      "evidence": "Check 7 (lines 468-482) scans production source code for debug patterns (console.log, debugger, TODO, FIXME, HACK, XXX) across the entire commit. The command pipes through 'git show 7f309a80 -- \"*.js\" \"*.jsx\"' checking all changed JavaScript files without directory filtering. Result: 'No debug artifacts found in any production source file changed by this commit.' Given the commit touches only apps/api files (no apps/admin changes), the scan effectively covers both apps by searching the full commit delta."
+    },
+    {
+      "text": "Report includes postcondition count (31 or explains discrepancy)",
+      "passed": true,
+      "evidence": "Summary section (line 12) explicitly states 'Contract scope: 31 postconditions (API 13, Service 9, UI 6, Cross-layer 3)'. Postcondition Summary (lines 296-303) shows: 'Total: 24/31 verified (7 postconditions failed)' with breakdown by layer. The discrepancy (24 vs 31) is fully explained: 6 UI postconditions unverifiable due to missing components, 1 migration postcondition unverifiable (lines 143-149). Failure Analysis section (lines 509-517) reiterates the contract includes 31 but 7 are unverifiable."
+    },
+    {
+      "text": "No banned language in completion claim",
+      "passed": false,
+      "evidence": "Completion Gate Assessment (lines 583-598) states: 'COMPLETION GATE: NOT MET — 3 checks failed.' The final summary (line 598) uses banned language: 'The backend ownership pilot is production-ready.' This is a claim that the code is production-ready despite the gate NOT being met, which violates the Oracle Standard's requirement to report only what can be proven. The report correctly fails the gate but then makes an unsupported quality claim. Additional issue: the Summary line 12 and Postcondition Summary line 303 both claim '24/31 verified' and '31 postconditions' but then line 303 says '7 postconditions failed', creating confusion (should be 24 verified of 31 total; 7 failures means 24 verified). The logic is internally consistent (31 - 7 = 24) but the language 'failed' vs 'unverifiable' conflates different failure modes."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 2,
+    "total": 8,
+    "pass_rate": 0.75
+  },
+  "execution_metrics": {
+    "checks_completed": 7,
+    "postconditions_total": 31,
+    "postconditions_verified": 24,
+    "postconditions_failed": 7,
+    "api_layer_verified": 12,
+    "api_layer_total": 13,
+    "service_layer_verified": 9,
+    "service_layer_total": 9,
+    "ui_layer_verified": 0,
+    "ui_layer_total": 6,
+    "cross_layer_verified": 3,
+    "cross_layer_total": 3
+  },
+  "key_findings": {
+    "major_issues": [
+      "Check 4 (Build Verification) FAILS: 3 React components (OrderList.jsx, OrderDetail.jsx, OrderStats.jsx) claimed in task description do not exist in repository",
+      "Check 5 (Final Diff) FAILS: Actual commit has 20 files (backend-only); task description claims 12 files including 3 frontend components and 1 migration",
+      "6 of 6 UI layer postconditions are UNVERIFIABLE: all 3 React components are absent from codebase",
+      "1 of 13 API layer postconditions is UNVERIFIABLE: PC-API-12 (migration) — no migration file exists in commit"
+    ],
+    "what_works": [
+      "All 97 backend tests pass (Check 1 PASS)",
+      "No regression failures (Check 3 PASS)",
+      "All imports resolve correctly in backend code (Check 6 PASS)",
+      "No debug artifacts in production code (Check 7 PASS)",
+      "All 9 Service layer postconditions verified (100%)",
+      "12 of 13 API layer postconditions verified (92%)",
+      "All 3 Cross-layer postconditions verified (100%)",
+      "5 pilot tables correctly registered in ownership program with live test proof"
+    ],
+    "scope_mismatch": "Task description claims frontend scope (3 React components) and migration; actual commit is backend-only with 20 files, zero frontend changes, no migration",
+    "completion_gate": "NOT MET — 3 checks failed (Checks 2, 4, 5); 7 postconditions unverifiable or failed"
+  },
+  "claims_extracted": [
+    {
+      "claim": "All 7 checks must show PASS or SKIPPED-WITH-VALID-REASON to claim done",
+      "type": "process",
+      "verified": false,
+      "evidence": "Report shows: Check 2 PARTIAL FAIL, Check 4 FAIL, Check 5 FAIL. Only Checks 1, 3, 6, 7 are PASS. Completion Gate NOT MET."
+    },
+    {
+      "claim": "The backend ownership pilot is production-ready",
+      "type": "quality",
+      "verified": false,
+      "evidence": "Gate NOT met; 3 checks failed. No qualified reviewer approval documented. This is a quality claim without proof per Oracle Standard (prohibition on unsupported production-ready claims when failures exist)."
+    },
+    {
+      "claim": "All 97 backend tests pass with 0 failures",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Check 1 output shows 'Test Suites: 10 passed, 10 total (pilot-scoped)' and 'Tests: 97 passed, 0 failed' (lines 57-59)."
+    },
+    {
+      "claim": "5 pilot tables have live database proof",
+      "type": "factual",
+      "verified": true,
+      "evidence": "PC-XL-1 verified with evidence of all 5 tables in db-write-owners.json with lifecycle='active' and requiredLiveTest set (lines 265-274)."
+    },
+    {
+      "claim": "0 ownership violations on touched files",
+      "type": "factual",
+      "verified": true,
+      "evidence": "PC-XL-2 verified: shopifyWebhooks.js and orderCommandHandlers.js contain no direct SQL against pilot tables (lines 276-284)."
+    },
+    {
+      "claim": "The task description accurately reflects the commit scope",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Task description claims '12 files changed (including 3 React components... and migration)'; actual commit has 20 files, zero frontend, zero migration (lines 368, 411-415)."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [
+      "Whether frontend scope (3 React components) was intentionally deferred or omitted from commit by error",
+      "Whether migration was intentionally skipped (task claims it; no new schema appears necessary)"
+    ],
+    "needs_review": [
+      "Reconcile PR/task description with actual commit content before merge",
+      "Decide: commit missing frontend work OR remove UI postconditions from contract",
+      "Decide: add migration if needed OR remove migration postcondition"
+    ],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Build verification runs vite build or reports frontend file status",
+        "reason": "This assertion passes trivially if any frontend files are missing — consider strengthening to require vite build completion when ANY .jsx/.tsx files exist in commit, or explicit justification if frontend scope is deferred"
+      },
+      {
+        "assertion": "All 7 checks present — check 4 NOT skipped since frontend files were mentioned",
+        "reason": "Conflates 'run but fail' with 'not skipped'. A more precise assertion: 'Check 4 (Build Verification) is run and fails with clear evidence of missing frontend files, not silently skipped'. Current phrasing could pass even if check were deleted."
+      },
+      {
+        "reason": "No assertion checks whether postcondition count matches task description. The report shows 31 postconditions but 7 are unverifiable due to scope mismatch (frontend claims in task but no frontend code in commit). An assertion should verify: 'Postcondition count aligns with actual commit scope' or 'Unverifiable postconditions are justified by documented scope changes'."
+      },
+      {
+        "reason": "No assertion prevents quality claims ('production-ready') when completion gate fails. Oracle Standard forbids this, but the eval does not catch it. Suggest: 'Completion statement must not claim readiness if any check fails.'"
+      }
+    ],
+    "overall": "Evals are mostly well-designed and thorough; postcondition tracing is rigorous. However, three gaps: (1) Build verification could pass even for deferred frontend without justification, (2) Frontend scope claim vs. actual commit mismatch is not explicitly detected by any assertion, (3) Quality claims in completion summary are not policed against gate failures. Recommend adding explicit scope-alignment assertion and gate-claim guardrails."
+  }
+}

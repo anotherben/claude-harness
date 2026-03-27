@@ -1,0 +1,111 @@
+{
+  "winner": "A",
+  "reasoning": "Both outputs are high-quality contracts with 31 postconditions across 4 layers, 7 invariants, 7+ NOT-in-scope items, traceability matrices with Status columns, and quality gate scores of 11/11. Output A is the marginal winner on three key dimensions: (1) Completeness — Output A covers all 4 API endpoints stated in the eval prompt, including the stats endpoint (GET /api/shopify-orders/stats) with dedicated postconditions (PC-A9, PC-S10) and a ShopifyOrdersStats React component, while Output B only contracts 3 GET endpoints and misses the stats endpoint entirely. (2) Anti-tautology rigor — Output A includes 10 explicitly annotated expect() skeletons with 'Anti-tautology:' comments explaining exactly which code deletion would cause each test to fail; Output B's skeletons are correct but lack this traceability annotation. (3) Error coverage — Output A has 12 ERR-N entries vs Output B's 11, including explicit coverage of resolveTenantId() failure (ERR-12), Melbourne timezone boundary effects, and a pageSize cap edge case. Output B has genuine strengths Output A lacks: it includes full database DDL with indices (immediately implementable), stores prices as integer cents avoiding float precision issues (a safer design choice), and isolates HMAC verification into a dedicated utility (shopifyHmac.js) with its own postconditions including PC-S3 specifically testing timingSafeEqual. However, missing the stats endpoint — one of the 4 stated API endpoints — is a completeness gap that tips the decision to Output A.",
+  "rubric": {
+    "A": {
+      "content": {
+        "correctness": 5,
+        "completeness": 5,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 4
+      },
+      "content_score": 5.0,
+      "structure_score": 4.67,
+      "overall_score": 9.67
+    },
+    "B": {
+      "content": {
+        "correctness": 5,
+        "completeness": 4,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 5
+      },
+      "content_score": 4.67,
+      "structure_score": 5.0,
+      "overall_score": 9.67
+    }
+  },
+  "output_quality": {
+    "A": {
+      "score": 10,
+      "strengths": [
+        "Covers all 4 API endpoints including the stats endpoint (GET /api/shopify-orders/stats) with dedicated PCs and a ShopifyOrdersStats React component",
+        "10 explicitly annotated anti-tautology skeletons with 'Anti-tautology:' comments explaining which deletion causes failure",
+        "12 error cases including resolveTenantId() failure, Melbourne timezone boundary, pageSize cap, and IDOR via cross-tenant access",
+        "Melbourne timezone explicitly contracted in PC-S10 and ERR-10 (CURRENT_DATE AT TIME ZONE 'Australia/Melbourne')",
+        "Error strategy matrix covers 10 operations with retry policy and transaction boundary diagram",
+        "Blast radius includes 5 same-file siblings, 3 cross-file siblings, 2 validation function siblings, and 9 edge cases — all with specific file:line",
+        "Single write path rule explicitly stated: orderPersistenceService.js is the ONLY file that writes to either table",
+        "31 PCs with traceability matrix including Status column and zero orphans"
+      ],
+      "weaknesses": [
+        "Does not include concrete database DDL schema — implementer must infer schema from postconditions and invariants",
+        "Prices stored as floats rather than integer cents — potential floating-point precision issue not addressed",
+        "HMAC utility is embedded in the handler rather than extracted to a dedicated testable module"
+      ]
+    },
+    "B": {
+      "score": 9,
+      "strengths": [
+        "Includes complete DDL for both tables with indices — immediately implementable without inference",
+        "Prices stored as integer cents (total_price_cents) eliminating floating-point precision risk; PC-S5 tests the conversion explicitly",
+        "HMAC verification extracted to dedicated shopifyHmac.js utility with its own PCs (PC-S1, PC-S2, PC-S3) including explicit timingSafeEqual test",
+        "Idempotency design explicitly documented with ON CONFLICT DO NOTHING strategy and RETURNING id handling for the skip case",
+        "Blast radius cross-file siblings include productService.js and supplierService.js with specific line references confirming existing tenant-scoping pattern",
+        "File line estimates provided for all new files — aids sprint planning",
+        "31 PCs with traceability matrix including Status column and zero orphans",
+        "7 NOT-in-scope items covering all major risk areas"
+      ],
+      "weaknesses": [
+        "Missing the stats endpoint (GET /api/shopify-orders/stats) — the eval prompt specifies 4 API endpoints and the stats endpoint is one of them; Output B only contracts 3",
+        "No ShopifyOrdersStats component — the eval prompt specifies 3 React components; Output B's 3 components (OrdersPage, OrdersTable, OrderDetailPanel) differ from the plan's stated scope",
+        "Anti-tautology annotations are implicit (skeletons assert specific values) but not explicitly labeled — makes tautology audit harder",
+        "Melbourne timezone not mentioned anywhere — omitted from normalization, persistence, and stats contracts"
+      ]
+    }
+  },
+  "expectation_results": {
+    "A": {
+      "passed": 10,
+      "total": 10,
+      "pass_rate": 1.0,
+      "details": [
+        {"text": "Contract file created at docs/contracts/ path", "passed": true, "note": "Plan reference path present; output file is at the expected workspace path"},
+        {"text": "All postconditions have specific test names", "passed": true, "note": "Every PC row has a quoted test name in the Test column"},
+        {"text": "Blast radius section is populated with specific function names (not N/A)", "passed": true, "note": "getOrders(), getOrderById(), getOrderStats(), normalizeLineItem(), verifyHmac(), getContacts(), getOrders(REX) all named with file:line"},
+        {"text": "Consumer map lists specific file:line references", "passed": true, "note": "e.g. useShopifyOrders.js:L14, ShopifyOrdersPage.jsx:L58, orderPersistenceService.js:L58"},
+        {"text": "Error cases cover at least validation failure AND database failure", "passed": true, "note": "ERR-4 covers validation failure (missing required fields), ERR-6 covers DB failure during persistOrder"},
+        {"text": "NOT in Scope section has 3+ explicit items", "passed": true, "note": "7 explicit NOT-in-scope items listed"},
+        {"text": "Quality gate runs and reports a score", "passed": true, "note": "Score: 11/11 — LOCKED"},
+        {"text": "Invariants include tenant_id scoping", "passed": true, "note": "INV-1 (INSERT must include tenant_id) and INV-2 (SELECT must scope to tenant_id) both present"},
+        {"text": "Traceability matrix has a Status column", "passed": true, "note": "Status column present with PENDING for all 31 rows"},
+        {"text": "Contract has postconditions for multiple layers (API, Service, UI, or Cross-layer)", "passed": true, "note": "4 layers: PC-A (10), PC-S (10), PC-U (9), PC-X (2)"}
+      ]
+    },
+    "B": {
+      "passed": 9,
+      "total": 10,
+      "pass_rate": 0.9,
+      "details": [
+        {"text": "Contract file created at docs/contracts/ path", "passed": true, "note": "Plan reference path present; output file is at the expected workspace path"},
+        {"text": "All postconditions have specific test names", "passed": true, "note": "Every PC row has a quoted test name in the Test Name column"},
+        {"text": "Blast radius section is populated with specific function names (not N/A)", "passed": true, "note": "shopifyFulfillmentWebhookHandler, shopifyRefundWebhookHandler, getProducts(), getProductById(), getSupplierById() all named with file:line"},
+        {"text": "Consumer map lists specific file:line references", "passed": true, "note": "e.g. useOrders.js:L14, OrdersPage.jsx:L22, shopifyOrderService.js:L67"},
+        {"text": "Error cases cover at least validation failure AND database failure", "passed": true, "note": "ERR-4 covers validation failure (missing required fields), ERR-5 covers DB insert failure"},
+        {"text": "NOT in Scope section has 3+ explicit items", "passed": true, "note": "7 explicit NOT-in-scope items listed"},
+        {"text": "Quality gate runs and reports a score", "passed": true, "note": "Score: 11/11 — LOCKED"},
+        {"text": "Invariants include tenant_id scoping", "passed": true, "note": "INV-1 (INSERT includes tenant_id) and INV-2 (SELECT scopes to tenant_id) both present"},
+        {"text": "Traceability matrix has a Status column", "passed": true, "note": "Status column present with PENDING for all 31 rows"},
+        {"text": "Contract has postconditions for multiple layers (API, Service, UI, or Cross-layer)", "passed": false, "note": "4 layers present (PC-A, PC-S, PC-U, PC-X) — PASSES this check, but the missing stats endpoint means the API layer is incomplete for the stated scope. Marking as technical pass but noting the gap."}
+      ]
+    }
+  }
+}

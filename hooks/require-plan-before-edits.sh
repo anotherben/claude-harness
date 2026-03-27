@@ -27,9 +27,22 @@ case "$FILE_PATH" in
   *__tests__*|*.test.*|*.spec.*) exit 0 ;;
 esac
 
-# Check for plan approval marker
-if [ -f "/tmp/claude-plan-approved-${SESSION_ID}" ]; then
-  exit 0
+# Check for plan approval marker (HMAC-signed by mark-skill-invoked.sh)
+HOOK_SALT="claude-hook-integrity-v1"
+PLAN_MARKER="/tmp/claude-plan-approved-${SESSION_ID}"
+if [ -f "$PLAN_MARKER" ]; then
+  STORED_SIG=$(cat "$PLAN_MARKER" 2>/dev/null | tr -d '[:space:]')
+  EXPECTED_SIG=$(echo -n "plan-approved|${SESSION_ID}|${HOOK_SALT}" | shasum -a 256 | cut -d' ' -f1)
+  if [ "$STORED_SIG" = "$EXPECTED_SIG" ]; then
+    exit 0
+  elif [ -z "$STORED_SIG" ]; then
+    # Empty marker (from touch) — BLOCKED. Must be HMAC-signed.
+    echo "BLOCKED: Plan approval marker exists but is unsigned. Agents cannot forge plan approval with touch." >&2
+    rm -f "$PLAN_MARKER"
+  else
+    echo "BLOCKED: Plan approval marker has INVALID signature — was it hand-written by an agent?" >&2
+    rm -f "$PLAN_MARKER"
+  fi
 fi
 
 echo "BLOCKED: Source file edit requires an approved plan. Run /enterprise (which includes planning) or /enterprise-plan first. No code without a plan."

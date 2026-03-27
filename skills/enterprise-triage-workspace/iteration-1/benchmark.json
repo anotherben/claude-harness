@@ -1,0 +1,48 @@
+{
+  "skill_name": "enterprise-triage",
+  "iteration": 1,
+  "configurations": [
+    {
+      "name": "with_skill (3-path triage)",
+      "evals": [
+        {"eval_name": "quick-typo-fix", "pass_rate": 1.0, "tokens": 31905, "duration_ms": 51488},
+        {"eval_name": "standard-endpoint", "pass_rate": 1.0, "tokens": 26019, "duration_ms": 60763},
+        {"eval_name": "full-multi-layer", "pass_rate": 1.0, "tokens": 26826, "duration_ms": 76989}
+      ],
+      "aggregate": {
+        "mean_pass_rate": 1.0,
+        "stddev_pass_rate": 0.0,
+        "mean_tokens": 28250,
+        "mean_duration_ms": 63080
+      }
+    },
+    {
+      "name": "old_skill (micro-or-full)",
+      "evals": [
+        {"eval_name": "quick-typo-fix", "pass_rate": 0.667, "tokens": 25711, "duration_ms": 62613},
+        {"eval_name": "standard-endpoint", "pass_rate": 0.143, "tokens": 25772, "duration_ms": 78209},
+        {"eval_name": "full-multi-layer", "pass_rate": 0.833, "tokens": 26699, "duration_ms": 85856}
+      ],
+      "aggregate": {
+        "mean_pass_rate": 0.548,
+        "stddev_pass_rate": 0.296,
+        "mean_tokens": 26061,
+        "mean_duration_ms": 75559
+      }
+    }
+  ],
+  "delta": {
+    "pass_rate": "+45.2% (1.0 vs 0.548)",
+    "tokens": "+8.4%",
+    "duration": "-16.5% (faster triage decisions)"
+  },
+  "analyst_observations": [
+    "with_skill sweeps 3/3 with 100% pass rate vs 54.8% average for old_skill",
+    "Eval 2 (standard endpoint) is the decisive win: 100% vs 14.3% — old skill runs 11 stages for a clear-scope 4-file task, new skill routes to 3 stages",
+    "Eval 1 (typo) both handle well — with_skill adds signal assessment table, old_skill uses simpler Micro fast path",
+    "Eval 3 (large feature) both route correctly to full pipeline — with_skill adds explicit signal assessment, old_skill uses tier matching",
+    "The STANDARD path is the entire value proposition: it fills the gap between 'trivial typo' and 'build a whole system' that the old skill didn't have",
+    "Old skill forces a binary choice: MICRO (skip everything) or FULL (run everything). The STANDARD path is the missing middle ground",
+    "Signal assessment table provides audit trail for WHY a path was chosen — old skill just says 'this is Medium'"
+  ]
+}

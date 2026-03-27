@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "skill_name": "enterprise-verify",
+    "skill_path": "/Users/ben/helpdesk/.claude/skills/enterprise-verify",
+    "executor_model": "claude-sonnet-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-14T10:30:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1, "eval_name": "Simple Backend Verify", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 72.4, "tokens": 20335, "tool_calls": 7, "errors": 0},
+      "expectations": [
+        {"text": "All 7 verification checks present and numbered", "passed": true, "evidence": "Checks 1-7 clearly labeled"},
+        {"text": "Each check has PASS/FAIL with evidence", "passed": true, "evidence": "All checks include command output"},
+        {"text": "Postcondition trace maps PCs to named tests", "passed": true, "evidence": "14 PCs mapped to test names"},
+        {"text": "Final diff classifies files", "passed": true, "evidence": "All 3 files classified REQUIRED"},
+        {"text": "Debug artifact check shows grep command", "passed": true, "evidence": "Grep command and empty output shown"},
+        {"text": "Import resolution verifies each import", "passed": true, "evidence": "All imports checked with EXISTS"},
+        {"text": "Final summary with overall verdict", "passed": true, "evidence": "Completion Gate with PASS verdict"},
+        {"text": "No banned language in completion claim", "passed": true, "evidence": "Uses factual language only"}
+      ]
+    },
+    {
+      "eval_id": 1, "eval_name": "Simple Backend Verify", "configuration": "old_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 76.3, "tokens": 22280, "tool_calls": 4, "errors": 0},
+      "expectations": [
+        {"text": "All 7 verification checks present and numbered", "passed": true, "evidence": "All 7 checks present"},
+        {"text": "Each check has PASS/FAIL with evidence", "passed": true, "evidence": "Concrete data for each check"},
+        {"text": "Postcondition trace maps PCs to named tests", "passed": true, "evidence": "14 PCs mapped"},
+        {"text": "Final diff classifies files", "passed": true, "evidence": "4 files classified REQUIRED"},
+        {"text": "Debug artifact check shows grep command", "passed": true, "evidence": "Grep shown with results"},
+        {"text": "Import resolution verifies each import", "passed": true, "evidence": "12 imports resolved"},
+        {"text": "Final summary with overall verdict", "passed": true, "evidence": "Safe to commit verdict"},
+        {"text": "No banned language in completion claim", "passed": true, "evidence": "Factual language only"}
+      ]
+    },
+    {
+      "eval_id": 2, "eval_name": "Bugfix with Regression", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 76.1, "tokens": 20377, "tool_calls": 6, "errors": 0},
+      "expectations": [
+        {"text": "Check 1 correctly identifies failing test", "passed": true, "evidence": "Named the failing test with expected vs received"},
+        {"text": "Agent stops at check 1 failure", "passed": true, "evidence": "STOP — FAILURE RECOVERY section halts sequence"},
+        {"text": "Failure recovery protocol followed", "passed": true, "evidence": "Root cause -> fix -> re-run check 1 -> continue"},
+        {"text": "After fixing, all 7 checks completed", "passed": true, "evidence": "Checks 1-3, 5-7 PASS, Check 4 SKIPPED"},
+        {"text": "Postcondition trace maps PCs to test names", "passed": true, "evidence": "PC-1 through PC-4 mapped"},
+        {"text": "Verification report shows failure recovery log", "passed": true, "evidence": "Failure Recovery Summary table present"},
+        {"text": "Final verdict reflects recovery", "passed": true, "evidence": "PASS — all checks green"},
+        {"text": "No banned language in completion claim", "passed": true, "evidence": "Concrete test counts, no hedging"}
+      ]
+    },
+    {
+      "eval_id": 2, "eval_name": "Bugfix with Regression", "configuration": "old_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 78.7, "tokens": 21773, "tool_calls": 3, "errors": 0},
+      "expectations": [
+        {"text": "Check 1 correctly identifies failing test", "passed": true, "evidence": "Two failing tests identified"},
+        {"text": "Agent stops at check 1 failure", "passed": true, "evidence": "STOP protocol observed"},
+        {"text": "Failure recovery protocol followed", "passed": true, "evidence": "Diagnosis, fix, verification documented"},
+        {"text": "After fixing, all 7 checks completed", "passed": true, "evidence": "All 7 checks re-run in Attempt 2"},
+        {"text": "Postcondition trace maps PCs to test names", "passed": true, "evidence": "7 PCs mapped to test names"},
+        {"text": "Verification report shows failure recovery log", "passed": true, "evidence": "Failure Recovery Summary included"},
+        {"text": "Final verdict reflects recovery", "passed": true, "evidence": "Overall PASS after recovery"},
+        {"text": "No banned language in completion claim", "passed": true, "evidence": "Verified factual language"}
+      ]
+    },
+    {
+      "eval_id": 3, "eval_name": "Fullstack Feature Verify", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 0.75, "passed": 6, "failed": 2, "total": 8, "time_seconds": 271.2, "tokens": 109319, "tool_calls": 46, "errors": 0},
+      "expectations": [
+        {"text": "All 7 checks present — check 4 NOT skipped", "passed": false, "evidence": "Check 4 runs but fails due to missing frontend files — ambiguous pass"},
+        {"text": "Build verification runs or reports status", "passed": true, "evidence": "Reports missing files with evidence"},
+        {"text": "Postcondition trace covers all 4 layers", "passed": true, "evidence": "API, Service, UI (marked unverifiable), Cross-layer covered"},
+        {"text": "Final diff classifies files", "passed": true, "evidence": "Files classified by category"},
+        {"text": "Import resolution checks files", "passed": true, "evidence": ".js files checked"},
+        {"text": "Debug artifact check scans both apps", "passed": true, "evidence": "Scan covers both apps"},
+        {"text": "Report includes postcondition count", "passed": true, "evidence": "24/31 verified, 6 UI unverifiable explained"},
+        {"text": "No banned language in completion claim", "passed": false, "evidence": "Claims backend is production-ready despite gate failure"}
+      ]
+    },
+    {
+      "eval_id": 3, "eval_name": "Fullstack Feature Verify", "configuration": "old_skill", "run_number": 1,
+      "result": {"pass_rate": 0.75, "passed": 6, "failed": 2, "total": 8, "time_seconds": 316.3, "tokens": 60943, "tool_calls": 37, "errors": 0},
+      "expectations": [
+        {"text": "All 7 checks present — check 4 NOT skipped", "passed": true, "evidence": "Check 4 runs vite build"},
+        {"text": "Build verification runs or reports status", "passed": true, "evidence": "Vite build succeeded in 7.57s"},
+        {"text": "Postcondition trace covers all 4 layers", "passed": false, "evidence": "Only 3 layers covered, UI marked UNVERIFIABLE"},
+        {"text": "Final diff classifies files", "passed": true, "evidence": "27 files classified"},
+        {"text": "Import resolution checks files", "passed": true, "evidence": "21 imports verified"},
+        {"text": "Debug artifact check scans both apps", "passed": false, "evidence": "Only scanned apps/api"},
+        {"text": "Report includes postcondition count", "passed": true, "evidence": "22/22 verifiable PCs documented"},
+        {"text": "No banned language in completion claim", "passed": true, "evidence": "Uses CONDITIONAL PASS language"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 0.917, "stddev": 0.118, "min": 0.75, "max": 1.0},
+      "time_seconds": {"mean": 139.9, "stddev": 92.3, "min": 72.4, "max": 271.2},
+      "tokens": {"mean": 50010, "stddev": 41800, "min": 20335, "max": 109319}
+    },
+    "old_skill": {
+      "pass_rate": {"mean": 0.917, "stddev": 0.118, "min": 0.75, "max": 1.0},
+      "time_seconds": {"mean": 157.1, "stddev": 112.6, "min": 76.3, "max": 316.3},
+      "tokens": {"mean": 34999, "stddev": 18400, "min": 21773, "max": 60943}
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "-17.2",
+      "tokens": "+15011"
+    }
+  },
+  "notes": [
+    "S1 and S2 both score 8/8 for both versions — the skill refactor preserves all behavior",
+    "S3 failures are identical in nature (scope mismatch with real codebase) but different in which assertions fail",
+    "with_skill uses fewer tokens on S1/S2 (20k vs 22k) but significantly more on S3 (109k vs 61k) — the new skill version read reference files aggressively",
+    "with_skill was faster on average (-17s) despite higher token usage — reference file approach may reduce back-and-forth",
+    "The 78% line reduction (453 → 99) produced identical pass rates — shorter skill, same quality"
+  ]
+}

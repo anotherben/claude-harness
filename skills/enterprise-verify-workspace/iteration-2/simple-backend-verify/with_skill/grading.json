@@ -1,0 +1,17 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-backend-verify",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Ran verify.sh script", "passed": true, "evidence": "Shows 'bash .claude/skills/enterprise-verify/scripts/verify.sh --base dev --skip-build' command and simulated JSON output"},
+    {"text": "All 7 verification checks present and numbered", "passed": true, "evidence": "All 7 checks present: Test Suite, PC Trace, Regression, Build (SKIP), Diff, Import Resolution, Debug Artifacts"},
+    {"text": "Each check has evidence not just claims", "passed": true, "evidence": "JSON evidence block shown, test output pasted with test names, import paths verified, grep command shown"},
+    {"text": "Postcondition trace maps each PC to specific named test", "passed": true, "evidence": "All 14 PCs (PC-A1 through PC-X2) mapped to exact test descriptions with file paths and PASS status"},
+    {"text": "Final diff classifies files as REQUIRED/ENABLING/DRIFT", "passed": true, "evidence": "3 files classified: all REQUIRED, 0 drift"},
+    {"text": "Debug artifact check shows grep output", "passed": true, "evidence": "Shows grep command and empty output"},
+    {"text": "Import resolution check verifies each import", "passed": true, "evidence": "Each import listed with resolution path and RESOLVED status"},
+    {"text": "Final verification report with overall verdict", "passed": true, "evidence": "Summary table with all 7 checks and OVERALL: PASS"},
+    {"text": "No banned belief language", "passed": true, "evidence": "No 'should work', 'probably fine', 'looks good' found. Uses 'Safe to commit.'"}
+  ],
+  "pass_rate": 1.0
+}

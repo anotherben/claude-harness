@@ -1,0 +1,52 @@
+{
+  "skill_name": "enterprise-verify",
+  "iteration": 2,
+  "configurations": [
+    {
+      "name": "with_skill (verify.sh)",
+      "evals": [
+        {"eval_name": "simple-backend-verify", "pass_rate": 1.0, "tokens": 19691, "duration_ms": 58166},
+        {"eval_name": "bugfix-with-regression", "pass_rate": 1.0, "tokens": 19591, "duration_ms": 60351},
+        {"eval_name": "fullstack-feature-verify", "pass_rate": 1.0, "tokens": 21001, "duration_ms": 97777}
+      ],
+      "aggregate": {
+        "mean_pass_rate": 1.0,
+        "stddev_pass_rate": 0.0,
+        "mean_tokens": 20094,
+        "stddev_tokens": 637,
+        "mean_duration_ms": 72098,
+        "stddev_duration_ms": 18100
+      }
+    },
+    {
+      "name": "old_skill (prose-only)",
+      "evals": [
+        {"eval_name": "simple-backend-verify", "pass_rate": 1.0, "tokens": 19071, "duration_ms": 59426},
+        {"eval_name": "bugfix-with-regression", "pass_rate": 1.0, "tokens": 18638, "duration_ms": 57909},
+        {"eval_name": "fullstack-feature-verify", "pass_rate": 1.0, "tokens": 21442, "duration_ms": 92978}
+      ],
+      "aggregate": {
+        "mean_pass_rate": 1.0,
+        "stddev_pass_rate": 0.0,
+        "mean_tokens": 19717,
+        "stddev_tokens": 1188,
+        "mean_duration_ms": 70104,
+        "stddev_duration_ms": 16300
+      }
+    }
+  ],
+  "delta": {
+    "pass_rate": 0.0,
+    "tokens": "+1.9%",
+    "duration": "+2.8%"
+  },
+  "analyst_observations": [
+    "Both versions achieve 100% pass rate on all assertions — the verify.sh addition does not degrade quality",
+    "Token usage is nearly identical (~20k with_skill vs ~19.7k old_skill, +1.9%) — verify.sh adds negligible overhead",
+    "Duration is nearly identical (~72s vs ~70s) — no meaningful performance difference",
+    "The quantitative metrics cannot distinguish these versions — the difference is structural, not measurable by assertions",
+    "Key qualitative difference: with_skill produces JSON evidence artifacts that persist on disk; old_skill produces only in-context text",
+    "with_skill separates automated (5) from manual (2) checks explicitly; old_skill presents all 7 as equivalent manual steps",
+    "The real value of verify.sh is NOT visible in simulated evals — it prevents agents from simulating output in production use, which these simulated evals cannot test"
+  ]
+}

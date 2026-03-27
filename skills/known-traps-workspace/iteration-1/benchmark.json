@@ -1,0 +1,51 @@
+{
+  "skill_name": "known-traps-registry",
+  "iteration": 1,
+  "configurations": [
+    {
+      "name": "with_skill (known-traps)",
+      "evals": [
+        {"eval_name": "contract-sql-feature", "pass_rate": 1.0, "tokens": 46279, "duration_ms": 179435},
+        {"eval_name": "forge-catches-tenant-bug", "pass_rate": 1.0, "tokens": 23905, "duration_ms": 86685},
+        {"eval_name": "contract-webhook-feature", "pass_rate": 1.0, "tokens": 50020, "duration_ms": 205097}
+      ],
+      "aggregate": {
+        "mean_pass_rate": 1.0,
+        "stddev_pass_rate": 0.0,
+        "mean_tokens": 40068,
+        "stddev_tokens": 11300,
+        "mean_duration_ms": 157072,
+        "stddev_duration_ms": 51600
+      }
+    },
+    {
+      "name": "old_skill (no traps)",
+      "evals": [
+        {"eval_name": "contract-sql-feature", "pass_rate": 0.75, "tokens": 35736, "duration_ms": 190147},
+        {"eval_name": "forge-catches-tenant-bug", "pass_rate": 0.625, "tokens": 22009, "duration_ms": 81825},
+        {"eval_name": "contract-webhook-feature", "pass_rate": 0.714, "tokens": 41982, "duration_ms": 171767}
+      ],
+      "aggregate": {
+        "mean_pass_rate": 0.696,
+        "stddev_pass_rate": 0.053,
+        "mean_tokens": 33242,
+        "stddev_tokens": 8300,
+        "mean_duration_ms": 147913,
+        "stddev_duration_ms": 47400
+      }
+    }
+  ],
+  "delta": {
+    "pass_rate": "+30.4% (1.0 vs 0.696)",
+    "tokens": "+20.5% (more thorough analysis)",
+    "duration": "+6.2% (negligible)"
+  },
+  "analyst_observations": [
+    "Known-traps version wins all 3 evals on pass rate: 100% vs 69.6% average",
+    "The key discriminating assertions are: (1) explicit trap registry check, (2) trap-to-PC mapping table, (3) registry update after forge recycle, (4) dialogService trap for frontend",
+    "Old skill still catches most issues via existing invariants (tenant_id, TIMESTAMPTZ, route order) — the gap is SYSTEMATIC coverage vs IMPLICIT coverage",
+    "The dialogService trap (trap-002) is the clearest win: old skill missed it entirely on the webhook feature, with_skill caught it via registry",
+    "Forge with_skill provides the feedback loop: increments found_count, notes prevention gap, creates institutional memory. Old skill fixes the bug but the learning dies with the session",
+    "Token cost is ~20% higher with_skill — acceptable tradeoff for the systematic coverage and learning loop"
+  ]
+}

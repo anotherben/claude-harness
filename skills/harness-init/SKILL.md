@@ -221,10 +221,9 @@ chmod +x *.sh
 
 Copy all skill directories from `~/claude-harness/skills/` to `.claude/skills/`.
 
-All tiers get the current enterprise, vault, guard, and utility skills.
-
-- **Lite/Standard**: do not add `conductor-resume`
-- **Full**: add `conductor-resume`
+All tiers get all skills EXCEPT:
+- **Lite/Standard**: skip `fleet-commander` and `conductor-resume`
+- **Full**: copy everything
 
 This includes vault skills (vault-capture, vault-context, vault-init, vault-process, vault-status, vault-sweep, vault-triage, vault-update), domain guards (integration-guard, sql-guard, sync-worker, rex-soap-protocol, shopify-integration), and utilities (worktree-cleanup, cortex-index, prompt-intelligence, harness-update).
 
@@ -238,7 +237,7 @@ All hook paths use: `"$CLAUDE_PROJECT_DIR"/.claude/hooks/`
 
 ## Step 5b: Register MCP Servers (ALL TIERS)
 
-All three MCP servers must be registered for the harness to enforce properly. Without them, vault gates, cortex reads, and skill retrieval fall back to blunt behavior.
+Both MCP servers must be registered for the harness to enforce properly. Without them, vault gates and cortex hooks are toothless.
 
 ### cortex-engine (code intelligence)
 
@@ -273,30 +272,13 @@ codex mcp add cortex-engine -- node /Users/ben/claude-harness/cortex-engine/src/
 codex mcp add vault-index -- node /Users/ben/.vault-index/src/server.js
 ```
 
-### skills-index (skill + policy retrieval engine)
-
-**Claude Code** — check `~/.claude.json` for a `skills-index` entry. If missing, add:
-```json
-"skills-index": {
-  "type": "stdio",
-  "command": "node",
-  "args": ["/Users/ben/claude-harness/skills-index/src/server.js"]
-}
-```
-
-**Codex CLI:**
-```bash
-codex mcp add skills-index -- node /Users/ben/claude-harness/skills-index/src/server.js
-```
-
 ### Verification
 
-After registration, verify all three are live:
+After registration, verify both are live:
 - `cortex_status()` — should return file/symbol counts
-- `mcp__skills-index__skill_status()` — should return skill/policy counts and freshness
 - `mcp__vault-index__list_vault(project="...")` — should return vault items
 
-If any server fails, check that the server code exists at the path and `npm install` has been run.
+If either fails, check that the server code exists at the path and `npm install` has been run.
 
 **If jcodemunch is present in mcpServers, remove it** — cortex-engine is the replacement.
 

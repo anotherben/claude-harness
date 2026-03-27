@@ -1,0 +1,53 @@
+{
+  "skill_name": "enterprise-verify",
+  "evals": [
+    {
+      "id": 1,
+      "name": "simple-backend-verify",
+      "prompt": "I just finished implementing the POST /api/alert-configs endpoint. 3 files changed: alertConfigService.js, alertConfigRoutes.js, alertConfig.test.js. The contract has 14 postconditions (PC-A1 through PC-A5, PC-S1 through PC-S7, PC-X1 through PC-X2). Run verification before I commit.",
+      "expected_output": "A complete verification report with all 7 checks, pasted evidence for each, and a clear PASS/FAIL verdict",
+      "expectations": [
+        "All 7 verification checks are present and numbered",
+        "Each check has a PASS or FAIL verdict with evidence (not just a claim)",
+        "Postcondition trace maps each PC to a specific named test",
+        "Final diff classifies files as REQUIRED/ENABLING/DRIFT",
+        "Debug artifact check shows the grep command and its output",
+        "Import resolution check verifies each import in changed files",
+        "A final verification report summary is present with overall verdict",
+        "No banned/belief language used in the completion claim (should work, probably fine, looks good)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "bugfix-with-regression",
+      "prompt": "I fixed the stock quantity display bug by switching getProductDetails() and getProductList() from available_stock to current_stock. 2 files changed: productService.js, productService.test.js. One test is failing — the mock still expects the old column name. Run verification.",
+      "expected_output": "Verification that catches the failing test, stops, describes the fix needed, then re-runs after the fix",
+      "expectations": [
+        "Check 1 (test suite) correctly identifies the failing test",
+        "The agent STOPS at check 1 failure instead of continuing",
+        "The failure recovery protocol is followed (fix, re-run check 1, continue)",
+        "After fixing the mock, all 7 checks are completed",
+        "Postcondition trace maps PCs to specific test names",
+        "The verification report shows the failure recovery log",
+        "Final verdict reflects the recovery (not just the initial failure)",
+        "No banned language in the completion claim"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "fullstack-feature-verify",
+      "prompt": "The Shopify order ingress feature is complete. 12 files changed across apps/api and apps/admin — including 3 React components (OrderList.jsx, OrderDetail.jsx, OrderStats.jsx), 2 new service files, webhook handler, and migration. Contract has 31 postconditions across API (13), Service (9), UI (6), Cross-layer (3). Verify everything before the PR.",
+      "expected_output": "Full verification including build check (frontend files changed), comprehensive postcondition trace for 31 PCs, and drift classification for 12 files",
+      "expectations": [
+        "All 7 checks present — check 4 (build) is NOT skipped since frontend files changed",
+        "Build verification runs vite build and pastes output",
+        "Postcondition trace covers all 4 layers (API, Service, UI, Cross-layer)",
+        "Final diff classifies all 12 files",
+        "Import resolution checks both .js and .jsx files",
+        "Debug artifact check scans both apps/api and apps/admin",
+        "Verification report summary includes postcondition count (31)",
+        "No banned language in completion claim"
+      ]
+    }
+  ]
+}

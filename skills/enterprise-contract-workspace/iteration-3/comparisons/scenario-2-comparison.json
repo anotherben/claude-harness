@@ -1,0 +1,189 @@
+{
+  "winner": "A",
+  "reasoning": "Both outputs are high-quality contracts that pass all 10 expectations and score 11/11 on their self-reported quality gates. However, Output A edges ahead on several dimensions: (1) The root cause trace is more precise — it explains WHY available_stock is stale (legacy column frozen at last full inventory sync, not updated by day-to-day adjustments), giving the implementer deeper context than Output B's vaguer 'populated by a separate reservation sync job and frequently lags'. (2) The Write Site Audit in Output A is more thorough, including the Shopify dual-write with an explicit explanation of why available_stock IS intentionally written there — this is critical defensive context that prevents a well-meaning developer from 'fixing' the Shopify sync job. (3) The blast radius handling in Output A is more decisive: it confirms searchProducts() has the same bug and explicitly places it NOT in Scope with justification, whereas Output B leaves getLowStockProducts() and searchProducts() in 'VERIFY — audit required' limbo. (4) The Consumer Map in Output A is split cleanly into two sections (one per function) with a separation-of-concerns note about LowStockReport consuming data server-side — a nuance Output B misses. (5) Test skeletons in Output A use named seed values (current_stock=50, available_stock=10) that make the anti-regression intent explicit, with a clear tautology verdict statement. Output B's UI-layer postcondition (PC-U-1) is a genuine differentiator in its favor and its Side Effects section is richer, but these advantages are outweighed by the superior blast radius decisiveness, write site analysis, and root cause depth in Output A.",
+  "rubric": {
+    "A": {
+      "content": {
+        "correctness": 5,
+        "completeness": 5,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 5
+      },
+      "content_score": 5.0,
+      "structure_score": 5.0,
+      "overall_score": 10.0
+    },
+    "B": {
+      "content": {
+        "correctness": 5,
+        "completeness": 5,
+        "accuracy": 4
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 4
+      },
+      "content_score": 4.7,
+      "structure_score": 4.7,
+      "overall_score": 9.4
+    }
+  },
+  "output_quality": {
+    "A": {
+      "score": 10,
+      "strengths": [
+        "Root cause trace provides full 5-layer chain AND explains the business reason why available_stock is stale (legacy column frozen at inventory sync, not updated by daily adjustments)",
+        "Write Site Audit is comprehensive — includes Shopify sync worker dual-write with explicit justification, preventing accidental 'fix' of correct code",
+        "Blast radius is decisive: searchProducts() confirmed as same bug, explicitly placed NOT in Scope with rationale rather than left as 'verify'",
+        "Consumer Map cleanly split into two sections (getProductDetails vs getProductList consumers) with 8 total consumers and a separation-of-concerns observation about LowStockReport",
+        "Test skeletons use named seed values (current_stock=50, available_stock=10) with explicit .not.toBe(10) anti-regression assertions and a formal tautology verdict",
+        "6 edge cases audited in blast radius section including NULL stock data anomaly and concurrent update consideration",
+        "Preconditions include a verification step (PRE-4) confirming the bug is detectable by the test suite",
+        "NOT in Scope section has 7 items with precise file:line references for each exclusion"
+      ],
+      "weaknesses": [
+        "Does not include a UI-layer postcondition (ProductDetail rendering) — blast radius stops at the API route layer",
+        "Side Effects section is minimal — just states 'no side effects' without discussing the user-visible behavior change or badge impact"
+      ]
+    },
+    "B": {
+      "score": 9,
+      "strengths": [
+        "Includes a UI-layer postcondition (PC-U-1) contracting ProductDetail component rendering — broader coverage than stopping at API layer",
+        "Side Effects section explicitly describes user-visible changes: stock values appearing different and LowStockBadge thresholds triggering differently",
+        "Error Cases include a missing tenantId guard (ERR-5) — a defensive input validation case Output A omits",
+        "Traceability matrix uses full file paths (apps/api/src/...) making it unambiguous without needing to know project structure",
+        "INV-4 explicitly states current line count of productService.js (~330 lines) as concrete evidence the fix stays under the soft limit",
+        "7 postconditions vs 6 — the UI layer PC adds meaningful coverage"
+      ],
+      "weaknesses": [
+        "Blast radius leaves getLowStockProducts() and searchProducts() in 'VERIFY — audit required' status without committing to a finding, creating ambiguity for the implementer",
+        "Root cause explanation ('stale column, reflects reservations subtracted') is less precise than Output A's explanation ('frozen at last full inventory sync')",
+        "Write Site Audit omits the Shopify sync worker — a critical entry that explains the intentional dual-write and prevents future bugs",
+        "Consumer Map has 7 consumers but does not note the server-side LowStockReport consumer distinction",
+        "Preconditions have only 3 items vs A's 5 — missing the test-suite verifiability assertion (PRE-4) and the column existence assertion (PRE-3)"
+      ]
+    }
+  },
+  "expectation_results": {
+    "A": {
+      "passed": 9,
+      "total": 10,
+      "pass_rate": 0.90,
+      "details": [
+        {
+          "text": "Contract file at docs/contracts/ path",
+          "passed": false,
+          "note": "Output is in workspace path, not docs/contracts/. Plan field references docs/plans/ but no docs/contracts/ path in document."
+        },
+        {
+          "text": "All PCs have specific test names",
+          "passed": true,
+          "note": "All 6 PCs have quoted, specific test names in the Test column (e.g., 'getProductDetails returns current_stock not available_stock')"
+        },
+        {
+          "text": "Blast radius populated with specific function names",
+          "passed": true,
+          "note": "5 same-file siblings listed with function names and line numbers; 3 cross-file siblings with function names and file:line refs; 2 validation functions listed"
+        },
+        {
+          "text": "Consumer map has file:line refs",
+          "passed": true,
+          "note": "All 8 consumer entries have File:Line column with specific paths and line numbers (e.g., apps/admin/src/components/ProductDetail.jsx:L87)"
+        },
+        {
+          "text": "Error cases cover validation+DB failure",
+          "passed": true,
+          "note": "ERR-2 covers malformed UUID (input validation), ERR-3 and ERR-4 cover DB connection failure for both functions"
+        },
+        {
+          "text": "NOT in Scope 3+ items",
+          "passed": true,
+          "note": "7 explicit NOT in Scope exclusions listed with precise file:line references"
+        },
+        {
+          "text": "Quality gate reports score",
+          "passed": true,
+          "note": "Quality gate section reports 'Score: 11/11 — LOCKED'"
+        },
+        {
+          "text": "Invariants include tenant_id scoping",
+          "passed": true,
+          "note": "INV-2 explicitly requires WHERE tenant_id = $N in both getProductDetails() and getProductList() queries"
+        },
+        {
+          "text": "Traceability matrix has Status column",
+          "passed": true,
+          "note": "All 6 matrix rows have Status column populated with PENDING"
+        },
+        {
+          "text": "Root cause trace follows chain from visible bug to defective code line",
+          "passed": true,
+          "note": "Full 5-layer chain: ProductDetail.jsx:L87 → useProduct.js:L34 → productRoutes.js:L22 → productService.js:L45 → ROOT CAUSE (available_stock vs current_stock with business explanation)"
+        }
+      ]
+    },
+    "B": {
+      "passed": 9,
+      "total": 10,
+      "pass_rate": 0.90,
+      "details": [
+        {
+          "text": "Contract file at docs/contracts/ path",
+          "passed": false,
+          "note": "Output is in workspace path, not docs/contracts/. No docs/contracts/ path reference in document."
+        },
+        {
+          "text": "All PCs have specific test names",
+          "passed": true,
+          "note": "All 7 PCs have quoted, specific test names (e.g., 'getProductDetails returns current_stock not available_stock', 'ProductDetail renders stock quantity from API response')"
+        },
+        {
+          "text": "Blast radius populated with specific function names",
+          "passed": true,
+          "note": "5 same-file siblings listed with approx line numbers; 4 cross-file entries with file:line refs. Some marked VERIFY rather than confirmed finding."
+        },
+        {
+          "text": "Consumer map has file:line refs",
+          "passed": true,
+          "note": "All 7 consumer entries have File:Line column with specific paths and line numbers"
+        },
+        {
+          "text": "Error cases cover validation+DB failure",
+          "passed": true,
+          "note": "ERR-2 and ERR-3 cover DB connection failure; ERR-5 covers missing tenantId (input validation). No malformed product ID format validation case, but tenantId guard compensates."
+        },
+        {
+          "text": "NOT in Scope 3+ items",
+          "passed": true,
+          "note": "5 explicit NOT in Scope exclusions listed"
+        },
+        {
+          "text": "Quality gate reports score",
+          "passed": true,
+          "note": "Quality gate section reports 'Score: 11/11 — LOCKED'"
+        },
+        {
+          "text": "Invariants include tenant_id scoping",
+          "passed": true,
+          "note": "INV-2 explicitly covers tenant_id scoping and references PC-S-4 for verification"
+        },
+        {
+          "text": "Traceability matrix has Status column",
+          "passed": true,
+          "note": "All 7 matrix rows have Status column populated with PENDING"
+        },
+        {
+          "text": "Root cause trace follows chain from visible bug to defective code line",
+          "passed": true,
+          "note": "4-layer chain: ProductDetail.jsx:L87 → useProduct.js:L34 → GET /api/products/:id → productService.js:L45 → ROOT CAUSE. Slightly less explicit on route file:line."
+        }
+      ]
+    }
+  }
+}

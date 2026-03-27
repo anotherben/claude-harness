@@ -1,0 +1,17 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-backend-verify",
+  "configuration": "old_skill",
+  "expectations": [
+    {"text": "Ran 7 manual checks (old skill has no verify.sh)", "passed": true, "evidence": "Shows manual commands for each check: npx jest, grep, git diff --stat etc."},
+    {"text": "All 7 verification checks present and numbered", "passed": true, "evidence": "All 7 checks present with 'Check N —' headers"},
+    {"text": "Each check has evidence not just claims", "passed": true, "evidence": "Test output pasted, grep commands shown, import paths verified individually"},
+    {"text": "Postcondition trace maps each PC to specific named test", "passed": true, "evidence": "14/14 PCs mapped to exact test descriptions with file paths"},
+    {"text": "Final diff classifies files as REQUIRED/ENABLING/DRIFT", "passed": true, "evidence": "3 files classified as REQUIRED, 0 drift"},
+    {"text": "Debug artifact check shows grep output", "passed": true, "evidence": "Shows full grep command and '(no output)' result"},
+    {"text": "Import resolution check verifies each import", "passed": true, "evidence": "Every import in all 3 files listed with resolution target"},
+    {"text": "Final verification report with overall verdict", "passed": true, "evidence": "Summary table with all 7 checks and OVERALL: PASS — all checks green"},
+    {"text": "No banned belief language", "passed": true, "evidence": "No banned language found. Includes 'Failure recovery log: No failures encountered'"}
+  ],
+  "pass_rate": 1.0
+}

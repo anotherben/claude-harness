@@ -1,0 +1,128 @@
+{
+  "expectations": [
+    {
+      "text": "Contract file created at docs/contracts/ path",
+      "passed": false,
+      "evidence": "The contract summary states the output is at 'docs/contracts/2026-03-14-alert-configs-contract.md', but no such file exists. The file is only present at the sandbox outputs path '/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-1/outputs/contract.md'. A glob of /Users/ben/helpdesk/docs/contracts/ confirms no alert-configs contract file exists there. The executor wrote the file to the wrong location."
+    },
+    {
+      "text": "All postconditions have specific test names (not generic placeholders)",
+      "passed": true,
+      "evidence": "The traceability matrix contains 14 rows, each with a quoted, specific test name. Examples: PC-A1 → '\"POST /api/alert-configs returns 201 with created config\"'; PC-S3 → '\"createAlertConfig throws ValidationError when category is empty or null\"'; PC-X2 → '\"alert config created by tenant A not visible to tenant B\"'. None use generic placeholders like 'test_1' or 'should work'."
+    },
+    {
+      "text": "Blast radius section is populated with specific function names and line references (not N/A or 'seems isolated')",
+      "passed": true,
+      "evidence": "The blast radius section names specific functions with line estimates: getAlertConfigs() at L42-L65, deleteAlertConfig() at L67-L90, updateAlertConfig() at L92-L120. Cross-file siblings name productService.js:createProduct(), supplierService.js:createSupplier(), orderService.js:createOrder(). Validation functions are listed with line refs: validateProduct() at productService.js:L8, validateSupplier() at supplierService.js:L5. No N/A or 'seems isolated' language anywhere. Note: the transcript acknowledges these are 'simulated' (invented) since no codebase files were actually read for this new feature, which is the correct approach for a new file."
+    },
+    {
+      "text": "Consumer map lists specific file:line references for each consumer",
+      "passed": false,
+      "evidence": "The consumer map contains file paths and line ranges for all 5 consumers (e.g., 'apps/admin/src/components/AlertConfigList.jsx L12-L45'). However, the transcript explicitly states at Step 3 that these were 'simulated' and 'invented': 'Simulated file reads (as instructed — no actual codebase to read, so I invented plausible details)' and 'Consumers grepped (simulated)'. The plan file docs/plans/2026-03-14-alert-configs-plan.md does not exist in the repository (confirmed by glob). The referenced consumer files (AlertConfigList.jsx, useAlertConfigs.js, AlertConfigDetail.jsx, alertWorker.js) were not verified to exist. Fabricated file:line references are not evidence of genuine consumer discovery — they would fail the grader's standard that evidence must reflect genuine task completion, not surface-level compliance."
+    },
+    {
+      "text": "Error cases cover at least validation failure AND database failure",
+      "passed": true,
+      "evidence": "ERR-1 through ERR-7 cover validation failures (missing/empty/null category, missing/zero/negative/float/string threshold). ERR-8 explicitly covers 'Database INSERT fails (connection lost, constraint violation)' with HTTP 500 response and logger.error call. Both categories are clearly present with specific test names."
+    },
+    {
+      "text": "NOT in Scope section has 3+ explicit items",
+      "passed": true,
+      "evidence": "The NOT in Scope section lists 6 numbered items: (1) PATCH/PUT/DELETE endpoints, (2) Input sanitization/XSS escaping, (3) Rate limiting, (4) Pagination/filtering, (5) Alerting worker logic changes, (6) Admin UI form implementation. All are explicit and specific, exceeding the minimum of 3."
+    },
+    {
+      "text": "Quality gate runs and reports a score with PASS/FAIL per criterion",
+      "passed": true,
+      "evidence": "The Quality Gate section shows all 11 criteria each labeled as PASS with justifications, and a final score of '11/11 — LOCKED'. Example entries: 'Testability: PASS — 14 PCs, all have concrete expect() skeletons'; 'Blast Radius: PASS — same-file: 3 sibling functions identified'. The quality gate is present and fully populated."
+    },
+    {
+      "text": "Invariants include tenant_id scoping (INV-1 and INV-2)",
+      "passed": true,
+      "evidence": "The invariants table lists INV-1 ('Every INSERT includes tenant_id') with status APPLIES and justification 'INSERT into alert_configs must include tenant_id from req.user.tenant_id. Enforced by PC-S1.' INV-2 ('Every SELECT/UPDATE/DELETE scopes to tenant_id') with status APPLIES and justification 'Any read-back query in the service must scope to tenant. Enforced by PC-X2.' Both invariants are present with specific enforcement references."
+    },
+    {
+      "text": "Traceability matrix has a Status column with PENDING entries",
+      "passed": true,
+      "evidence": "The traceability matrix has columns: PC | Test File | Test Name | Code File | Code Location | Status. All 14 rows show 'PENDING' in the Status column. Example: 'PC-A1 | apps/api/src/__tests__/alertConfigs.test.js | \"POST /api/alert-configs returns 201 with created config\" | apps/api/src/routes/alertConfigs.js | Route handler L8-L25 | PENDING'."
+    },
+    {
+      "text": "No banned vague words (should, probably, appropriate, reasonable, properly) in postcondition text",
+      "passed": true,
+      "evidence": "A grep of the contract file for 'should|probably|appropriate|reasonable|properly' found one match at line 129 in the Blast Radius section ('Validation pattern should be consistent'), not in postcondition text. The postconditions sections (PC-A1-A6, PC-S1-S6, PC-X1-X2) contain no banned words. The quality gate's banned-word check claims 0 occurrences, which appears to have missed the occurrence in the blast radius section — however, the expectation specifically says 'in postcondition text', so this is a narrow pass."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 2,
+    "total": 10,
+    "pass_rate": 0.8
+  },
+  "execution_metrics": {
+    "tool_calls": null,
+    "total_tool_calls": null,
+    "total_steps": 15,
+    "errors_encountered": 0,
+    "output_chars": 11900,
+    "transcript_chars": 9800
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "Contract written to docs/contracts/2026-03-14-alert-configs-contract.md",
+      "type": "factual",
+      "verified": false,
+      "evidence": "The file does not exist at that path. Glob of /Users/ben/helpdesk/docs/contracts/ shows no alert-configs contract. The file was only written to the sandbox outputs directory."
+    },
+    {
+      "claim": "Banned words grep count: 0",
+      "type": "factual",
+      "verified": false,
+      "evidence": "The word 'should' appears at contract line 129 in the Blast Radius section ('Validation pattern should be consistent'). The quality gate's banned-word claim is incorrect — the count is not 0. However, the banned word does not appear in postconditions specifically."
+    },
+    {
+      "claim": "5 consumers found by grep",
+      "type": "process",
+      "verified": false,
+      "evidence": "Transcript explicitly states grep was 'simulated' and consumers were 'invented'. The consumer files were not verified to exist in the codebase. The plan file itself does not exist at docs/plans/2026-03-14-alert-configs-plan.md."
+    },
+    {
+      "claim": "14 PCs, all have concrete expect() skeletons with specific values",
+      "type": "quality",
+      "verified": true,
+      "evidence": "All 14 postconditions in the contract contain concrete expect() assertions with specific values (exact strings, UUID patterns, specific status codes). Confirmed by reading the postconditions tables."
+    },
+    {
+      "claim": "All 7 standard invariants apply and are addressed",
+      "type": "quality",
+      "verified": true,
+      "evidence": "All 7 invariants are listed in the table with APPLIES status and specific justifications referencing enforcement PCs. Reviewed against the extracted invariant list in the transcript."
+    },
+    {
+      "claim": "Plan tasks fully contracted",
+      "type": "quality",
+      "verified": false,
+      "evidence": "The plan file (docs/plans/2026-03-14-alert-configs-plan.md) does not exist in the repository. The executor simulated reading it. The claim that plan tasks are 'fully contracted' cannot be verified against the actual plan."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Contract file created at docs/contracts/ path",
+        "reason": "This assertion correctly caught that the contract must be written to the canonical path. Consider strengthening it to also verify the file path matches the date and slug convention (YYYY-MM-DD-<slug>-contract.md), not just the directory — a file named 'contract.md' in docs/contracts/ would technically pass but violate the naming convention."
+      },
+      {
+        "assertion": "Consumer map lists specific file:line references for each consumer",
+        "reason": "The assertion passes when line references are present but doesn't distinguish real from fabricated references. For this scenario (a new feature with no existing consumers), the executor correctly invented plausible references rather than verifying them. A stronger assertion would be: 'Consumer map grep command output is visible in the transcript AND references at least one file that exists in the codebase' — this would catch the case where all consumers are entirely fabricated."
+      },
+      {
+        "reason": "No assertion checks whether the plan file referenced in the contract actually exists at docs/plans/2026-03-14-alert-configs-plan.md. The executor simulated reading a non-existent plan and invented all task details. A contract graded against a hallucinated plan provides no real correctness guarantee. Consider adding: 'Contract references a plan file that exists in docs/plans/'."
+      },
+      {
+        "assertion": "No banned vague words (should, probably, appropriate, reasonable, properly) in postcondition text",
+        "reason": "The scope of 'postcondition text' is ambiguous — the word 'should' appears in the blast radius section and was missed by the quality gate's own ban-word check. Consider broadening the assertion to cover the entire contract file, or explicitly scoping it: 'banned words do not appear in any postcondition row in the PC-A, PC-S, or PC-X tables'."
+      }
+    ],
+    "overall": "The evals are well-targeted and caught the most critical failure (wrong output path). The consumer map assertion is the hardest to enforce mechanically since the distinction between real and simulated discovery isn't visible without checking the codebase. The missing plan file is a significant blind spot — the entire contract was written against an invented plan, which the current evals don't detect."
+  }
+}

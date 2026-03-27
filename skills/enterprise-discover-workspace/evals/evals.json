@@ -1,0 +1,87 @@
+{
+  "skill_name": "enterprise-pipeline-generic",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run verify.sh (old hardcoded version) and capture JSON output",
+      "expected_output": "JSON evidence file with 7 checks, all producing results",
+      "files": [],
+      "assertions": [
+        {
+          "name": "verify-old-produces-valid-json",
+          "description": "Old verify.sh produces valid JSON evidence",
+          "type": "programmatic"
+        },
+        {
+          "name": "verify-old-has-7-checks",
+          "description": "JSON contains all 7 check sections",
+          "type": "programmatic"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Run verify.sh (new parameterized version) WITHOUT --profile flag and compare to old version",
+      "expected_output": "JSON evidence identical or equivalent to old version output",
+      "files": [],
+      "assertions": [
+        {
+          "name": "verify-new-no-profile-produces-valid-json",
+          "description": "New verify.sh without profile produces valid JSON",
+          "type": "programmatic"
+        },
+        {
+          "name": "verify-new-no-profile-same-structure",
+          "description": "JSON structure matches old version (same keys, same check names)",
+          "type": "programmatic"
+        },
+        {
+          "name": "verify-new-no-profile-same-verdicts",
+          "description": "All 7 check verdicts match old version verdicts",
+          "type": "programmatic"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Run verify.sh (new version) WITH --profile flag pointing to helpdesk stack-profile.json",
+      "expected_output": "JSON evidence equivalent to old version (since profile describes the same helpdesk stack)",
+      "files": [],
+      "assertions": [
+        {
+          "name": "verify-with-profile-produces-valid-json",
+          "description": "New verify.sh with profile produces valid JSON",
+          "type": "programmatic"
+        },
+        {
+          "name": "verify-with-profile-same-verdicts",
+          "description": "All 7 check verdicts match old version",
+          "type": "programmatic"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Run mechanical-checks.sh (old vs new) with --check all and compare",
+      "expected_output": "Same check results from both versions",
+      "files": [],
+      "assertions": [
+        {
+          "name": "mechanical-old-runs-clean",
+          "description": "Old mechanical-checks.sh runs without errors",
+          "type": "programmatic"
+        },
+        {
+          "name": "mechanical-new-runs-clean",
+          "description": "New mechanical-checks.sh runs without errors",
+          "type": "programmatic"
+        },
+        {
+          "name": "mechanical-same-output",
+          "description": "Both versions produce equivalent check results",
+          "type": "programmatic"
+        }
+      ]
+    }
+  ]
+}

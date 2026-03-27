@@ -1,7 +1,7 @@
 #!/bin/bash
 # PostToolUse:Bash — record JSON test evidence to local file + Obsidian vault
 # Writes structured evidence to .claude/evidence/last-test-run.json (local, hooks read this)
-# AND to {{VAULT_EVIDENCE_PATH}}/{{PROJECT_NAME}}-test-evidence.md (shared, vault-index reads this)
+# AND to ~/Documents/Product Ideas/_evidence/firearm-systems-test-evidence.md (shared, vault-index reads this)
 # Stale-marking is handled exclusively by invalidate-after-git-op.sh.
 
 EVIDENCE_DIR="$CLAUDE_PROJECT_DIR/.claude/evidence"
@@ -19,13 +19,13 @@ if [ -z "$SESSION_ID" ]; then exit 0; fi
 COMMAND=$(python3 -c "import json; print(json.load(open('$HOOK_TMP')).get('tool_input',{}).get('command',''))" 2>/dev/null)
 
 # --- Record evidence when test commands run ---
-if echo "$COMMAND" | grep -qE '(npx jest|npm run test|npm test|npx playwright|node_modules/\.bin/jest|^\s*jest\s)'; then
+if echo "$COMMAND" | grep -qE '(npx jest|npm run test|npm test|npx playwright|node_modules/\.bin/jest|^\s*jest\s|npx vitest|vitest run)'; then
   mkdir -p "$EVIDENCE_DIR"
   COMMIT=$(git -C "$CLAUDE_PROJECT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
   BRANCH=$(git -C "$CLAUDE_PROJECT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 
   python3 - "$HOOK_TMP" "$EVIDENCE_FILE" "$COMMIT" "$BRANCH" "$SESSION_ID" "$STACK_PROFILE" << 'PYEOF'
-import json, re, sys, os
+import json, re, sys, os, hashlib, hmac
 from datetime import datetime, timezone
 
 hook_file, evidence_file, commit, branch, session_id, stack_profile_path = sys.argv[1:7]
@@ -43,6 +43,9 @@ if isinstance(tr, dict):
 else:
     exit_code = 0
     response_text = str(tr)
+
+# Strip ANSI escape codes for reliable regex parsing
+clean_text = re.sub(r'\x1b\[[0-9;]*m', '', response_text)
 
 # Determine test mode
 mode = 'parallel'
@@ -80,41 +83,95 @@ if tier == 'unknown':
     elif 'test:local' in cmd or 'runInBand' in cmd:
         tier = 'integration'
         tier_reason = 'command uses test:local or runInBand (real DB expected)'
+    elif 'vitest' in cmd:
+        tier = 'integration'
+        tier_reason = 'vitest runs against real project (not mocked)'
     elif 'jest' in cmd or 'npm test' in cmd or 'npm run test' in cmd:
         tier = 'mocked'
         tier_reason = 'generic test command (assumed mocked)'
 
 # 3. Refine from output content
 db_connected = False
-if 'DATABASE_URL' in response_text or 'Connected to' in response_text or 'PostgreSQL' in response_text:
+if 'DATABASE_URL' in clean_text or 'Connected to' in clean_text or 'PostgreSQL' in clean_text:
     db_connected = True
     if tier == 'mocked':
         tier = 'integration'
         tier_reason = 'output indicates real database connection'
 
-# Parse jest output for suite/test counts
+# Parse test output for suite/test counts (supports jest AND vitest)
+# IMPORTANT: Use findall + take LAST match to prevent agents from prepending
+# fake summary lines via echo. The real test framework output comes last.
 suites_passed = suites_failed = suites_skipped = 0
-tests_passed = tests_failed = 0
+tests_passed = tests_failed = tests_skipped = 0
+counts_verified = False
 
-suite_match = re.search(r'Test Suites:\s+(.+)', response_text)
-if suite_match:
-    line = suite_match.group(1)
+# Strip lines that look like agent-injected echo commands
+# (lines starting with "Test Suites:" or "Test Files" that appear after shell separators)
+# Only trust output that contains ANSI codes (real framework output) or appears in the
+# main output block before any chained commands
+trusted_text = clean_text
+# If command contains ; or && after the test command, only trust output before the separator output
+cmd_parts = re.split(r'\s*(?:;|&&)\s*', cmd, maxsplit=1)
+if len(cmd_parts) > 1:
+    # The command had chained parts — strip any output that matches the echo'd part
+    echo_part = cmd_parts[1] if len(cmd_parts) > 1 else ''
+    # Remove lines from trusted_text that were likely echo'd (no ANSI codes in raw response)
+    raw_response = response_text  # Before ANSI stripping
+    trusted_lines = []
+    for i, line in enumerate(clean_text.split('\n')):
+        # Check if this line exists with ANSI codes in the raw output (real framework output has them)
+        raw_line = raw_response.split('\n')[i] if i < len(raw_response.split('\n')) else ''
+        has_ansi = '\x1b[' in raw_line
+        is_summary = bool(re.match(r'\s*(Test Suites:|Test Files|Tests:?\s)', line))
+        if is_summary and not has_ansi:
+            continue  # Skip: summary line without ANSI = likely echo'd by agent
+        trusted_lines.append(line)
+    trusted_text = '\n'.join(trusted_lines)
+
+# --- Jest format: "Test Suites: 3 failed, 39 passed, 42 total" ---
+# Use findall + take LAST match
+suite_matches = re.findall(r'Test Suites:\s+(.+)', trusted_text)
+if suite_matches:
+    line = suite_matches[-1]  # LAST match = real framework output
     m = re.search(r'(\d+) failed', line)
     if m: suites_failed = int(m.group(1))
     m = re.search(r'(\d+) passed', line)
     if m: suites_passed = int(m.group(1))
     m = re.search(r'(\d+) skipped', line)
     if m: suites_skipped = int(m.group(1))
+    counts_verified = True
 
-test_match = re.search(r'Tests:\s+(.+)', response_text)
-if test_match:
-    line = test_match.group(1)
+test_matches = re.findall(r'Tests:\s+(.+)', trusted_text)
+if test_matches:
+    line = test_matches[-1]  # LAST match
     m = re.search(r'(\d+) failed', line)
     if m: tests_failed = int(m.group(1))
     m = re.search(r'(\d+) passed', line)
     if m: tests_passed = int(m.group(1))
+    m = re.search(r'(\d+) skipped', line)
+    if m: tests_skipped = int(m.group(1))
 
-counts_verified = bool(suite_match)
+# --- Vitest format: "Test Files  71 failed | 39 passed (110)" ---
+if not counts_verified:
+    vit_matches = re.findall(r'Test Files\s+(.+?)(?:\n|$)', trusted_text)
+    if vit_matches:
+        line = vit_matches[-1]  # LAST match
+        m = re.search(r'(\d+) failed', line)
+        if m: suites_failed = int(m.group(1))
+        m = re.search(r'(\d+) passed', line)
+        if m: suites_passed = int(m.group(1))
+        counts_verified = True
+
+    # Vitest: "Tests  3 failed | 729 passed | 398 skipped (1130)"
+    vit_test_matches = re.findall(r'(?:^|\n)\s*Tests\s+(.+?)(?:\n|$)', trusted_text)
+    if vit_test_matches:
+        line = vit_test_matches[-1]  # LAST match
+        m = re.search(r'(\d+) failed', line)
+        if m: tests_failed = int(m.group(1))
+        m = re.search(r'(\d+) passed', line)
+        if m: tests_passed = int(m.group(1))
+        m = re.search(r'(\d+) skipped', line)
+        if m: tests_skipped = int(m.group(1))
 
 # Capture last 100 lines of output
 output_lines = response_text.strip().split('\n')
@@ -146,6 +203,16 @@ evidence = {
     'counts_verified': counts_verified
 }
 
+# --- HMAC integrity signature ---
+# Prevents agents from hand-writing fake evidence files.
+# The signature covers fields an agent would need to fabricate.
+# Salt is intentionally NOT stored externally — it's here in the hook source.
+# An agent CAN read this file, but doing so to forge evidence is deliberate fraud
+# visible in the session transcript.
+EVIDENCE_SALT = b'claude-hook-integrity-v1'
+sig_payload = f"{output_tail}|{commit}|{session_id}|{exit_code}|{suites_passed}|{tests_passed}".encode()
+evidence['_integrity'] = hmac.new(EVIDENCE_SALT, sig_payload, hashlib.sha256).hexdigest()
+
 # --- Write local JSON (hooks read this) ---
 os.makedirs(os.path.dirname(evidence_file), exist_ok=True)
 with open(evidence_file, 'w') as f:
@@ -154,10 +221,10 @@ with open(evidence_file, 'w') as f:
 
 # --- Detect project from CLAUDE_PROJECT_DIR ---
 project_dir = os.environ.get('CLAUDE_PROJECT_DIR', '')
-project_name = os.path.basename(project_dir) if project_dir else '{{PROJECT_NAME}}'
+project_name = os.path.basename(project_dir) if project_dir else 'firearm-systems'
 
 # --- Write Obsidian vault note (cross-agent visibility) ---
-vault_path = os.path.expanduser('{{VAULT_PATH}}')
+vault_path = os.path.expanduser('~/Documents/Product Ideas')
 evidence_dir_vault = os.path.join(vault_path, '_evidence')
 if os.path.isdir(vault_path):
     os.makedirs(evidence_dir_vault, exist_ok=True)

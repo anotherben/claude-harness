@@ -1,0 +1,108 @@
+{
+  "expectations": [
+    {
+      "text": "All 7 verification checks are present and numbered",
+      "passed": true,
+      "evidence": "Report contains Check 1 through Check 7, each clearly labeled and numbered. Check 4 is SKIPPED (not a failure) with explicit reason documented. All other checks (1, 2, 3, 5, 6, 7) present and completed."
+    },
+    {
+      "text": "Each check has a PASS or FAIL verdict with evidence (not just a claim)",
+      "passed": true,
+      "evidence": "Each check includes concrete evidence: Check 1 shows 61 passed tests with Jest output; Check 2 shows 14/14 postconditions with specific test names; Check 3 shows test delta (+1 suite, +14 tests); Check 5 shows git diff --stat with file counts; Check 6 shows import paths with ✓ EXISTS verification; Check 7 shows grep command output (empty)"
+    },
+    {
+      "text": "Postcondition trace maps each PC to a specific named test",
+      "passed": true,
+      "evidence": "CHECK 2 — POSTCONDITION TRACE section maps 14 postconditions (PC-A1–PC-A5, PC-S1–PC-S7, PC-X1–PC-X2) to specific test names. Example: PC-A1 maps to 'POST /api/alert-configs → returns 422 when required field \\'name\\' is missing' located in src/tests/alertConfig.test.js"
+    },
+    {
+      "text": "Final diff classifies files as REQUIRED/ENABLING/DRIFT",
+      "passed": true,
+      "evidence": "CHECK 5 — FINAL DIFF section contains explicit file classification. All 3 files marked as REQUIRED: 'apps/api/src/services/alertConfigService.js → REQUIRED (service layer for POST /api/alert-configs)', 'apps/api/src/routes/alertConfigRoutes.js → REQUIRED (route registration and validation)', 'apps/api/src/tests/alertConfig.test.js → REQUIRED (14 PC tests per contract)'. Drift files: NONE"
+    },
+    {
+      "text": "Debug artifact check shows the grep command and its output",
+      "passed": true,
+      "evidence": "CHECK 7 — DEBUG ARTIFACT CHECK includes: Command: 'git diff -- \\'*.js\\' | grep \\'^+\\' | grep -v \\'^+++\\' | grep -iE \\'console\\.(log|debug|warn|info)|debugger|TODO|FIXME|HACK|XXX\\' | grep -v \\'\.test\\.\\' | grep -v \\'console\\.error\\'' and Output: '(empty — no matches)'"
+    },
+    {
+      "text": "Import resolution check verifies each import in changed files",
+      "passed": true,
+      "evidence": "CHECK 6 — IMPORT RESOLUTION audits all imports across 3 changed files: alertConfigService.js (pool, AppError, logger); alertConfigRoutes.js (express, authenticateStaff, validate, createAlertConfig); alertConfig.test.js (request, app, pool). Each import shows resolved path with ✓ EXISTS verification. Statement: 'All imports resolve to real files. No mocked-only paths.'"
+    },
+    {
+      "text": "A final verification report summary is present with overall verdict",
+      "passed": true,
+      "evidence": "Completion Gate section at end lists all check results with checkboxes: '[x] All 7 checks PASS (Check 4 SKIPPED with valid reason: backend-only changes)' and '[x] Verification report printed with pasted evidence'. Final statement: 'Verification complete. All 7 checks passed. 61 tests passing (14 new, 47 pre-existing), 14/14 postconditions verified, no regressions, no drift, all imports resolve, no debug artifacts. Safe to commit.'"
+    },
+    {
+      "text": "No banned/belief language used in the completion claim (should work, probably fine, looks good)",
+      "passed": true,
+      "evidence": "Final completion claim uses only factual assertions: 'All 7 checks passed', '61 tests passing', '14/14 postconditions verified', 'no regressions', 'no drift', 'all imports resolve', 'no debug artifacts', 'Safe to commit.' No instances of 'should work', 'probably fine', 'looks good', or similar belief language detected."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "report_file": "verification-report.md",
+    "report_size_bytes": 9177,
+    "total_tokens": 20335,
+    "duration_seconds": 72.4
+  },
+  "timing": {
+    "executor_duration_seconds": 72.4,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 72.4
+  },
+  "claims": [
+    {
+      "claim": "All 61 tests pass (14 new for alert-configs, 47 pre-existing)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Jest output shows 'Tests: 61 passed, 0 failed' after changes; delta analysis shows +14 tests from alertConfig.test.js, no broken tests"
+    },
+    {
+      "claim": "All 14 postconditions from contract are verified by named tests",
+      "type": "factual",
+      "verified": true,
+      "evidence": "PC-A1–PC-X2 each mapped to specific test in alertConfig.test.js; CHECK 2 shows '14/14 postconditions verified'"
+    },
+    {
+      "claim": "No debug artifacts (console.log, debugger, TODO) in production code",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Grep command explicitly searches for console.log/debug/warn/debugger/TODO/FIXME/HACK/XXX, returns empty output, excludes test files and console.error"
+    },
+    {
+      "claim": "All 11 imports resolve to real files",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 6 lists pool, AppError, logger, express, authenticateStaff, validate, createAlertConfig, request, app each with ✓ EXISTS verification"
+    },
+    {
+      "claim": "Changes are backend-only (no frontend code touched)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Check 4 SKIPPED with reason: 'All 3 changed files are backend-only (.js in apps/api/src/). No frontend files (.jsx, .tsx, .css, React component, hook, or context) were modified.'"
+    },
+    {
+      "claim": "No regressions from the change",
+      "type": "quality",
+      "verified": true,
+      "evidence": "CHECK 3 shows pre-change baseline (5 suites, 47 tests) vs post-change (6 suites, 61 tests); delta is +1 suite +14 tests, all new; 'New test failures: NONE'"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Expectations are well-designed and discriminating. Each checks a meaningful outcome that requires actual work to satisfy. No suggestions for improvement — all assertions are substantive (not just 'file exists'), specific evidence is provided, and the bar is appropriately high. Report demonstrates complete verification with no gaps."
+  }
+}

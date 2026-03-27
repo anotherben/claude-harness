@@ -21,4 +21,16 @@ if echo "$FILE" | grep -qE '(\.env$|\.env\.local$|middleware/auth\.js$|\.claude/
   exit 2
 fi
 
+# Protect git hooks from agent modification
+if echo "$FILE" | grep -qE '\.git/hooks/'; then
+  echo "BLOCKED: $FILE is a git hook. Agents must not modify git hooks." >&2
+  exit 2
+fi
+
+# Protect global Claude infrastructure from agent modification
+if echo "$FILE" | grep -qE '/\.claude/hooks/|/\.claude/settings\.json$'; then
+  echo "BLOCKED: $FILE is Claude infrastructure. Agents must not modify hooks or global settings." >&2
+  exit 2
+fi
+
 exit 0

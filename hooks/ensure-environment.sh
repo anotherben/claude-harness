@@ -1,5 +1,5 @@
 #!/bin/bash
-# SessionStart hook — ensures cortex-memory, skills, and compiled agent-platform bundles are available.
+# SessionStart hook — ensures cortex-memory and skills are installed.
 # Runs at session start. Fast no-op if everything is already set up.
 
 HOOK_INPUT=$(cat)
@@ -7,9 +7,15 @@ SESSION_ID=$(echo "$HOOK_INPUT" | python3 -c "import sys,json; print(json.load(s
 if [ -z "$SESSION_ID" ]; then SESSION_ID="unknown"; fi
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
-HARNESS_ROOT="${CLAUDE_HARNESS_DIR:-$HOME/claude-harness}"
-SKILLS_INDEX_CLI="$HARNESS_ROOT/skills-index/src/cli.js"
 CHANGED=()
+SKILLS_INDEX_SERVER="/Users/ben/Projects/helpdesk/.codex/mcp-servers/skills-index/src/cli.js"
+
+# 0. Ensure vault directories exist
+mkdir -p ~/Documents/Product\ Ideas/_activity
+mkdir -p ~/Documents/Product\ Ideas/06-Business
+mkdir -p ~/Documents/Product\ Ideas/07-Personal
+mkdir -p ~/Documents/Product\ Ideas/08-Learning
+mkdir -p ~/Documents/Product\ Ideas/09-Creative
 
 # 1. Install cortex-memory MCP server
 if [ ! -d ~/.cortex-memory/node_modules ]; then
@@ -52,19 +58,19 @@ if [ ! -f "$METHODOLOGY_FILE" ]; then
   CHANGED+=("METHODOLOGY NOT SET — ask user: Superpowers or Compound Engineering?")
 fi
 
-# 6. Compile agent-platform bundles if skills-index is available
-if [ -f "$SKILLS_INDEX_CLI" ]; then
+# 6. Compile the agent platform bundles if the compiler is available
+if [ -f "$SKILLS_INDEX_SERVER" ]; then
   COMPILED_REGISTRY="${AGENT_PLATFORM_ROOT:-$HOME/.agent-platform}/compiled/skills-registry.json"
   HAD_COMPILED=false
   if [ -f "$COMPILED_REGISTRY" ]; then
     HAD_COMPILED=true
   fi
-  if node "$SKILLS_INDEX_CLI" compile >/dev/null 2>&1; then
+  if /opt/homebrew/bin/node "$SKILLS_INDEX_SERVER" compile >/dev/null 2>&1; then
     if [ "$HAD_COMPILED" = false ]; then
       CHANGED+=("agent-platform compiled")
     fi
   else
-    CHANGED+=("WARNING: skills-index compile failed")
+    CHANGED+=("WARNING: agent-platform compile failed")
   fi
 fi
 

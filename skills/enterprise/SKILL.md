@@ -79,6 +79,52 @@ This gate applies to ALL enterprise paths: QUICK, STANDARD, FULL, CRITICAL, DEBU
 
 **Rule: no context → no claim → no code changes.**
 
+### VAULT CONTROLLER CONTRACT
+
+When enterprise work is tied to a vault item, keep the note aligned with the Obsidian controller.
+
+Canonical status values:
+
+- `open`
+- `claimed`
+- `in-progress`
+- `blocked`
+- `done`
+- `wont-do`
+
+Required controller fields on governed work:
+
+- `id`
+- `project`
+- `status`
+- `updated`
+- `next_action`
+
+Use these fields when applicable:
+
+- `proof_state`
+- `owner_family`
+- `owner_instance`
+- `branch`
+- `worktree_path`
+- `claimed_at`
+- `completed_at`
+- `handoff_from`
+- `handoff_note`
+
+Normalize legacy note values instead of creating new synonyms:
+
+- `active` => `in-progress`
+- `closed` => `done`
+- `completed` => `done`
+
+Project briefings should prefer the project home and controller pages first:
+
+- `[[Master Dashboard]]`
+- `[[06-Portfolio/00 Portfolio Control Tower]]`
+- `[[06-Portfolio/05 Verification Gap Register]]`
+- `[[Projects/<project>/README]]`
+
 ### MECHANICAL GATE
 
 The pipeline is enforced by `enterprise-pipeline-gate.sh`. This hook BLOCKS Edit/Write on source files unless a LOCKED contract exists.

@@ -1,0 +1,119 @@
+{
+  "expectations": [
+    {
+      "text": "All 7 checks present — check 4 NOT skipped",
+      "passed": true,
+      "evidence": "All 7 checks are present in the report with results: Check 1 (Test Suite), Check 2 (Postcondition Trace), Check 3 (Regression Check), Check 4 (Build Verification), Check 5 (Final Diff), Check 6 (Import Resolution), Check 7 (Debug Artifact Check). Check 4 was explicitly run despite no frontend files being changed, with the report noting 'Despite this, the build was run as instructed (task stated Check 4 must NOT be skipped).' The report explicitly states 'Check 4 — Build Verification: PASS — frontend build clean (no frontend files changed)'"
+    },
+    {
+      "text": "Build verification runs vite build or reports status",
+      "passed": true,
+      "evidence": "Check 4 section explicitly shows: 'Command: cd apps/admin && npx vite build 2>&1 | tail -20' followed by output showing 'dist/assets/index-z4reciSp.js 900.08 kB │ gzip: 255.17 kB' and '✓ built in 7.57s'. The report states 'Result: PASS — frontend build succeeds.'"
+    },
+    {
+      "text": "Postcondition trace covers all 4 layers",
+      "passed": false,
+      "evidence": "The report explicitly covers only 3 verifiable layers: API Layer (13 postconditions, all marked PASS), Service Layer (9 postconditions, all marked PASS), and Cross-Layer (3 postconditions, all marked PASS). The UI Layer section (PC-23 through PC-28) is marked 'UNVERIFIABLE — No React components were shipped in commit 7f309a80.' The summary states '22/22 verifiable postconditions PASS / 6/6 UI postconditions UNVERIFIABLE'. This is 3 out of 4 layers with verification."
+    },
+    {
+      "text": "Final diff classifies files",
+      "passed": true,
+      "evidence": "Check 5 (Final Diff) explicitly classifies all 27 files with detailed annotations. Each file is marked either '— REQUIRED' (for feature implementation, tests, and infrastructure) or '— ENABLING' (for documentation and dependencies). The report states 'Unexpected files: NONE / Drift detected: NONE / Result: PASS — all 27 files are required or enabling. Zero drift.'"
+    },
+    {
+      "text": "Import resolution checks files",
+      "passed": true,
+      "evidence": "Check 6 (Import Resolution) systematically checks 6 changed production source files and verifies all 21 unique local import targets. For each file (shopifyWebhooks.js, orderCommandHandlers.js, orderPaymentsGatekeeperService.js, ordersGatekeeperService.js, shopifyOrderSyncService.js, shopifyOrdersGatekeeperService.js), each import is listed with existence verification '→ EXISTS'. Report concludes 'All 21 unique local import targets verified: all EXIST. / Result: PASS — zero missing imports.'"
+    },
+    {
+      "text": "Debug artifact check scans both apps",
+      "passed": false,
+      "evidence": "Check 7 (Debug Artifact Check) shows the command: 'git show 7f309a80 -- '*.js' '*.jsx' | grep \"^+\" | grep -v \"^+++\" | grep -iE 'console\\.(log|debug|warn|info)|debugger|TODO|FIXME|HACK|XXX' | grep -v '\\.test\\.' | grep -v 'console\\.error''. This command scans only the modified files in the commit (which are all in apps/api, as noted in the report: 'All apps/api. Zero apps/admin.'). The command structure filters for production files ('grep -v '\\.test\\.'') but is limited to changed files, not both apps. The report shows 'Findings: NONE' but this is because there were no apps/admin files changed, not because both apps were scanned comprehensively."
+    },
+    {
+      "text": "Report includes postcondition count or explains discrepancy",
+      "passed": true,
+      "evidence": "The report explicitly counts postconditions in multiple places: (1) Section 2 header states '31 postconditions across API/13, Service/9, UI/6, Cross-layer/3'; (2) Check 2 footer shows 'Result: 22/22 verifiable postconditions PASS / 6/6 UI postconditions UNVERIFIABLE (no frontend files in this commit) / 3/3 cross-layer postconditions PASS'; (3) The discrepancy is fully explained: 'The \"UI\" postconditions (PC-22 through PC-27) referenced in the task description cannot be traced — no UI files were shipped in this commit. Those 6 postconditions are marked UNVERIFIABLE and are the responsibility of a future frontend commit.'"
+    },
+    {
+      "text": "No banned language in completion claim",
+      "passed": true,
+      "evidence": "The overall completion statement is: 'OVERALL: CONDITIONAL PASS with one open regression item (see Check 3)'. This uses precise language ('CONDITIONAL PASS') rather than banned language like 'seems', 'appears', 'looks like', 'apparently', or other speculative/hedging terms. The statement is qualified by an explicit condition (regression item in Check 3), not vague hedging."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 2,
+    "total": 8,
+    "pass_rate": 0.75
+  },
+  "execution_metrics": {
+    "note": "No metrics.json found in outputs directory"
+  },
+  "claims": [
+    {
+      "claim": "All 7 checks are present and executed",
+      "type": "factual",
+      "verified": true,
+      "evidence": "All 7 check sections appear with results: Test Suite (PARTIAL PASS), Postcondition Trace (PASS), Regression Check (FAIL), Build Verification (PASS), Final Diff (PASS), Import Resolution (PASS), Debug Artifacts (PASS)"
+    },
+    {
+      "claim": "31 postconditions were defined and verified/classified",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Report header states '31 postconditions across API/13, Service/9, UI/6, Cross-layer/3'. Breakdown: 22 verifiable postconditions (API + Service + Cross-layer) all PASS, 6 UI postconditions UNVERIFIABLE, 3 cross-layer postconditions PASS (sum = 31)"
+    },
+    {
+      "claim": "3 net new test failures were introduced by this commit",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Check 3 (Regression Check) shows: Baseline (59 failing suites / 198 failing tests), After commit (60 failing suites / 201 failing tests), Delta (+1 suite / +3 tests). The 3 failures are all in shopify-webhooks-order-cancelled.test.js. Report states 'Classification: Regressions introduced: 1 suite / 3 tests (shopify-webhooks-order-cancelled.test.js)'"
+    },
+    {
+      "claim": "22 postconditions passed; 6 were unverifiable (no frontend shipped); 3 were cross-layer",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Check 2 footer: 'Result: 22/22 verifiable postconditions PASS / 6/6 UI postconditions UNVERIFIABLE (no frontend files in this commit) / 3/3 cross-layer postconditions PASS'. All counts align with section breakdown."
+    },
+    {
+      "claim": "27 files were changed, all in apps/api, zero in apps/admin",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Check 5 (Final Diff) shows 27 files changed with detailed classifications. Report states 'All apps/api. Zero apps/admin.' Also mentioned in Check 4 context: 'No apps/admin files were modified by this commit.'"
+    },
+    {
+      "claim": "The cancelled webhook handler test failures are out of scope but represent a regression",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Report states: 'Root cause: The orders/cancelled handler was refactored (or its test became misaligned during the shopifyWebhooks.js refactor)... The refactor of shopifyWebhooks.js to add dispatchCanonicalOrderWebhook() likely affected the cancelled route's mock setup.' This is classified as a genuine regression introduced by this commit, even though the cancelled route itself is out of scope for the pilot."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Postcondition trace covers all 4 layers",
+        "reason": "This assertion failed because it demands coverage of 4 layers, but the task/commit legitimately only delivered 3 (no frontend shipped). The assertion is too rigid — it should either specify 'all verifiable layers' or account for the possibility that not all layers are in scope for a given commit. A better assertion might be: 'Postcondition trace covers all layers present in the commit and explains why any layers are missing.'"
+      },
+      {
+        "assertion": "Debug artifact check scans both apps",
+        "reason": "This assertion passed vacuously because the commit only touched apps/api. The assertion doesn't actually verify that a comprehensive two-app scan was performed — it just checks the command structure. Since no apps/admin files were modified, the output is clean not because of thorough scanning, but because there's nothing to scan. A better assertion would require evidence that the tool explicitly scanned both directories (e.g., 'checked apps/api: X files, checked apps/admin: Y files') or would acknowledge that this check is only meaningful when both apps have changes."
+      },
+      {
+        "reason": "The report contains conflicting/confusing framing around Check 4 (Build Verification). The task description mentioned 3 React components that don't exist, yet the report states Check 4 'was still run — the task description explicitly stated it must NOT be skipped.' This creates narrative confusion: Did the verifier follow a flawed task description, or did they correctly run the build even though the premise was wrong? The assertion 'Build verification runs vite build or reports status' passes, but the *context* (why it was run, what it meant) is unclear."
+      }
+    ],
+    "overall": "The verification report is thorough and well-evidenced, with clear post-condition tracing and systematic checks. However, two assertions are somewhat brittle: the 4-layer postcondition check is too rigid for partial-scope commits, and the debug artifact check's design allows it to vacuously pass when only one app has changes. The 'banned language' check is well-satisfied — the report uses precise hedging ('CONDITIONAL PASS', 'open item') rather than vague speculation. The regression finding (3 new failures in cancelled handler) is a legitimate blocker, and the report correctly flags it as such. Recommendation: Strengthen assertions to account for variable scope (not all commits change all layers) and to require explicit evidence of dual-app scanning rather than relying on command structure."
+  },
+  "user_notes_summary": {
+    "uncertainties": [
+      "The task description mentioned 3 React components (OrderList.jsx, OrderDetail.jsx, OrderStats.jsx) that do not exist in the actual commit — this is flagged but not a skill error, rather a mismatch between task description and reality.",
+      "Check 4 was run despite being unnecessary (no frontend files changed) because the task description explicitly stated it must NOT be skipped."
+    ],
+    "needs_review": [
+      "3 new test failures in shopify-webhooks-order-cancelled.test.js (Check 3) must be fixed before merge. These are outside the scope of the pilot (create/updated/paid only) but represent a regression from the refactored shopifyWebhooks.js."
+    ],
+    "workarounds": [
+      "6 UI postconditions (PC-23 through PC-28) are marked UNVERIFIABLE because no frontend files were shipped. These are correctly deferred to a separate commit."
+    ]
+  }
+}

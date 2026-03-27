@@ -1,0 +1,193 @@
+{
+  "winner": "B",
+  "reasoning": "Output B edges out Output A on completeness and usability. Both are high-quality contracts scoring 11/11 on their quality gates, and both satisfy the core requirements. The deciding factors are: (1) Output B includes a Deliverable Inventory section that explicitly enumerates all 11 deliverables before writing postconditions, making the contract's coverage auditable at a glance. (2) Output B provides 8 concrete expect() skeletons — full executable test bodies — not just test names, making the TDD handoff immediately actionable without interpretation. (3) Output B's traceability matrix uses full absolute file paths (e.g. apps/api/src/__tests__/shopifyWebhook.test.js) rather than bare filenames, eliminating any ambiguity about where tests live in the monorepo. (4) Output B's blast radius scan found a real security defect in a sibling file (shopifyRefundWebhookHandler.js using === for HMAC comparison instead of timingSafeEqual) and contracted it as PC-S8 — demonstrating active threat modeling, not just box-checking. (5) Output B's invariants table includes a Justification column explaining why each invariant applies to this specific feature, whereas Output A's invariants are bare assertions. Output A is excellent — it has a marginally richer service layer decomposition (separate normalization/persistence/query service PCs) and a more detailed Side Effects and Error Strategy section — but Output B's structural advantages in deliverable inventory, executable test skeletons, full file paths, and proactive defect discovery make it the superior contract for a build engineer picking this up cold.",
+  "rubric": {
+    "A": {
+      "content": {
+        "correctness": 5,
+        "completeness": 4,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 4,
+        "formatting": 5,
+        "usability": 4
+      },
+      "content_score": 4.67,
+      "structure_score": 4.33,
+      "overall_score": 9.0
+    },
+    "B": {
+      "content": {
+        "correctness": 5,
+        "completeness": 5,
+        "accuracy": 5
+      },
+      "structure": {
+        "organization": 5,
+        "formatting": 5,
+        "usability": 5
+      },
+      "content_score": 5.0,
+      "structure_score": 5.0,
+      "overall_score": 10.0
+    }
+  },
+  "output_quality": {
+    "A": {
+      "score": 9,
+      "strengths": [
+        "26 PCs with fine-grained service layer decomposition — normalization, persistence, and query services each get dedicated PCs (PC-S1 through PC-S9)",
+        "All 26 PCs have specific test file names and test names — fully traceable",
+        "Blast radius lists 7 same-file functions and 2 validation functions with line numbers",
+        "10 error cases covering HMAC (2), malformed payload (1), DB failure (2), pagination validation (2), auth (1), idempotency (1), cross-tenant (1)",
+        "Side effects section explicitly calls out log entries and transactional guarantees",
+        "Error strategy section includes retry policy and explicit transaction boundary diagram",
+        "7 NOT in Scope exclusions with a clear drift warning",
+        "Consumer map notes the architectural separation of concerns between OrderStatsWidget and the list endpoint"
+      ],
+      "weaknesses": [
+        "No Deliverable Inventory section — coverage of the 11 plan deliverables is implicit, not explicitly enumerated",
+        "No executable expect() skeletons — test names are present but no actual test code bodies; build engineer must write assertions from scratch",
+        "Traceability matrix uses bare filenames (e.g. shopifyWebhook.test.js) not full monorepo paths — ambiguous in a monorepo with apps/api/ and apps/admin/ structure",
+        "Invariants table has no Justification column — states what applies but not why it applies to this feature",
+        "No Postcondition Registry JSON path — no state handoff artifact for enterprise-build phase"
+      ]
+    },
+    "B": {
+      "score": 10,
+      "strengths": [
+        "Deliverable Inventory section explicitly maps all 11 plan deliverables to PC coverage before any postconditions are written",
+        "8 full executable expect() skeletons with real assertion logic (toBe, toHaveLength, toEqual, toBeInTheDocument) — immediately runnable",
+        "Traceability matrix uses full absolute file paths (apps/api/src/__tests__/shopifyWebhook.test.js) — zero ambiguity in monorepo",
+        "Blast radius scan actively found a security defect in shopifyRefundWebhookHandler.js (timing-unsafe HMAC comparison) and contracted it as PC-S8",
+        "Invariants table includes Justification column explaining why each invariant applies specifically to this feature",
+        "Consumer map includes grep command to confirm zero existing consumers (net-new feature verification)",
+        "Side effects section distinguishes intentional from unintentional side effects",
+        "NOT in Scope includes 6 explicit exclusions covering fulfillment webhooks, UI editing, rate limiting, OAuth, existing order routes, and notifications",
+        "Postcondition Registry JSON path specified for enterprise-build state handoff",
+        "Error cases include ERR-10 (oversized payload / 413) — defensive against DoS vectors not mentioned in the original plan"
+      ],
+      "weaknesses": [
+        "Service layer PCs (PC-S1 through PC-S7) conflate DB schema concerns (unique constraint, FK cascade) with service logic — some of these are migration PCs, not service PCs, which slightly blurs the layer separation",
+        "Consumer map uses full file paths but not line numbers — Output A's consumer map has file:line refs (e.g. hooks/useOrders.js:L14) which are more precise"
+      ]
+    }
+  },
+  "expectation_results": {
+    "A": {
+      "passed": 8,
+      "total": 10,
+      "pass_rate": 0.80,
+      "details": [
+        {
+          "text": "Contract file at docs/contracts/ path",
+          "passed": false,
+          "note": "Contract references docs/plans/ path but the contract file itself is not placed at a docs/contracts/ path — no file path header specifying target location"
+        },
+        {
+          "text": "All PCs have specific test names",
+          "passed": true,
+          "note": "All 26 PCs include a Test column with specific test file and test name strings"
+        },
+        {
+          "text": "Blast radius populated with specific function names",
+          "passed": true,
+          "note": "7 same-file functions listed with file:line refs (verifyHmac(), handleOrderCreate(), normalizeLineItems(), persistOrder(), getOrders(), getOrderById(), getOrderStats())"
+        },
+        {
+          "text": "Consumer map has file:line refs",
+          "passed": true,
+          "note": "Consumer map entries include file:line refs (e.g. hooks/useOrders.js:L14, components/OrderList.jsx:L38)"
+        },
+        {
+          "text": "Error cases cover validation+DB failure",
+          "passed": true,
+          "note": "ERR-1 through ERR-10 cover HMAC validation, payload validation, pagination validation, DB write failure, DB read failure, auth, and cross-tenant"
+        },
+        {
+          "text": "NOT in Scope 3+ items",
+          "passed": true,
+          "note": "7 NOT in Scope items listed"
+        },
+        {
+          "text": "Quality gate reports score",
+          "passed": true,
+          "note": "CONTRACT QUALITY GATE block reports Score: 11/11 — LOCKED"
+        },
+        {
+          "text": "Invariants include tenant_id scoping",
+          "passed": true,
+          "note": "INV-1 (every INSERT includes tenant_id) and INV-2 (every SELECT scopes to tenant_id) explicitly present"
+        },
+        {
+          "text": "Traceability matrix has Status column",
+          "passed": true,
+          "note": "Traceability matrix includes Status column with all rows marked PENDING"
+        },
+        {
+          "text": "PCs for multiple layers (API, Service, UI, Cross-layer)",
+          "passed": true,
+          "note": "PC-A (8), PC-S (9), PC-U (7), PC-X (2) — all four layers covered"
+        }
+      ]
+    },
+    "B": {
+      "passed": 9,
+      "total": 10,
+      "pass_rate": 0.90,
+      "details": [
+        {
+          "text": "Contract file at docs/contracts/ path",
+          "passed": false,
+          "note": "Contract does not specify a target docs/contracts/ path in its header — no plan/TDD path metadata at top of file"
+        },
+        {
+          "text": "All PCs have specific test names",
+          "passed": true,
+          "note": "All 24 PCs (plus PC-S8 amendment) include a Test Name column with specific quoted test name strings"
+        },
+        {
+          "text": "Blast radius populated with specific function names",
+          "passed": true,
+          "note": "Specific function names and file paths cited: shopifyInventoryWebhookHandler.js:L23 hmacVerify, shopifyRefundWebhookHandler.js:L19, productRoutes.js:L89, orderRoutes.js:L44"
+        },
+        {
+          "text": "Consumer map has file:line refs",
+          "passed": false,
+          "note": "Consumer map has full file paths (apps/admin/src/components/OrderList.jsx) but no line numbers — file paths present, :line refs absent"
+        },
+        {
+          "text": "Error cases cover validation+DB failure",
+          "passed": true,
+          "note": "ERR-1 through ERR-10 cover HMAC validation, JSON parse, DB insert failure, DB read failure, pagination edge cases, missing fields, oversized payload"
+        },
+        {
+          "text": "NOT in Scope 3+ items",
+          "passed": true,
+          "note": "6 NOT in Scope items listed"
+        },
+        {
+          "text": "Quality gate reports score",
+          "passed": true,
+          "note": "CONTRACT QUALITY GATE block reports Score: 11/11 — LOCKED"
+        },
+        {
+          "text": "Invariants include tenant_id scoping",
+          "passed": true,
+          "note": "INV-1 (every INSERT includes tenant_id) and INV-2 (every SELECT scopes to tenant_id) present with APPLIES status and justification"
+        },
+        {
+          "text": "Traceability matrix has Status column",
+          "passed": true,
+          "note": "Traceability matrix includes Status column with all rows marked PENDING"
+        },
+        {
+          "text": "PCs for multiple layers (API, Service, UI, Cross-layer)",
+          "passed": true,
+          "note": "PC-A (9), PC-S (8 including PC-S8 amendment), PC-U (5), PC-X (2) — all four layers covered"
+        }
+      ]
+    }
+  }
+}

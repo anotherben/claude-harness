@@ -31,10 +31,11 @@ if [ ! -f "$MARKER" ]; then
 fi
 
 # Find source files newer than the marker
-# MUST be fast (<2s) — prune heavy dirs aggressively, only scan apps/ and tools/
-NEW_FILES=$(find "$PROJECT_DIR/apps" "$PROJECT_DIR/tools" "$PROJECT_DIR/packages" "$PROJECT_DIR/src" \
+# MUST be fast (<2s) — prune heavy dirs aggressively
+# Scans ALL source directories including public/ for CSS/HTML
+NEW_FILES=$(find "$PROJECT_DIR/apps" "$PROJECT_DIR/tools" "$PROJECT_DIR/packages" "$PROJECT_DIR/src" "$PROJECT_DIR/public" \
   \( -name node_modules -o -name .git -o -name dist -o -name .next -o -name .worktrees \) -prune -o \
-  -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \) \
+  -type f \( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.css' -o -name '*.html' \) \
   -newer "$MARKER" \
   -print \
   2>/dev/null)
@@ -61,10 +62,22 @@ if [ ! -f "$VAULT_MARKER" ]; then GATES_OK=false; MISSING="vault-context"; fi
 if [ ! -f "$PLAN_MARKER" ]; then GATES_OK=false; MISSING="${MISSING:+$MISSING, }plan-approval"; fi
 
 if [ "$GATES_OK" = true ]; then
-  # Gates pass — warn but allow
+  # Gates pass but Bash was used instead of Edit/Write — BLOCK.
+  # Edit/Write tools have TDD, vault, plan, and protect-files hooks.
+  # Bash scripts bypass ALL of those. Force the proper tool.
   COUNT=$(echo "$NEW_FILES" | wc -l | tr -d ' ')
-  echo "NOTE: Bash modified ${COUNT} source file(s). Use Write/Edit tools for full hook coverage." >&2
-  exit 0
+  echo "BLOCKED: Bash modified ${COUNT} source file(s). Use Edit/Write tools instead." >&2
+  echo "Bash bypasses TDD, vault, plan, and file-protection hooks." >&2
+  echo "Modified files:" >&2
+  echo "$NEW_FILES" | head -10 | while IFS= read -r f; do echo "  $f" >&2; done
+  echo "" >&2
+  echo "Reverting changes..." >&2
+  # Revert modified files via git checkout
+  echo "$NEW_FILES" | while IFS= read -r filepath; do
+    [ -z "$filepath" ] && continue
+    git -C "$PROJECT_DIR" checkout -- "$filepath" 2>/dev/null && echo "  REVERTED: $filepath" >&2
+  done
+  exit 2
 fi
 
 # Gates FAIL — quarantine new files

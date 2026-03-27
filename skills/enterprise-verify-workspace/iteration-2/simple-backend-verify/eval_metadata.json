@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-backend-verify",
+  "prompt": "I just finished implementing the POST /api/alert-configs endpoint. 3 files changed: alertConfigService.js, alertConfigRoutes.js, alertConfig.test.js. The contract has 14 postconditions (PC-A1 through PC-A5, PC-S1 through PC-S7, PC-X1 through PC-X2). Run verification before I commit.",
+  "assertions": [
+    {"text": "Ran verify.sh script (new skill) OR ran 7 manual checks (old skill)", "type": "process"},
+    {"text": "All 7 verification checks are present and numbered", "type": "completeness"},
+    {"text": "Each check has evidence (pasted output), not just a claim", "type": "evidence"},
+    {"text": "Postcondition trace maps each PC to a specific named test", "type": "correctness"},
+    {"text": "Final diff classifies files as REQUIRED/ENABLING/DRIFT", "type": "correctness"},
+    {"text": "Debug artifact check shows grep output", "type": "evidence"},
+    {"text": "Import resolution check verifies each import", "type": "evidence"},
+    {"text": "Final verification report with overall verdict", "type": "completeness"},
+    {"text": "No banned belief language (should work, probably fine, looks good)", "type": "discipline"}
+  ]
+}

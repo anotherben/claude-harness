@@ -19,14 +19,17 @@ if [ -z "$STAGED_SRC" ]; then
 fi
 
 # --- Subagent detection ---
-# If this session claimed a vault pass, it's a subagent. Subagents cannot commit.
+# A subagent is a session that CLAIMED a vault pass where someone ELSE is the parent.
+# If claimed_by == SESSION_ID but parent_session == SESSION_ID, we're the orchestrator, not the subagent.
 PASS_DIR="$CLAUDE_PROJECT_DIR/.claude/evidence/vault-passes"
 IS_SUBAGENT=false
 if [ -d "$PASS_DIR" ] && [ -n "$SESSION_ID" ]; then
   for pass_file in "$PASS_DIR"/*.json; do
     [ -f "$pass_file" ] || continue
-    CLAIMED_BY=$(python3 -c "import sys,json; print(json.load(open('$pass_file')).get('claimed_by','') or '')" 2>/dev/null)
-    if [ "$CLAIMED_BY" = "$SESSION_ID" ]; then
+    PASS_DATA=$(python3 -c "import sys,json; d=json.load(open('$pass_file')); print(d.get('claimed_by','') or '', d.get('parent_session','') or '')" 2>/dev/null)
+    CLAIMED_BY=$(echo "$PASS_DATA" | awk '{print $1}')
+    PARENT_SESSION=$(echo "$PASS_DATA" | awk '{print $2}')
+    if [ "$CLAIMED_BY" = "$SESSION_ID" ] && [ "$PARENT_SESSION" != "$SESSION_ID" ]; then
       IS_SUBAGENT=true
       break
     fi
@@ -43,13 +46,24 @@ if [ "$IS_SUBAGENT" = true ]; then
   exit 2
 fi
 
-# Check if vault-update or vault-capture was invoked in this session
-SKILLS_FILE="/tmp/claude-skills-invoked-${SESSION_ID}"
+# Check if vault-update or vault-capture was invoked — via HMAC-signed marker
+# The marker is written by mark-skill-invoked.sh (PostToolUse:Skill hook).
+# Agents cannot create valid markers without knowing the salt AND being invoked
+# through the actual Skill tool.
+HOOK_SALT="claude-hook-integrity-v1"
+VAULT_MARKER="/tmp/claude-vault-update-${SESSION_ID}"
 VAULT_UPDATED=false
 
-if [ -f "$SKILLS_FILE" ]; then
-  if grep -qE "vault-update|vault-capture" "$SKILLS_FILE" 2>/dev/null; then
+if [ -f "$VAULT_MARKER" ]; then
+  STORED_SIG=$(cat "$VAULT_MARKER" 2>/dev/null | tr -d '[:space:]')
+  EXPECTED_SIG=$(echo -n "vault-update|${SESSION_ID}|${HOOK_SALT}" | shasum -a 256 | cut -d' ' -f1)
+  if [ "$STORED_SIG" = "$EXPECTED_SIG" ]; then
     VAULT_UPDATED=true
+  else
+    echo "BLOCKED: Vault update marker has INVALID signature." >&2
+    echo "The marker file was tampered with or hand-written by an agent." >&2
+    echo "Run /vault-update or /vault-capture through the Skill tool." >&2
+    exit 2
   fi
 fi
 

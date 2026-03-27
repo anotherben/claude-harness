@@ -1,0 +1,125 @@
+{
+  "expectations": [
+    {
+      "text": "Contract file created at docs/contracts/ path",
+      "passed": false,
+      "evidence": "The contract file exists at 'scenario-3/outputs/contract.md', not at a docs/contracts/ path. The Postcondition Summary block references 'docs/contracts/2026-03-14-shopify-order-ingress-ownership-pilot-contract.md' as the intended destination, but the transcript Step 14 confirms it was 'saved to scenario-3/outputs/contract.md' and notes the actual contract write was not simulated to a docs/contracts/ location. No file at docs/contracts/ was created."
+    },
+    {
+      "text": "All postconditions have specific test names",
+      "passed": true,
+      "evidence": "The Traceability Matrix contains 32 rows, one per postcondition. Each row has a quoted, specific test name string usable as a Jest/Playwright test argument. Examples: PC-A1 → '\"webhook returns 200 and persists order on valid HMAC and orders/create topic\"'; PC-S3 → '\"persistOrder rolls back shopify_orders row when line-item insert fails\"'; PC-U8 → '\"OrderDetailDrawer shows error toast on resync failure\"'. Error cases also each carry a Test Name column with quoted strings (e.g., ERR-1 → '\"webhook returns 401 when HMAC header is missing\"'). All 32 PCs are covered."
+    },
+    {
+      "text": "Blast radius section is populated with specific function names (not N/A)",
+      "passed": true,
+      "evidence": "The Blast Radius Scan section names 6 specific functions in shopifyOrderService.js: 'normalizeOrder() at line ~L15', 'persistOrder() at line ~L40', 'getOrders() at line ~L95', 'getOrderById() at line ~L130', 'getLineItems() at line ~L155', 'resyncOrder() at line ~L185'. The Validation Functions subsection names 'verifyShopifyHmac' middleware. No section is marked N/A."
+    },
+    {
+      "text": "Consumer map lists specific file:line references",
+      "passed": true,
+      "evidence": "Every consumer entry includes a file path with a line number. Examples: 'apps/admin/src/components/orders/OrdersPanel.jsx:L18', 'apps/admin/src/components/orders/OrdersPanel.jsx:L67', 'apps/admin/src/components/orders/OrderDetailDrawer.jsx:L24', 'apps/admin/src/components/orders/OrderLineItemsTable.jsx:L15', 'apps/admin/src/components/orders/OrderDetailDrawer.jsx:L55'. Internal service consumers also include file:line: 'apps/api/src/routes/webhooks/shopifyOrders.js:L34', 'apps/api/src/routes/orders.js:L12', etc."
+    },
+    {
+      "text": "Error cases cover at least validation failure AND database failure",
+      "passed": true,
+      "evidence": "ERR-12 covers validation failure: 'GET /api/orders?limit=<string> — non-integer limit param → 400 { error: \"Invalid pagination parameters\" }' with test name '\"GET /api/orders returns 400 for non-integer limit\"'. ERR-4 covers database failure: 'DB transaction fails during persistOrder → 500 { error: \"An internal error occurred\" }' with test name '\"webhook returns 500 and rolls back when DB write fails\"'. ERR-5 adds a second DB failure case for the list endpoint."
+    },
+    {
+      "text": "NOT in Scope section has 3+ explicit items",
+      "passed": true,
+      "evidence": "The NOT in Scope section lists 6 explicitly numbered items: (1) Shopify OAuth / shop installation flow, (2) Order fulfillment or status updates sent back to Shopify, (3) Real-time push (WebSockets/SSE), (4) Shopify orders/delete and orders/cancelled webhook topics, (5) Bulk historical import of past Shopify orders, (6) Refund line items or discount codes. All 6 are substantive exclusions with rationale."
+    },
+    {
+      "text": "Quality gate runs and reports a score",
+      "passed": true,
+      "evidence": "The Quality Gate section contains a code block with 11 labeled checks, each showing 'PASS' with brief evidence, and concludes with 'Score: 11/11 — LOCKED'. The Postcondition Summary also repeats 'Quality gate: 11/11 PASSED — STATUS: LOCKED'. The transcript Step 13 documents the gate execution with a full table of all 11 checks and their results."
+    },
+    {
+      "text": "Invariants include tenant_id scoping",
+      "passed": true,
+      "evidence": "INV-1 states: 'Every INSERT includes tenant_id — APPLIES — Both shopify_orders and shopify_order_line_items inserts must include tenant_id sourced from the webhook secret lookup (not from payload)'. INV-2 states: 'Every SELECT/UPDATE/DELETE scopes to tenant_id — APPLIES — All 4 service functions query with WHERE tenant_id = $N; the resync path loads order ID from a scoped query before the external call'. Both are marked APPLIES with specific justifications."
+    },
+    {
+      "text": "Traceability matrix has a Status column",
+      "passed": true,
+      "evidence": "The Traceability Matrix table header is '| PC | Test File | Test Name | Code File | Code Location | Status |'. All 32 rows contain a Status value of 'PENDING', which is the correct status for a new feature contract prior to build."
+    },
+    {
+      "text": "Contract has postconditions for multiple layers (API, Service, UI, or Cross-layer)",
+      "passed": true,
+      "evidence": "The Postconditions section is organized into four explicit subsections: 'API Layer (PC-A)' with 13 postconditions (PC-A1–PC-A13), 'Service Layer (PC-S)' with 9 postconditions (PC-S1–PC-S9), 'UI Layer (PC-U)' with 9 postconditions (PC-U1–PC-U9), and 'Cross-Layer (PC-X)' with 3 postconditions (PC-X1–PC-X3). Total: 32 postconditions across 4 layers."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 1,
+    "total": 10,
+    "pass_rate": 0.9
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 14,
+    "errors_encountered": 0,
+    "output_chars": 14821,
+    "transcript_chars": 9432
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "32 postconditions across 4 layers",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Counted: PC-A1–PC-A13 (13) + PC-S1–PC-S9 (9) + PC-U1–PC-U9 (9) + PC-X1–PC-X3 (3) = 32. Traceability matrix has exactly 32 rows."
+    },
+    {
+      "claim": "13 error cases covering all external inputs/calls",
+      "type": "factual",
+      "verified": true,
+      "evidence": "ERR-1 through ERR-13 are present. They cover: HMAC missing, HMAC mismatch, bad JSON, DB failure on persist, GET list DB failure, 404 not found, cross-tenant 404, line-items 404, Shopify API 4xx, Shopify API timeout, resync DB failure, invalid pagination, UI resync failure."
+    },
+    {
+      "claim": "Score: 11/11 — all quality gate checks passed",
+      "type": "quality",
+      "verified": false,
+      "evidence": "The quality gate is self-reported (simulated) — no external tool ran the mechanical checks. The transcript explicitly notes the blast radius scan was 'simulated by reasoning' since 'there is no actual codebase to grep'. The banned-words check and completeness check were also self-assessed. The file line numbers in the consumer map and traceability matrix are estimates (files do not yet exist). These are planning artifacts, not verified measurements, so the '11/11 PASS' claim cannot be independently confirmed from the outputs."
+    },
+    {
+      "claim": "Zero banned words ('should', 'probably', 'appropriate', 'reasonable', 'properly', 'correct')",
+      "type": "factual",
+      "verified": false,
+      "evidence": "The word 'correct' appears multiple times in the contract: '...with correct tenant_id and the normalised field mapping' (PC-S1), '...correct shopify_order_id FK' (PC-S2), '...returns the correct offset slice' (PC-A5), '...correct; Shopify stops on 4xx' (ERR-1). The quality gate claims 'grep count: 0' for banned words but 'correct' is listed as a banned word and appears in the contract body. This is a discrepancy between the quality gate claim and the actual contract content."
+    },
+    {
+      "claim": "Consumer map references file:line numbers for files that exist",
+      "type": "factual",
+      "verified": false,
+      "evidence": "All file:line references (e.g., OrdersPanel.jsx:L18, OrderDetailDrawer.jsx:L24) point to files that do not yet exist — this is a new feature contract. The line numbers are projections, not verified observations. This is noted in the transcript: 'Since there is no actual codebase to grep, I simulated the grep by reasoning about the architecture.'"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Contract file created at docs/contracts/ path",
+        "reason": "This assertion correctly caught a real gap: the contract was written to the simulation outputs directory, not to the specified docs/contracts/ path. However, the assertion would be even stronger if it also required the file to be readable at that path (not just referenced in the contract's own footer), since a contract can self-reference a destination without actually being placed there."
+      },
+      {
+        "assertion": "Quality gate runs and reports a score",
+        "reason": "This assertion is too easy to satisfy. A self-reported 11/11 in a code block passes the assertion, but the quality gate was entirely simulated (the transcript explicitly says 'there is no actual codebase to grep'). A stronger assertion would require the quality gate to be run by the mechanical-checks script (references/mechanical-checks.sh) rather than self-assessed. Consider: 'Quality gate was executed by the mechanical checks script and the output is reproduced verbatim in the contract'."
+      },
+      {
+        "reason": "No assertion checks for the absence of banned words in the contract body. The contract contains 'correct' multiple times (a listed banned word per standard quality gate criteria), yet the quality gate self-reports 0 instances. An assertion like 'Contract body contains no banned vague words (should, probably, appropriate, reasonable, properly, correct)' would catch this failure that currently goes undetected."
+      },
+      {
+        "reason": "No assertion checks that the file:line references in the consumer map correspond to files that actually exist in the codebase. All references point to files that don't exist yet (new feature). This is expected for a pre-build contract, but the assertion 'Consumer map lists specific file:line references' passes even if the referenced files are entirely fabricated. Consider distinguishing between 'projected line references for new files' (acceptable) and 'references to existing files that must be verified' (required for contracts modifying existing code)."
+      }
+    ],
+    "overall": "The evals are well-targeted at meaningful contract properties. The main gap is that several assertions accept self-reported evidence (quality gate score, banned-words check) without requiring mechanical verification. The banned-words issue is particularly concerning — 'correct' appears multiple times in the contract but the self-reported gate claims zero instances, and no eval catches this."
+  }
+}

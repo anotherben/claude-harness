@@ -1,0 +1,109 @@
+{
+  "expectations": [
+    {
+      "text": "All 7 verification checks are present and numbered",
+      "passed": true,
+      "evidence": "Report contains CHECK 1 through CHECK 7: Test Suite, Postcondition Trace, Regression Check, Build Verification, Final Diff, Import Resolution, and Debug Artifact Check. All numbered sequentially."
+    },
+    {
+      "text": "Each check has a PASS or FAIL verdict with evidence (not just a claim)",
+      "passed": true,
+      "evidence": "Each check explicitly states PASS or SKIPPED with specific evidence: CHECK 1 shows '51 tests passed, 0 failed', CHECK 2 lists 14/14 postconditions, CHECK 3 shows baseline vs current test counts, CHECK 5 displays git diff output, CHECK 6 lists all imports with resolution status, CHECK 7 shows grep command and output. All verdicts are supported by concrete data."
+    },
+    {
+      "text": "Postcondition trace maps each PC to a specific named test",
+      "passed": true,
+      "evidence": "CHECK 2 lists all 14 postconditions (PC-A1 through PC-X2), each mapped to a specific named test in a specific file. Example: 'PC-A1: Returns HTTP 201 on successful creation → Test: \"POST /api/alert-configs returns 201 with created alert config\" → File: src/routes/__tests__/alertConfigRoutes.test.js → Status: PASS'"
+    },
+    {
+      "text": "Final diff classifies files as REQUIRED/ENABLING/DRIFT",
+      "passed": true,
+      "evidence": "CHECK 5 explicitly classifies all 4 files: 'apps/api/src/services/alertConfigService.js — REQUIRED (service layer, in contract)', 'apps/api/src/routes/alertConfigRoutes.js — REQUIRED (route layer, in contract)', both test files marked REQUIRED. Result states '0 drift' with 'All files in scope.'"
+    },
+    {
+      "text": "Debug artifact check shows the grep command and its output",
+      "passed": true,
+      "evidence": "CHECK 7 shows the exact grep command: 'git diff -- '*.js' '*.jsx' '*.ts' '*.tsx' | grep '^+' | grep -v '^+++' | grep -iE 'console\\.(log|debug|warn|info)|debugger|TODO|FIXME|HACK|XXX' | grep -v '\\.test\\.' | grep -v 'console\\.error'. Output shows '(no output — no matches)' with finding 'NONE'"
+    },
+    {
+      "text": "Import resolution check verifies each import in changed files",
+      "passed": true,
+      "evidence": "CHECK 6 systematically lists all 4 changed files, then for each file lists every import with resolution status. Example for alertConfigService.js: 'const { pool } = require('../db') → EXISTS (apps/api/src/db/index.js)'. All imports show EXISTS status, result states 'All imports resolve. 0 MISSING.'"
+    },
+    {
+      "text": "A final verification report summary is present with overall verdict",
+      "passed": true,
+      "evidence": "Report includes final boxed summary section with 'ENTERPRISE VERIFICATION REPORT', lists all 7 checks with verdicts, shows 'OVERALL: PASS — all 7 checks green (4 passed, 1 skipped with valid reason, 0 failed)', and ends with 'Verification complete. All 7 checks passed... Safe to commit.'"
+    },
+    {
+      "text": "No banned/belief language used in the completion claim",
+      "passed": true,
+      "evidence": "Final claim states 'Verification complete. All 7 checks passed (4 PASS, 1 SKIPPED with valid reason, 0 FAIL). Safe to commit.' Uses only factual language ('passed', 'checks', 'PASS/FAIL/SKIPPED'). No banned terms like 'should', 'believe', 'appears', 'seems', 'likely', 'hope', 'ensure', 'guarantee' found in the completion statement."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "output_files": 1,
+    "output_file_chars": 13858,
+    "output_file_name": "verification-report.md"
+  },
+  "claims": [
+    {
+      "claim": "51 tests passed, 0 failed",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 1 output shows 'Test Suites: 8 passed, 8 total' and 'Tests: 51 passed, 0 failed'"
+    },
+    {
+      "claim": "14 postconditions were verified and all passed",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 2 explicitly lists PC-A1 through PC-X2 (14 conditions), each with Status: PASS, concluding 'Result: 14/14 postconditions verified'"
+    },
+    {
+      "claim": "37 existing tests continue to pass with 14 new tests added",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 3 states 'Baseline (pre-change): 37 tests across 6 suites' and 'Current: 51 tests across 8 suites (14 new tests in 2 new files)'"
+    },
+    {
+      "claim": "No debug artifacts (console logs, debugger, TODO/FIXME) in code",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 7 grep command with comprehensive pattern found no matches in production files (excluding test files and console.error)"
+    },
+    {
+      "claim": "All 4 files changed are in-scope and necessary",
+      "type": "quality",
+      "verified": true,
+      "evidence": "CHECK 5 classifies all 4 files as REQUIRED with explanation: service and route files are in contract, test files are TDD requirement"
+    },
+    {
+      "claim": "All imports resolve to existing files",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 6 shows 12 imports across 4 files, all marked EXISTS with exact file paths"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "CHECK 4 (Build Verification) is skipped because no frontend files were changed. However, the expectation wording says 'each check has a PASS or FAIL verdict'. A SKIPPED verdict is technically a third state not captured by the expectation. This is actually correct behavior (frontend build verification is only relevant when frontend changes), but the expectation language is slightly ambiguous about whether SKIPPED counts as satisfying the criterion. Consider clarifying in future evals whether SKIPPED verdicts are acceptable when the check is legitimately not applicable."
+      },
+      {
+        "reason": "The expectations and report both focus on structural/presence checks (files exist, tests pass, imports resolve) but don't verify deeper behavioral correctness beyond what the test suite claims. For example, CHECK 6 verifies imports 'resolve' but doesn't verify they're used correctly or that the service layer actually implements the contract. This is a strength of the report (it's checking what it claims), but it's worth noting that the verification depth is limited to what automated checks can detect. The report is honest about this scope."
+      }
+    ],
+    "overall": "All 8 expectations satisfied with strong evidence. The report is well-structured, systematic, and provides concrete proof for every claim. Verdict is PASS."
+  }
+}

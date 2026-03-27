@@ -1,91 +1,127 @@
 ---
 name: vault-status
-description: Cross-project visibility dashboard showing all vault queues at a glance. Use when the user says "what's open", "vault status", "show my dashboard", "what am I working on", or invokes /vault-status. Also use when the user seems unsure what to work on next or needs a project overview. Shows items grouped by queue (Inbox, Bugs, Tasks, Ideas, In-Progress, Archive) with staleness flags and scatter-brain scoring.
+description: Cross-project controller summary for the Obsidian vault. Use when the user says "what's open", "vault status", "show my dashboard", "what am I working on", or invokes /vault-status. Also use when the user seems unsure what to work on next or needs a project overview. Mirrors the Obsidian-first controller: project load, immediate attention, ghost work, verification gaps, and inbox debt.
 ---
 
-# Vault Status Dashboard
+# Vault Status Controller
+
+This skill is the terminal summary of the same model rendered in Obsidian by `Master Dashboard.md`.
+
+## Controller Contract
+
+Use these canonical statuses:
+
+- `open`
+- `claimed`
+- `in-progress`
+- `blocked`
+- `done`
+- `wont-do`
+
+Normalize legacy values before reasoning:
+
+- `active` => `in-progress`
+- `closed` => `done`
+- `completed` => `done`
+
+High-signal controller fields:
+
+- `id`
+- `project`
+- `status`
+- `next_action`
+- `proof_state`
+- `owner_family`
+- `owner_instance`
+- `branch`
+- `worktree_path`
+- `claimed_at`
+- `completed_at`
 
 ## Steps
 
-### 1. Fetch all vault items
+### 1. Fetch active vault state
 
-Call `mcp__vault-index__list_vault` multiple times with different status filters to retrieve every item across all queues. Use compact JSON output — do not read individual files.
+Use `mcp__vault-index__list_vault` with these filters:
 
-Queues to fetch:
-- `00-Inbox`
-- `01-Bugs`
-- `02-Tasks`
-- `03-Ideas`
-- `04-In-Progress`
-- `05-Archive`
+- all active work: `status="open"`, `status="claimed"`, `status="in-progress"`, `status="blocked"`
+- `folder="00-Inbox"` for inbox debt
+- `folder="04-In-Progress"` for active-lane drift
 
-### 2. Group and sort
+Do not read full files unless the user asks for a specific item.
 
-Group returned items by their queue folder. Within each group, sort by priority descending: critical > high > medium > low.
+### 2. Apply optional project filter
 
-### 3. Compute staleness flags
+If the user names a project, filter every result to that `project`. State clearly: `Filtered to project: <name>`.
 
-For every item **not** in `03-Ideas`, check the `updated` (or `created` if no update) date in frontmatter. If the item is older than 14 days from today, mark it with a stale flag (prefix with `[STALE]` in output).
+### 3. Compute controller views
 
-### 4. Compute scatter-brain score
+Compute these views from the compact JSON:
 
-- Count the number of **distinct projects** that have at least one open item (anything outside `05-Archive`).
-- Count the number of distinct projects with **recent activity** (updated within the last 7 days).
-- Report: `Scatter-brain score: X open projects, Y recently active`
-- If X > Y * 2, add a warning: "You have too many plates spinning. Consider archiving or parking stale projects."
+- `Needs Attention Today`
+  - all `critical` items
+  - all `blocked` items
+- `Project Load`
+  - per project: open count, inbox count, active count, blocked count, critical count
+- `Ghost Work`
+  - items not `done`/`wont-do` but with `completed_at` set or `handoff_note` present
+- `Verification Gaps`
+  - items with `proof_state`
+  - items with obvious completion signals but still open
+- `Inbox Debt`
+  - inbox items older than 48 hours
 
-### 5. Render summary table
+### 4. Compute staleness and integrity flags
 
-Present a markdown table:
+Use these controller flags:
 
-```
-| Queue          | Count | Critical | High | Med | Low | Stale |
-|----------------|-------|----------|------|-----|-----|-------|
-| 00-Inbox       |       |          |      |     |     |       |
-| 01-Bugs        |       |          |      |     |     |       |
-| 02-Tasks       |       |          |      |     |     |       |
-| 03-Ideas       |       |          |      |     |     |   -   |
-| 04-In-Progress |       |          |      |     |     |       |
-| 05-Archive     |       |          |      |     |     |   -   |
-```
+- `STALE-INBOX`: inbox item older than 48 hours
+- `STALE-ACTIVE`: claimed or in-progress item with no recent update for 7+ days
+- `MISSING-NEXT`: governed item missing `next_action`
+- `MISSING-ID`: item missing `id`
+- `GHOST`: completion evidence exists but status is not `done`
 
-Ideas and Archive never show stale counts (use `-`).
+### 5. Render the summary
 
-### 6. List items per queue
+Present:
 
-Below the table, list each non-empty queue with its items in brief format:
+1. A project-load table
+2. A short `Needs Attention Today` list
+3. A short `Ghost Work` list
+4. A short `Verification Gaps` list
+5. A short `Inbox Debt` list
 
-```
-## 01-Bugs (3 items)
-- [STALE] [critical] project-name: Title of item
-- [high] project-name: Another item
-- [med] project-name: Third item
-```
+Prefer project/action language over queue dumps. Example:
 
-Include the stale flag, priority in brackets, project name, and item title.
+```markdown
+## Project Load
+| Project | Open | Inbox | Active | Blocked | Critical |
+|---------|------|-------|--------|---------|----------|
 
-### 7. Project filtering (optional)
+## Needs Attention Today
+- [critical] helpdesk — Shopify Order Ingress Completeness Watchdog
+- [blocked] bundle-deals — Bundle Deals MVP Remaining
 
-If the user provides a project name as an argument (e.g., `/vault-status helpdesk`), filter all results to only show items where the `project` frontmatter field matches. Adjust all counts, the table, and the scatter-brain score accordingly. State clearly at the top: "Filtered to project: <name>".
-
-### 8. Closing recommendation
-
-End with a short recommendation:
-- If there are critical bugs, say: "You have N critical bugs. Recommend triaging those first."
-- If inbox is non-empty, say: "N items in inbox need triage."
-- If scatter-brain warning triggered, repeat it here.
-- Otherwise: "All clear. Pick up the highest-priority task or review parked ideas."
-
-## Obsidian CLI Enhancement (optional)
-
-If Obsidian CLI is available (check: `which obsidian`), supplement the dashboard with:
-
-```bash
-# Tag analytics — shows which tags are most used across the vault
-obsidian tags counts sort=count
-
-# Task overview — shows incomplete tasks across the vault
-obsidian tasks todo total
+## Ghost Work
+- helpdesk — Supplier portal phase5 rbac users 006
 ```
 
-Add a "Tag Cloud" section after the scatter-brain score showing the top 10 tags by count. Add an "Open Tasks" count to the summary table. Fall back to the standard approach above if CLI is not available.
+### 6. Close with one recommendation
+
+Choose the highest-signal next move:
+
+- critical items first
+- then blocked items
+- then ghost work cleanup
+- then inbox triage
+- otherwise highest-load project
+
+## Obsidian Note
+
+If the user wants the actual dashboard surface, direct them to:
+
+- `[[Master Dashboard]]`
+- `[[06-Portfolio/00 Portfolio Control Tower]]`
+- `[[06-Portfolio/05 Verification Gap Register]]`
+- `[[Projects/<project>/README]]`
+

@@ -1,0 +1,126 @@
+{
+  "expectations": [
+    {
+      "text": "Check 1 correctly identifies the failing test",
+      "passed": true,
+      "evidence": "Transcript clearly shows CHECK 1 — TEST SUITE with FAIL result. Output explicitly shows two failing tests with detailed error messages: (1) 'getProductDetails() › returns stock quantity from database' expecting `available_stock: 42` but received `current_stock: 42` at line 34; (2) 'getProductList() › returns product list with stock quantities' expecting `available_stock: 10` but received `current_stock: 10` at line 67. Root cause correctly identified: 'test mocks still assert on `available_stock` key — the old column name — but the service now returns `current_stock`. The mocks were not updated to match the production code change.'"
+    },
+    {
+      "text": "Agent STOPS at check 1 failure instead of continuing",
+      "passed": true,
+      "evidence": "Transcript explicitly states after CHECK 1 FAIL result: '→ STOP. Per skill protocol: fix the failure before proceeding. Do not proceed.' The agent halted execution and did not attempt CHECK 2 or beyond in Attempt 1, entering the FAILURE RECOVERY LOG section instead."
+    },
+    {
+      "text": "Failure recovery protocol followed",
+      "passed": true,
+      "evidence": "Transcript contains dedicated FAILURE RECOVERY LOG section documenting: (1) Check 1 failure with specific line numbers and causes; (2) Fix applied with exact details ('Updated productService.test.js mock expectations at lines 34 and 67. Replaced `available_stock` with `current_stock` in both assertion objects'); (3) Verification of fix ('git diff --stat' and 'grep -r' confirmation); (4) Explicit statement of next action ('Check 1 re-run: PASS (see Attempt 2 below)' and 'Continuing from Check 1 (full sequence restart as required)')."
+    },
+    {
+      "text": "After fixing, all 7 checks completed",
+      "passed": true,
+      "evidence": "ATTEMPT 2 section in transcript shows all 7 checks executed with results: CHECK 1 (PASS — 49 passed, 0 failed), CHECK 2 (PASS — 7/7 postconditions verified), CHECK 3 (PASS — no regressions), CHECK 4 (SKIPPED with valid reason: backend-only changes), CHECK 5 (PASS — 2 files, 0 drift), CHECK 6 (PASS — all imports resolve), CHECK 7 (PASS — no debug artifacts). The FINAL VERIFICATION REPORT summary confirms 'OVERALL: PASS — all 7 checks green (1 validly skipped)'."
+    },
+    {
+      "text": "Postcondition trace maps PCs to test names",
+      "passed": true,
+      "evidence": "CHECK 2 — POSTCONDITION TRACE section explicitly maps 7 postconditions to test names: PC-1 maps to 'getProductDetails() › returns stock quantity from database' (line 28), PC-2 maps to 'getProductList() › returns product list with stock quantities' (line 61), PC-3a maps to 'getProductDetails() › handles zero stock correctly' (line 42), PC-3b maps to 'getProductDetails() › handles null stock as zero' (line 49), PC-3c maps to 'getProductDetails() › returns null for unknown product id' (line 35), PC-3d maps to 'getProductList() › returns empty array when no products exist' (line 68), PC-4 maps to 'getProductList() › scopes results to tenant_id' (line 75). Each includes file path and status."
+    },
+    {
+      "text": "Verification report shows failure recovery log",
+      "passed": true,
+      "evidence": "Transcript contains explicit FAILURE RECOVERY LOG section between ATTEMPT 1 and ATTEMPT 2. It documents: the failure ('Check 1 failed: 2 tests assert on key `available_stock` in productService.test.js'), specific locations ('Line 34: mock expectation object contains `available_stock: 42`' and 'Line 67: mock expectation array contains `available_stock: 10`'), the fix applied, verification steps, and confirmation of success ('Check 1 re-run: PASS'). This recovery log is also summarized in the FINAL VERIFICATION REPORT section under 'Failure Recovery Summary'."
+    },
+    {
+      "text": "Final verdict reflects recovery",
+      "passed": true,
+      "evidence": "FINAL VERIFICATION REPORT summary clearly documents both the failure and recovery: 'Attempt 1, Check 1 FAILED: 2 tests in productService.test.js asserted on `available_stock` key... Root cause: test mocks not updated to match production code change... Fix: updated mock expectations at lines 34 and 67 to use `current_stock`... Verification restarted from Check 1 per protocol. Attempt 2: all checks passed.' The overall verdict then reflects success: 'OVERALL: PASS — all 7 checks green (1 validly skipped)'."
+    },
+    {
+      "text": "No banned language in completion claim",
+      "passed": true,
+      "evidence": "The completion statement in FINAL VERIFICATION REPORT states: 'Verification complete. All 7 checks passed (1 validly skipped — backend only, no frontend files modified). 49 tests passing, 0 failed, 7/7 postconditions verified, no regressions, no scope drift, all imports resolve, no debug artifacts. The fix is verified and ready to commit.' Review of all sections confirms no use of prohibited language such as 'hope', 'assume', 'likely', 'should', 'probably', or similar unverified qualifiers. All claims are based on explicit test output and verification steps."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": null,
+    "errors_encountered": 0,
+    "output_chars": 13688,
+    "transcript_chars": 13688
+  },
+  "timing": {
+    "executor_duration_seconds": 78.7,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 78.7
+  },
+  "claims": [
+    {
+      "claim": "49 tests passed, 0 failed",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 1 output shows final test run: 'Test Suites: 9 passed, 9 total' and 'Tests: 49 passed, 0 failed, 0 total'"
+    },
+    {
+      "claim": "7 out of 7 postconditions verified",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 2 explicitly states 'Result: 7/7 postconditions verified' with each PC mapped to a test name and status PASS"
+    },
+    {
+      "claim": "No regression in existing tests",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 3 shows 'Baseline (before this fix): 49 passed, 0 failed' and 'New test failures: NONE. Tests that were passing before and now fail: NONE.' Note clarifies the 2 tests that failed in Attempt 1 were pre-existing failures from production code change, not regressions."
+    },
+    {
+      "claim": "2 files changed with specific line-addition/deletion counts",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 5 output shows: 'apps/api/src/services/productService.js | 6 +++---' and 'apps/api/src/services/productService.test.js | 8 +++++---' with '2 files changed, 14 insertions(+), 11 deletions(-)'"
+    },
+    {
+      "claim": "All imports in changed files resolve",
+      "type": "factual",
+      "verified": true,
+      "evidence": "CHECK 6 explicitly verifies 4 imports: 'const { query } = require('../db/pool') → EXISTS', 'const { formatProduct } = require('../utils/productFormatter') → EXISTS', 'const productService = require('./productService') → EXISTS', 'const { mockPool } = require('../__mocks__/db/pool') → EXISTS'. Conclusion: 'No import paths changed.'"
+    },
+    {
+      "claim": "No debug artifacts (console.log, debugger, TODO/FIXME) introduced",
+      "type": "quality",
+      "verified": true,
+      "evidence": "CHECK 7 runs grep on changed files for common debug patterns and reports: '(no output)' with finding 'NONE'. Explicitly states 'No console.log, console.debug, debugger statements, TODOs, FIXMEs, HACKs, or XXX markers introduced in any changed production file.'"
+    },
+    {
+      "claim": "Failure in Check 1 was due to mismatch between production code and test mocks",
+      "type": "quality",
+      "verified": true,
+      "evidence": "FAILURE RECOVERY LOG explicitly identifies root cause: 'test mocks still assert on `available_stock` key — the old column name — but the service now returns `current_stock`. The mocks were not updated to match the production code change.' This diagnosis is supported by the diff output showing production code changed to use `current_stock` while test assertions still expected `available_stock`."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "Expectation 'After fixing, all 7 checks completed' is satisfied but the report also mentions 'Check 4 — Build Verification: SKIPPED (valid — backend only)'. To make assertions more discriminating, consider clarifying whether 'all 7 checks completed' means 'all 7 checks executed' or 'all 7 checks returned PASS verdicts' — a SKIPPED check technically passed (it chose not to run on grounds of validity) but did not fully execute. This is fine here because the skip is properly justified, but the language could be clearer."
+      },
+      {
+        "reason": "The expectations correctly capture the core pipeline: identify failure, stop, recover, continue. However, there is no assertion that explicitly verifies the agent re-ran the *full verification sequence* (checks 1–7) after recovery, only that 'all 7 checks completed.' The transcript shows this happened (ATTEMPT 2 has all 7 checks), but a more precise assertion like 'After fixing, Check 1 is re-run first to confirm the failure is resolved' would make this more discriminating."
+      },
+      {
+        "reason": "No expectation explicitly checks that the failure recovery *stopped at the right place*. The expectation 'Agent STOPS at check 1 failure instead of continuing' is correct, but it would be stronger to also verify the agent did not skip ahead to later checks in Attempt 2 — i.e., that it restarted the full sequence from CHECK 1 rather than resuming from CHECK 2. The transcript confirms this behavior ('Continuing from Check 1 (full sequence restart as required)'), but making it a named assertion would catch if a future implementation incorrectly resumed mid-sequence."
+      }
+    ],
+    "overall": "Assertions are well-designed and align closely with the skill's critical requirements. They correctly identify the core failure-recovery cycle and verify both process (stopping, recovering, continuing) and outcome (checks pass). The suggestions above refine precision rather than surface genuine gaps. One minor note: the distinction between 'all checks completed' and 'all checks passed' could be clarified given the valid SKIP in Check 4, but the assertion as written does not mislead given the context."
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "skill_name": "enterprise-contract",
+  "evals": [
+    {
+      "id": 1,
+      "name": "New API Endpoint",
+      "prompt": "The plan is at docs/plans/2026-03-14-alert-configs-plan.md. It adds a POST /api/alert-configs endpoint that creates tenant-scoped alert configurations with category and threshold fields. The service layer handles validation and the route mounts after authenticateStaff. Create the contract.",
+      "expected_output": "A complete contract document with postconditions, invariants, error cases, consumer map, and blast radius",
+      "expectations": [
+        "Contract file created at docs/contracts/ path",
+        "All postconditions have specific test names (not generic placeholders)",
+        "Blast radius section is populated with specific function names and line references (not N/A or 'seems isolated')",
+        "Consumer map lists specific file:line references for each consumer",
+        "Error cases cover at least validation failure AND database failure",
+        "NOT in Scope section has 3+ explicit items",
+        "Quality gate runs and reports a score with PASS/FAIL per criterion",
+        "Invariants include tenant_id scoping (INV-1 and INV-2)",
+        "Traceability matrix has a Status column with PENDING entries",
+        "No banned vague words (should, probably, appropriate, reasonable, properly) in postcondition text"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Bug Fix Contract",
+      "prompt": "Users report wrong stock quantities on the product detail page. The root cause is in getProductDetails() at apps/api/src/services/productService.js:L45 — it uses the wrong column (available_stock instead of current_stock). The blast radius includes getProductList() in the same file. Create a bug fix contract.",
+      "expected_output": "A bug fix contract with root cause trace, blast radius scan, and write site audit",
+      "expectations": [
+        "Contract file created at docs/contracts/ path",
+        "All postconditions have specific test names",
+        "Blast radius section is populated with specific function names (not N/A)",
+        "Consumer map lists specific file:line references",
+        "Error cases cover at least validation failure AND database failure",
+        "NOT in Scope section has 3+ explicit items",
+        "Quality gate runs and reports a score",
+        "Invariants include tenant_id scoping",
+        "Traceability matrix has a Status column",
+        "Root cause trace follows the chain from visible bug back to the defective code line"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Complex Multi-Layer Feature",
+      "prompt": "The plan adds a Shopify order ingress system: webhook receiver (HMAC verified), order normalization service, database persistence, and a React admin panel showing recent orders. 4 API endpoints, 2 new tables, 1 webhook handler, 3 React components. Create the contract.",
+      "expected_output": "A comprehensive contract covering webhook, service, database, and UI layers with cross-layer postconditions",
+      "expectations": [
+        "Contract file created at docs/contracts/ path",
+        "All postconditions have specific test names",
+        "Blast radius section is populated with specific function names (not N/A)",
+        "Consumer map lists specific file:line references",
+        "Error cases cover at least validation failure AND database failure",
+        "NOT in Scope section has 3+ explicit items",
+        "Quality gate runs and reports a score",
+        "Invariants include tenant_id scoping",
+        "Traceability matrix has a Status column",
+        "Contract has postconditions for multiple layers (API, Service, UI, or Cross-layer)"
+      ]
+    }
+  ]
+}

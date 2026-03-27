@@ -1,0 +1,130 @@
+{
+  "expectations": [
+    {
+      "text": "Contract file created at docs/contracts/ path",
+      "passed": false,
+      "evidence": "The contract was written to '.claude/skills/enterprise-contract-workspace/iteration-1/champion/scenario-2/outputs/contract.md' (confirmed in transcript Step 15: 'Written to: /Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/champion/scenario-2/outputs/contract.md'). No file exists at any docs/contracts/ path."
+    },
+    {
+      "text": "All postconditions have specific test names",
+      "passed": true,
+      "evidence": "All 13 postconditions (PC-S1 through PC-S9, PC-A1 through PC-A3, PC-X1) include a named test in the Test column. Example: PC-S1 maps to 'productService.test.js: \"getProductDetails returns current_stock as stock_quantity\"'. The Additional Postconditions table (PC-S7, S8, S9) also includes specific test names."
+    },
+    {
+      "text": "Blast radius section is populated with specific function names (not N/A)",
+      "passed": true,
+      "evidence": "The Blast Radius Scan section lists specific function names with file:line references: getProductList() (productService.js:L112), getProductByBarcode() (productService.js:L178), searchProducts() (productService.js:L234), updateProductStock() (productService.js:L298), getProductsBySupplier() (productService.js:L345), createProduct() (productService.js:L67), getInventoryReport() (inventoryService.js:L23), getLowStockProducts() (inventoryService.js:L78), syncProductStock() (shopifySync.js:L145), getProductsForExport() (bulkExportService.js:L88)."
+    },
+    {
+      "text": "Consumer map lists specific file:line references",
+      "passed": true,
+      "evidence": "Every row in both Consumer Map tables includes a File:Line column with specific references. Examples: 'apps/api/src/routes/products.js:L38', 'apps/admin/src/hooks/useProductDetail.js:L24', 'apps/admin/src/components/ProductDetail.jsx:L87', 'apps/admin/src/components/StockStatusBadge.jsx:L14', 'apps/admin/src/components/LowStockAlert.jsx:L31', 'apps/api/src/services/bulkExportService.js:L88'."
+    },
+    {
+      "text": "Error cases cover at least validation failure AND database failure",
+      "passed": true,
+      "evidence": "ERR-2 covers validation failure: 'getProductDetails() called with a null or undefined product ID → 400 from route param validation → { error: \"Invalid product ID\" }'. ERR-3 covers database failure: 'Database connection failure during getProductDetails() → 500 → { error: \"An internal error occurred\" }'. Both are present with test names."
+    },
+    {
+      "text": "NOT in Scope section has 3+ explicit items",
+      "passed": true,
+      "evidence": "The NOT in Scope section lists 6 explicit exclusions: (1) available_stock column deprecation/drop, (2) Shopify sync write paths, (3) UI component logic changes, (4) API response shape changes, (5) other product fields, (6) caching or read strategy changes."
+    },
+    {
+      "text": "Quality gate runs and reports a score",
+      "passed": true,
+      "evidence": "The Contract Quality Gate section is present and reports 'Score: 11/11 — LOCKED' with all 11 criteria listed individually as PASS, including Testability, Banned Words, Completeness, Consumer Coverage, Blast Radius, Error Coverage, Invariants, Scope Boundary, Traceability, Tautology Check, and Error Strategy."
+    },
+    {
+      "text": "Invariants include tenant_id scoping",
+      "passed": true,
+      "evidence": "INV-2 explicitly addresses tenant scoping: 'Every SELECT/UPDATE/DELETE scopes to tenant_id via WHERE clause — Verify both getProductDetails() and getProductList() retain their existing WHERE tenant_id = $N clauses after the column rename.' Also, PC-S6 adds a dedicated postcondition: 'getProductDetails() always scopes to the caller's tenantId — a product belonging to tenant B is not returned when called with tenant A's ID'."
+    },
+    {
+      "text": "Traceability matrix has a Status column",
+      "passed": true,
+      "evidence": "The Traceability Matrix table header reads: '| PC | Test File | Test Name | Code File | Code Location | Status |'. All 13 rows have Status set to 'PENDING', and a status transition legend is provided: 'PENDING → RED (test written, fails) → GREEN (code written, passes) → VERIFIED (in review)'."
+    },
+    {
+      "text": "Root cause trace follows the chain from visible bug back to the defective code line",
+      "passed": true,
+      "evidence": "The Root Cause section uses the required arrow-chain format tracing from the visible symptom to the defective line: 'BUG LOCATION: Wrong stock quantity displayed on product detail page ← rendered by: ProductDetail.jsx:L87 ← state from: useProductDetail.js:L24 ← fetched from: GET /api/products/:id route at products.js:L38 ← queried by: getProductDetails() at productService.js:L45 ← ROOT CAUSE: getProductDetails() queries available_stock column instead of current_stock'. The specific broken line (SELECT available_stock AS stock_quantity FROM products WHERE id = $1) and the correct fix are both shown."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 1,
+    "total": 10,
+    "pass_rate": 0.9
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 15,
+    "errors_encountered": 0,
+    "output_chars": 12485,
+    "transcript_chars": 6890
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "Score: 11/11 — quality gate passed across all criteria",
+      "type": "quality",
+      "verified": true,
+      "evidence": "All 11 criteria are individually listed as PASS in the quality gate section. Each criterion has a note explaining the evidence. The gate result is consistent with the contract content."
+    },
+    {
+      "claim": "13 postconditions, all with concrete expect() skeletons",
+      "type": "factual",
+      "verified": false,
+      "evidence": "There are 13 PCs confirmed. However, the contract states '13 PCs, all 13 have concrete expect() skeletons (4 shown inline; rest follow same pattern)'. Only 4 skeletons are actually written out. The claim that all 13 are verified as non-tautological is asserted but not demonstrated — the remaining 9 are confirmed by assertion only."
+    },
+    {
+      "claim": "Blast radius scan was performed by reading all functions in productService.js",
+      "type": "process",
+      "verified": false,
+      "evidence": "Transcript Step 6 states 'I read all functions in productService.js (simulated, following the skill's instruction...)'. The word 'simulated' indicates the file was not actually read — the executor invented plausible sibling functions (getProductByBarcode, searchProducts, getProductsBySupplier) based on inference, not actual code inspection. This is flagged explicitly: 'I invented plausible supporting context' (transcript Step 4)."
+    },
+    {
+      "claim": "Consumer map identifies 9 consumers across both functions",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The consumer map tables list 5 consumers for getProductDetails() and 4 for getProductList(), totaling 9. All have specific file:line references."
+    },
+    {
+      "claim": "Zero banned words in postconditions",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Reviewed postcondition text — none use 'should', 'probably', 'appropriate', 'reasonable', 'properly'. All are stated in indicative present tense with specific values."
+    },
+    {
+      "claim": "The contract documents a plan at docs/plans/2026-03-14-fix-product-stock-column-plan.md and TDD at docs/designs/2026-03-14-fix-product-stock-column-tdd.md",
+      "type": "factual",
+      "verified": false,
+      "evidence": "These paths are referenced in the contract header but no evidence in the transcript or outputs that these files were created or exist. They appear to be placeholder references."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Contract file created at docs/contracts/ path",
+        "reason": "This assertion failed because the skill wrote to a workspace-internal outputs/ directory rather than the canonical docs/contracts/ path. The assertion correctly catches this — consider whether the skill should be updated to write to docs/contracts/ as its final artifact location, or whether the assertion should be relaxed to accept the workspace path. The current behavior is that the skill never writes to docs/contracts/, making this assertion a consistent failure. Worth deciding intentionally."
+      },
+      {
+        "reason": "No assertion checks whether the blast radius scan was based on actual code reading vs. inference. The transcript explicitly states the scan was 'simulated' and that function names were invented as 'plausible context'. This is a significant quality concern: if productService.js does not actually contain getProductByBarcode(), searchProducts(), or getProductsBySupplier(), then PC-S7, PC-S8, and PC-S9 are phantom postconditions. An assertion like 'Blast radius findings cite grep output or file read evidence' would catch hallucinated blast radius expansion."
+      },
+      {
+        "reason": "No assertion checks that test skeletons exist for ALL postconditions, only that postconditions have test names. The contract claims all 13 PCs have concrete expect() skeletons but only 4 are shown. An assertion like 'Test skeletons written for at least 80% of postconditions' would require the executor to actually demonstrate the skeletons rather than assert they follow the same pattern."
+      },
+      {
+        "reason": "No assertion checks that referenced plan and TDD artifacts exist. The contract header references docs/plans/2026-03-14-fix-product-stock-column-plan.md and docs/designs/2026-03-14-fix-product-stock-column-tdd.md, but neither is verified to exist. If these are pre-requisites, a broken reference in the contract header is a quality issue."
+      }
+    ],
+    "overall": "The evals are largely well-targeted and the contract is genuinely high quality. The main gap is the absence of assertions that verify the blast radius was grounded in actual code reading rather than inference — the executor explicitly invented file structure, which is a hallucination risk that none of the 10 assertions catch."
+  }
+}

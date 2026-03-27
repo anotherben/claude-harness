@@ -1,0 +1,16 @@
+{
+  "eval_id": 3,
+  "eval_name": "fullstack-feature-verify",
+  "prompt": "The Shopify order ingress feature is complete. 12 files changed across apps/api and apps/admin — including 3 React components (OrderList.jsx, OrderDetail.jsx, OrderStats.jsx), 2 new service files, webhook handler, and migration. Contract has 31 postconditions across API (13), Service (9), UI (6), Cross-layer (3). Verify everything before the PR.",
+  "assertions": [
+    {"text": "Ran verify.sh script (new skill) OR ran 7 manual checks (old skill)", "type": "process"},
+    {"text": "All 7 checks present — check 4 (build) is NOT skipped since frontend files changed", "type": "correctness"},
+    {"text": "Build verification runs vite build and pastes output", "type": "evidence"},
+    {"text": "Postcondition trace covers all 4 layers (API, Service, UI, Cross-layer)", "type": "completeness"},
+    {"text": "Final diff classifies all 12 files", "type": "completeness"},
+    {"text": "Import resolution checks both .js and .jsx files", "type": "correctness"},
+    {"text": "Debug artifact check scans both api and admin", "type": "correctness"},
+    {"text": "Verification report includes postcondition count (31)", "type": "evidence"},
+    {"text": "No banned belief language", "type": "discipline"}
+  ]
+}

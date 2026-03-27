@@ -1,0 +1,131 @@
+{
+  "expectations": [
+    {
+      "text": "Contract file created at docs/contracts/ path",
+      "passed": false,
+      "evidence": "The contract was written to the outputs directory at '.claude/skills/enterprise-contract-workspace/iteration-1/champion/scenario-3/outputs/contract.md', not under 'docs/contracts/'. The transcript Step 15 notes: 'Would normally generate postcondition registry JSON... omitted in this simulation as those are filesystem state files external to the contract artifact itself'. No docs/contracts/ file was created."
+    },
+    {
+      "text": "All postconditions have specific test names",
+      "passed": true,
+      "evidence": "Every postcondition in all four layers (API, Service, UI, Cross-layer) includes a quoted test name in the Test column. Examples: PC-A1 has 'accepts valid orders/create webhook with correct HMAC', PC-S6 has 'replaces line items atomically', PC-U3 has 'renders empty state for empty orders array', PC-X1 has 'order created by webhook is visible in order list'. All 27 PCs have specific test names."
+    },
+    {
+      "text": "Blast radius section is populated with specific function names (not N/A)",
+      "passed": true,
+      "evidence": "Cross-File Siblings table lists: 'rex-soap-protocol webhook handlers' at 'apps/api/src/routes/rexWebhookRouter.js:L22', 'getProducts()' at 'apps/api/src/services/productService.js:L18', 'getSuppliers()' at 'apps/api/src/services/supplierService.js:L12'. Validation functions table lists 'verifyShopifyHmac()', 'authenticateStaff', and 'sanitizeInput()' with file:line references. No N/A entries appear."
+    },
+    {
+      "text": "Consumer map lists specific file:line references",
+      "passed": true,
+      "evidence": "Every row in the Consumer Map has a File:Line column with specific references. Examples: useOrders hook at 'apps/admin/src/hooks/useOrders.js:L14', OrdersTable at 'apps/admin/src/components/OrdersTable.jsx:L28', useOrderDetail at 'apps/admin/src/hooks/useOrderDetail.js:L9', shopifyOrderService.upsertOrder() at 'apps/api/src/services/shopifyOrderService.js:L112'."
+    },
+    {
+      "text": "Error cases cover at least validation failure AND database failure",
+      "passed": true,
+      "evidence": "ERR-8 covers validation failure: 'GET /api/orders with page or pageSize query params that are non-numeric or <= 0 → 400, { error: Invalid pagination parameters }'. ERR-9 covers database failure during webhook processing: 'Database connection failure during webhook processing → 500, { error: Internal error }, log: error: DB failure in upsertOrder'. ERR-10 covers database failure during GET. Both categories explicitly present."
+    },
+    {
+      "text": "NOT in Scope section has 3+ explicit items",
+      "passed": true,
+      "evidence": "The 'NOT in Scope' section contains 8 explicit bullet points including: Shopify webhook registration, order fulfillment/status update/refund handling, modifying existing routes/services/tables, email notifications, order search/filtering/export, role-based access control beyond authenticateStaff, retry queue, and real-time push notifications."
+    },
+    {
+      "text": "Quality gate runs and reports a score",
+      "passed": true,
+      "evidence": "The CONTRACT QUALITY GATE section evaluates all 11 criteria with explicit PASS verdicts for each (Testability, Banned Words, Completeness, Consumer Coverage, Blast Radius, Error Coverage, Invariants, Scope Boundary, Traceability, Tautology Check, Error Strategy) and reports 'Score: 11/11 — LOCKED'."
+    },
+    {
+      "text": "Invariants include tenant_id scoping",
+      "passed": true,
+      "evidence": "INV-1: 'Every INSERT into shopify_orders and shopify_order_line_items includes tenant_id — Grep all INSERT statements in shopifyOrderService.js and shopifyOrderNormalizer.js'. INV-2: 'Every SELECT/UPDATE/DELETE on shopify_orders and shopify_order_line_items scopes to tenant_id via WHERE tenant_id = $N'. Both invariants explicitly mandate tenant_id scoping."
+    },
+    {
+      "text": "Traceability matrix has a Status column",
+      "passed": true,
+      "evidence": "The Traceability Matrix table header is: '| PC | Test File | Test Name | Code File | Code Location | Status |'. All 27 rows have a Status value of 'PENDING', which is correct for a pre-BUILD contract."
+    },
+    {
+      "text": "Contract has postconditions for multiple layers (API, Service, UI, or Cross-layer)",
+      "passed": true,
+      "evidence": "The Postconditions section is organized into four distinct layers: 'API Layer (PC-A)' with 8 PCs, 'Service Layer (PC-S)' with 9 PCs, 'UI Layer (PC-U)' with 8 PCs, and 'Cross-Layer (PC-X)' with 2 PCs. All four layers present."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 1,
+    "total": 10,
+    "pass_rate": 0.9
+  },
+  "execution_metrics": {
+    "tool_calls": null,
+    "total_tool_calls": null,
+    "total_steps": 15,
+    "errors_encountered": 0,
+    "output_chars": 19456,
+    "transcript_chars": 7812
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "27 postconditions across all layers",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Counted: PC-A1 through PC-A8 (8) + PC-S1 through PC-S9 (9) + PC-U1 through PC-U8 (8) + PC-X1 through PC-X2 (2) = 27. Traceability matrix also has exactly 27 rows."
+    },
+    {
+      "claim": "8 tautology check skeletons written and verified as non-tautological",
+      "type": "quality",
+      "verified": true,
+      "evidence": "The Test Assertion Skeletons section contains concrete JavaScript test bodies for PC-A1, PC-A2, PC-A5, PC-S6, PC-S7, PC-S8, PC-U1, and PC-U3. Each has specific expect() assertions that would genuinely fail if the postcondition were violated (e.g., PC-S6 checks line item count after second upsert equals 1, not 3)."
+    },
+    {
+      "claim": "All 7 standard invariants present",
+      "type": "factual",
+      "verified": true,
+      "evidence": "INV-1 through INV-7 all present. INV-7 specifically checks TIMESTAMPTZ on timestamp columns and references the exact migration file names."
+    },
+    {
+      "claim": "Banned words check passed with 0 occurrences",
+      "type": "quality",
+      "verified": false,
+      "evidence": "The quality gate claims 0 banned words, but this was verified mentally in the simulation (transcript Step 14: 'Banned words: PASS (0 occurrences verified mentally)'). No actual grep tool call was made. The claim is plausible — scanning the postconditions section, no instances of 'should', 'probably', 'appropriate', 'reasonable', 'properly', or 'correct' are visible — but the verification method is not mechanically reliable."
+    },
+    {
+      "claim": "Consumer map separation-of-concerns check performed",
+      "type": "quality",
+      "verified": true,
+      "evidence": "The Consumer Map ends with an explicit 'Separation of concerns check' paragraph noting that list and detail endpoints correctly serve different shapes, with the rationale documented."
+    },
+    {
+      "claim": "Transaction boundary documented for multi-step upsert",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The Error Strategy section contains an explicit BEGIN/COMMIT block showing the three-step sequence (DELETE line items, UPSERT order, INSERT line items) with rollback behavior documented."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Contract file created at docs/contracts/ path",
+        "reason": "This assertion checks whether the contract lands at the project-standard path, which is meaningful. However, this is a simulation where the executor writes to an outputs/ directory by design. Consider whether this expectation should apply to simulation runs or only to live runs. If it applies to simulations, the expectation correctly caught a real gap — the executor chose not to create the file at the correct path, citing 'simulation'. If the intent is to test that the executor knows the correct path and uses it, the assertion is valid and correctly failed here."
+      },
+      {
+        "assertion": "Blast radius section is populated with specific function names (not N/A)",
+        "reason": "The assertion passes correctly, but could be tightened: the blast radius identifies cross-file siblings by name, but since all source files are new (no existing siblings in those files), the 'Same-File Siblings' subsection entries are effectively N/A in substance (documented as 'new file, no siblings'). A stronger assertion would require that at least one cross-file sibling is verified with a specific guard check, not just listed."
+      },
+      {
+        "reason": "No assertion checks whether the postconditions avoid banned words (should, probably, appropriate, reasonable, properly, correct). The quality gate claims this was verified, but the verification was mental. A eval that checks for absence of these words in the postconditions section would catch a real failure mode without relying on self-reported quality gate output."
+      },
+      {
+        "reason": "No assertion checks whether the database schema is defined in the contract. This contract contains a full Database Schema Reference section with DDL for both tables including TIMESTAMPTZ, IF NOT EXISTS, UNIQUE constraints, and indexes — high-quality content that no expectation validates."
+      }
+    ],
+    "overall": "Strong contract with well-structured multi-layer postconditions, specific test names, and genuinely non-tautological assertion skeletons. The single failure (docs/contracts/ path) is a real gap — the executor explicitly chose not to create the file at the canonical project path, citing simulation constraints. The evals are generally discriminating; the suggestions above would tighten the weaker assertions."
+  }
+}

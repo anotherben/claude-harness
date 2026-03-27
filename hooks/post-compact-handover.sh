@@ -28,6 +28,11 @@ if [ "$TRIGGER" = "auto" ]; then
   fi
   echo ""
   echo "Also: save important decisions to memory (MEMORY.md)."
+  echo ""
+  echo "ACTIVITY LOG: Write a session activity entry to ~/Documents/Product Ideas/_activity/"
+  echo "  Filename: $(date +%Y-%m-%d-%H%M%S)-claude-session.md"
+  echo "  Include: items worked on, completed, pending, decisions, and side-thoughts."
+  echo "  Frontmatter: type: activity-log, agent: claude, project: {project}, session_start/end timestamps."
 elif [ "$TRIGGER" = "manual" ]; then
   echo "Manual compact. If you're switching tasks, consider /handover-writer."
 fi

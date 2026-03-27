@@ -1,6 +1,6 @@
 ---
 name: vault-update
-description: Move vault items through the lifecycle — close bugs, mark tasks done, block items, promote from inbox, archive completed work. Use when the user says "close that bug", "mark it done", "this is blocked", "archive that", or invokes /vault-update. Also required before enterprise-verify/enterprise-compound (enforced by hook). Handles file moves between vault folders and frontmatter updates.
+description: Move vault items through the lifecycle — claim them, promote them, block them, complete them, archive them, or hand them off. Use when the user says "close that bug", "mark it done", "this is blocked", "archive that", or invokes /vault-update. Also required before enterprise-verify/enterprise-compound. Aligns updates with the Obsidian-first controller contract.
 ---
 
 # vault-update
@@ -8,86 +8,113 @@ description: Move vault items through the lifecycle — close bugs, mark tasks d
 Update the status of a vault item and move it to the correct folder.
 
 Vault path: `/Users/ben/Documents/Product Ideas`
-Vault folders: 00-Inbox, 01-Bugs, 02-Tasks, 03-Ideas, 04-In-Progress, 05-Archive
-Frontmatter schema: type, priority, project, module, agent, status, branch, complexity, blocked-by, related, tags, created, updated
+
+## Controller Contract
+
+Canonical statuses:
+
+- `open`
+- `claimed`
+- `in-progress`
+- `blocked`
+- `done`
+- `wont-do`
+
+Normalize legacy values when you encounter them:
+
+- `active` => `in-progress`
+- `closed` => `done`
+- `completed` => `done`
+
+Required governed fields:
+
+- `id`
+- `project`
+- `status`
+- `updated`
+- `next_action`
+
+Optional but high-value fields:
+
+- `proof_state`
+- `owner_family`
+- `owner_instance`
+- `branch`
+- `worktree_path`
+- `claimed_at`
+- `completed_at`
+- `handoff_from`
+- `handoff_note`
+- `blocked_by`
+- `related`
 
 ## Steps
 
 ### 1. Find the item
 
-Use `mcp__vault-index__search_vault(query="<search term>")` to find matching items. If the search returns multiple results and the correct item is ambiguous, present the options to the user and ask them to choose before proceeding.
+Use `mcp__vault-index__search_vault(query="<search term>")`. If ambiguous, stop and ask the user which item they mean.
 
-### 2. Read the item (if needed)
+### 2. Read the item when needed
 
-Use `mcp__vault-index__get_vault_item(path="<path>")` to read the full item content when you need more context about the item before making changes.
+Use `mcp__vault-index__get_vault_item(path="<path>")` when you need the full note before applying the transition.
 
 ### 3. Apply the frontmatter update
 
-Use the Edit tool on the item's markdown file to update the frontmatter fields. Always set `updated` to the current ISO timestamp (e.g. `2026-03-17T12:00:00Z`).
+Always set `updated` to the current ISO timestamp.
 
-Update the `status` field and any other relevant fields (e.g. `branch`, `blocked-by`, `complexity`).
+When changing status, also ensure:
 
-Also update coordination frontmatter when ownership changes:
-- `owner_family`: `claude` or `codex`
-- `owner_instance`: e.g. `claude:<session_id>` or `codex:<agent-id>`
-- `branch`, `worktree_path`, `claimed_at`, `completed_at`, `handoff_from`, `handoff_note`
+- `next_action` is present for every non-`done` and non-`wont-do` item
+- `proof_state` is set if proof is the reason work remains open
+- ownership fields match the coordination state
+- `blocked_by` uses underscore form, not `blocked-by`
 
 ### 4. Call the matching coordination tool
 
-After updating frontmatter, call the vault-index coordination tool that matches the transition:
+After the note update, call the matching vault-index coordination tool:
 
-| Transition    | Coordination tool call                                                                 |
-|--------------|----------------------------------------------------------------------------------------|
-| **in-progress** | `mcp__vault-index__claim_item(item_id, owner_family="claude", owner_instance="claude:<session_id>", repo_path=<repo>, branch=<branch>, worktree_path=<worktree>)` |
-| **done**        | `mcp__vault-index__complete_item(item_id, owner_instance="claude:<session_id>", note=<summary>)` |
-| **released/paused** | `mcp__vault-index__release_item(item_id, owner_instance="claude:<session_id>", note=<reason>)` |
-| **handoff**    | `mcp__vault-index__reassign_item(item_id, from_owner_instance="claude:<session_id>", to_owner_family=<target>, to_owner_instance=<target_id>, note=<handoff note>)` |
+| Transition | Coordination tool |
+|---|---|
+| `claimed` or `in-progress` | `mcp__vault-index__claim_item(...)` |
+| `done` | `mcp__vault-index__complete_item(...)` |
+| release / pause | `mcp__vault-index__release_item(...)` |
+| handoff | `mcp__vault-index__reassign_item(...)` |
 
-All ownership-changing operations require the caller to be the current owner. If the claim fails, stop and report the error — do not proceed with file moves.
+If the coordination call fails, stop and report the error. Do not continue with file moves that would leave note state and claim state inconsistent.
 
-Also update the session context file when claiming:
-```bash
-echo "item_id=<item_id>" > /tmp/claude-vault-context-${SESSION_ID}
-echo "project=<project>" >> /tmp/claude-vault-context-${SESSION_ID}
-echo "owner_instance=claude:${SESSION_ID}" >> /tmp/claude-vault-context-${SESSION_ID}
+### 5. Move the file if needed
+
+Use these folder rules:
+
+| New status | Target folder |
+|---|---|
+| `claimed` | `04-In-Progress/` |
+| `in-progress` | `04-In-Progress/` |
+| `done` | `05-Archive/` |
+| `wont-do` | `05-Archive/` |
+| `blocked` | stay where it is unless it already belongs in `04-In-Progress/` |
+| `open` | `01-Bugs/`, `02-Tasks/`, `03-Ideas/`, or `00-Inbox/` based on type and completeness |
+
+For inbox promotion:
+
+- bug => `01-Bugs/`
+- task => `02-Tasks/`
+- idea => `03-Ideas/`
+- ambiguous feature or note => keep in `00-Inbox/`
+
+### 6. Refresh the index
+
+Call `mcp__vault-index__index_vault(incremental=true)` after the change.
+
+### 7. Confirm
+
+Print one line:
+
+```text
+<item>: <old status> -> <new status> | folder: <old> -> <new> | coordination: <claim/completed/released/reassigned>
 ```
 
-### 5. Move the file to the appropriate folder
+## Fail-Closed Rule
 
-Based on the new status, determine the target folder:
+If live claim state and note state disagree, repair that before doing anything else.
 
-| New status   | Target folder     | Additional actions                          |
-|-------------|-------------------|---------------------------------------------|
-| in-progress | `04-In-Progress/` | Set `branch` field if a branch name is provided |
-| done        | `05-Archive/`     |                                             |
-| wont-do     | `05-Archive/`     |                                             |
-| blocked     | *(stays in current folder)* | Add the blocked reason to the body of the note |
-
-For **promoting from inbox** (moving out of `00-Inbox/`):
-- Route to `01-Bugs/` if the item type is bug
-- Route to `02-Tasks/` if the item type is task
-- Set the `complexity` field (low, medium, or high)
-
-### 6. Move the file
-
-To move a file between folders:
-1. Write the updated file content to the new path using the Write tool
-2. Delete the old file using Bash: `rm "<old path>"`
-
-Do NOT use `mv` -- write then delete to ensure content is correct at the new location before removing the original.
-
-### 7. Refresh the index
-
-Call `mcp__vault-index__index_vault(incremental=true)` to update the vault index after the change.
-
-### 8. Confirm
-
-Print a single confirmation line showing the transition and coordination state:
-
-```
-Bug #42 "Login timeout": open (01-Bugs) -> done (05-Archive) | claim: completed by claude:<session_id>
-```
-
-### Fail-closed rule
-
-If the live claim update succeeds but the note update fails, repair the note before continuing. If the claim update fails (wrong owner, already claimed), stop and report — do not modify the vault note.

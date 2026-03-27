@@ -174,14 +174,35 @@ Determine the current project from the CWD:
 Check if `Projects/<project-name>/` exists in the vault.
 
 - **Exists**: PASS
-- **Missing**: FIX — Create the folder and a README.md:
+- **Missing**: FIX — Create the folder and a README.md that acts as a project home:
 
-```markdown
+```text
+---
+type: project-home
+status: active
+project: <project-name>
+updated: <date>
+---
+
 # <Project Name>
 
-Project planning and documentation folder.
+Project home for the Obsidian controller.
 
-Created by /vault-init on <date>.
+## Active Delivery
+~~~dataview
+TABLE priority, type, module, status, owner_family, updated
+FROM "01-Bugs" OR "02-Tasks" OR "04-In-Progress" OR "06-Business"
+WHERE project = "<project-name>" AND status != "done" AND status != "wont-do"
+SORT priority ASC, updated DESC
+~~~
+
+## Inbox And Ideas
+~~~dataview
+TABLE type, priority, module, status, updated
+FROM "00-Inbox" OR "03-Ideas"
+WHERE project = "<project-name>" AND status != "done"
+SORT updated DESC
+~~~
 ```
 
 ### 11. Cortex Engine MCP Registered
@@ -242,60 +263,24 @@ Verify the engine works by calling `mcp__skills-index__skill_status()`. If it re
 
 ### 12. Master Dashboard
 
-Check if `Master Dashboard.md` exists in the vault root and contains Dataview queries that reference the current folder structure (00-Inbox through 05-Archive).
+Check if `Master Dashboard.md` exists in the vault root and behaves like the controller entrypoint, not just a queue index.
 
 - **Up to date**: PASS
-- **Outdated or missing**: FIX — Create or update `Master Dashboard.md` with Dataview queries for all 6 queue folders:
+- **Outdated or missing**: FIX — Create or update these pages:
+  - `Master Dashboard.md`
+  - `06-Portfolio/00 Portfolio Control Tower.md`
+  - `06-Portfolio/05 Verification Gap Register.md`
+  - `06-Portfolio/08 Controller Actions.md`
 
-```markdown
-# Master Dashboard
+Minimum controller sections:
 
-## Inbox (Needs Triage)
-```dataview
-TABLE priority, project, type, created
-FROM "00-Inbox"
-WHERE status != "done"
-SORT priority ASC, created ASC
-```
+- `Needs Attention Today`
+- `Project Load`
+- `Ghost Work`
+- `Verification Gaps`
+- `Inbox / Triage`
 
-## Bugs (Agent-Ready)
-```dataview
-TABLE priority, project, module, complexity, created
-FROM "01-Bugs"
-WHERE status = "open"
-SORT priority ASC, created ASC
-```
-
-## Tasks (Agent-Ready)
-```dataview
-TABLE priority, project, module, complexity, created
-FROM "02-Tasks"
-WHERE status = "open"
-SORT priority ASC, created ASC
-```
-
-## Ideas (Parked)
-```dataview
-TABLE priority, project, tags, created
-FROM "03-Ideas"
-SORT created DESC
-```
-
-## In-Progress
-```dataview
-TABLE priority, project, branch, agent, status, updated
-FROM "04-In-Progress"
-SORT updated DESC
-```
-
-## Recently Archived
-```dataview
-TABLE priority, project, type, updated
-FROM "05-Archive"
-SORT updated DESC
-LIMIT 10
-```
-```
+Project homes should be linked from the dashboard and `Projects/<project>/README.md` should exist for active projects.
 
 ## Summary Output
 

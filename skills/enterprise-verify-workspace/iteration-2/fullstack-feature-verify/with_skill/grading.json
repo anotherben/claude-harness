@@ -1,0 +1,17 @@
+{
+  "eval_id": 3,
+  "eval_name": "fullstack-feature-verify",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Ran verify.sh script", "passed": true, "evidence": "Shows verify.sh command without --skip-build, references JSON evidence file"},
+    {"text": "Check 4 NOT skipped (frontend files changed)", "passed": true, "evidence": "Check 4 shows PASS with vite build output: 418 modules, 2.84s"},
+    {"text": "Build verification runs vite build and pastes output", "passed": true, "evidence": "Build Output section shows full vite output with module count and file sizes"},
+    {"text": "Postcondition trace covers all 4 layers", "passed": true, "evidence": "31/31 PCs: API (13/13), Service (9/9), UI (6/6), Cross-layer (3/3)"},
+    {"text": "Final diff classifies all 12 files", "passed": true, "evidence": "Table with all 12 files, each classified as REQUIRED with rationale"},
+    {"text": "Import resolution checks both .js and .jsx files", "passed": true, "evidence": "Check 6 says 'all imports in 12 changed files resolve' (auto from verify.sh)"},
+    {"text": "Debug artifact check scans both api and admin", "passed": true, "evidence": "Shows grep command scanning *.js and *.jsx files"},
+    {"text": "Verification report includes postcondition count (31)", "passed": true, "evidence": "Summary shows 'PASS — 31/31 verified (API 13, Service 9, UI 6, Cross-layer 3)'"},
+    {"text": "No banned belief language", "passed": true, "evidence": "No banned language found"}
+  ],
+  "pass_rate": 1.0
+}

@@ -1,9 +1,8 @@
 #!/bin/bash
 # PreToolUse:Edit|Write hook — suggests domain skills when editing relevant files.
-# Non-blocking. Uses compiled skill hints when available.
-
+# Non-blocking (exit 0 always). Prints a suggestion line that Claude sees.
 HOOK_INPUT=$(cat)
-FILE_PATH=$(echo "$HOOK_INPUT" | python3 -c "import sys,json; d=json.load(sys.stdin).get('tool_input',{}); print(d.get('file_path','') or d.get('path',''))" 2>/dev/null)
+FILE_PATH=$(echo "$HOOK_INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))" 2>/dev/null)
 
 PLATFORM_ROOT="${AGENT_PLATFORM_ROOT:-$HOME/.agent-platform}"
 RULES_FILE="$PLATFORM_ROOT/compiled/skill-hints.json"
@@ -23,7 +22,7 @@ for rule in rules:
     if not skill or skill in seen:
         continue
     match_paths = [str(item).lower() for item in rule.get('match_paths', [])]
-    if any(fragment and fragment in needle for fragment in match_paths):
+    if any(path_fragment and path_fragment in needle for path_fragment in match_paths):
         seen.add(skill)
         message = rule.get('message', '').strip()
         if message:
@@ -40,16 +39,25 @@ PYEOF
 fi
 
 case "$FILE_PATH" in
+  # REX SOAP / fulfillment / inventory planning
   *rexWebStore*|*rexSoap*|*rexFulfillment*|*rexInventoryPlanning*|*retailExpress*)
     echo "SKILL REMINDER: /rex-soap-protocol — protocol detection, envelope construction, error-as-success patterns" ;;
+
+  # Queue / sync workers
   *SyncQueue*|*syncQueue*|*BackgroundSync*|*backgroundSync*|*syncCheckpoint*|*rexSync*|*worker*)
     echo "SKILL REMINDER: /sync-worker — atomic claims, backoff, checkpoint guards, echo detection" ;;
+
+  # Shopify
   *shopify*|*Shopify*)
-    echo "SKILL REMINDER: /shopify-integration — HMAC verification, pagination, idempotency, rate limits" ;;
-  *database/migrations*|*.sql)
-    echo "SKILL REMINDER: /sql-guard — tenant isolation, parameterized queries, migration safety" ;;
+    echo "SKILL REMINDER: /shopify-integration — HMAC verification, pagination, transaction fetching" ;;
+
+  # SQL / database / migrations
+  *database/migrations*|*pool.query*|*.sql)
+    echo "SKILL REMINDER: /sql-guard — tenant isolation, parameterized queries, type traps, Melbourne timezone" ;;
+
+  # Handovers
   *docs/handovers/*)
-    echo "SKILL REMINDER: /handover-writer — structured handover template" ;;
+    echo "SKILL REMINDER: /handover-writer — structured handover doc template" ;;
 esac
 
 exit 0

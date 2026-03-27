@@ -1,14 +1,39 @@
 #!/bin/bash
-# PreToolUse:Agent — create vault pass so subagents inherit parent authorization
-# When the parent dispatches a subagent, this hook writes a vault pass file
-# that the subagent auto-consumes on first edit via require-vault-for-edits.sh.
+# PreToolUse:Agent — enforce preamble + create vault pass for subagents
+# 1. BLOCKS dispatch if agent prompt doesn't contain <!-- PREAMBLE:OK --> marker
+#    (exempt: Explore, Plan, claude-code-guide subagent types — read-only)
+# 2. Creates vault pass so subagents inherit parent authorization
 # Each Agent invocation = one pass = one subagent. Passes expire after 2 hours.
-# Exit 0 always — dispatch is never blocked, but subagent will be blocked
-# if parent had no vault context (no pass created).
 
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('session_id',''))" 2>/dev/null)
 if [ -z "$SESSION_ID" ]; then exit 0; fi
+
+# --- Preamble enforcement ---
+SUBAGENT_TYPE=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('subagent_type',''))" 2>/dev/null)
+AGENT_PROMPT=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tool_input',{}).get('prompt',''))" 2>/dev/null)
+
+# Exempt read-only subagent types
+case "$SUBAGENT_TYPE" in
+  Explore|Plan|claude-code-guide) ;;
+  *)
+    # Check for preamble marker in the prompt
+    if ! echo "$AGENT_PROMPT" | grep -q 'PREAMBLE:OK'; then
+      PREAMBLE_FILE="$HOME/.claude/subagent-preamble.md"
+      echo "BLOCKED: Agent prompt missing preamble marker <!-- PREAMBLE:OK -->." >&2
+      echo "" >&2
+      echo "Include the subagent preamble in your agent prompt. Copy from:" >&2
+      echo "  $PREAMBLE_FILE" >&2
+      echo "" >&2
+      if [ -f "$PREAMBLE_FILE" ]; then
+        echo "--- PREAMBLE CONTENT (paste this into the agent prompt) ---" >&2
+        cat "$PREAMBLE_FILE" >&2
+        echo "--- END PREAMBLE ---" >&2
+      fi
+      exit 2
+    fi
+    ;;
+esac
 
 # Check if parent has vault context
 PARENT_VAULT_MARKER="/tmp/claude-vault-context-${SESSION_ID}"

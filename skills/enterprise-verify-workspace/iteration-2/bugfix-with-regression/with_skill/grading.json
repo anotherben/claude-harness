@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "bugfix-with-regression",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "Ran verify.sh script", "passed": true, "evidence": "Shows 2 verify.sh invocations: Run 1 (FAIL) and Run 2 (PASS) with JSON evidence for both"},
+    {"text": "Check 1 correctly identifies failing test", "passed": true, "evidence": "Run 1 JSON shows test_suite.result=FAIL, output shows exact assertion failure at line 42"},
+    {"text": "Agent STOPS at failure instead of continuing", "passed": true, "evidence": "After Run 1 FAIL: 'Root Cause' section, then 'Fix Applied', then 'Run 2: verify.sh — PASS'"},
+    {"text": "Failure recovery protocol followed (fix, re-run, continue)", "passed": true, "evidence": "Re-ran verify.sh from scratch per skill protocol, not just the failed check"},
+    {"text": "After fixing, all 7 checks completed", "passed": true, "evidence": "Run 2 shows all checks PASS including manual checks"},
+    {"text": "Postcondition trace maps PCs to specific test names", "passed": true, "evidence": "2 PCs derived from task description, each mapped to exact test description"},
+    {"text": "Verification report shows failure recovery log", "passed": true, "evidence": "Evidence Chain table at bottom documents both runs"},
+    {"text": "No banned belief language", "passed": true, "evidence": "No banned language found"}
+  ],
+  "pass_rate": 1.0
+}
