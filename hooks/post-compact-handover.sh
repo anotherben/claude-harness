@@ -29,7 +29,7 @@ if [ "$TRIGGER" = "auto" ]; then
   echo ""
   echo "Also: save important decisions to memory (MEMORY.md)."
   echo ""
-  echo "ACTIVITY LOG: Write a session activity entry to ~/Documents/Product Ideas/_activity/"
+  echo "ACTIVITY LOG: Write a session activity entry to ${OBSIDIAN_VAULT_PATH:-~/Documents/Vault}/_activity/"
   echo "  Filename: $(date +%Y-%m-%d-%H%M%S)-claude-session.md"
   echo "  Include: items worked on, completed, pending, decisions, and side-thoughts."
   echo "  Frontmatter: type: activity-log, agent: claude, project: {project}, session_start/end timestamps."

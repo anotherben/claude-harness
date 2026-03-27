@@ -43,7 +43,7 @@ if [ "$IS_ENTERPRISE" = true ] && [ "$IS_ORCHESTRATOR" = false ]; then
   fi
 
   # Gate C: Check for stale inbox items (>48h old) — sub-stages only
-  INBOX_PATH="$HOME/Documents/Product Ideas/00-Inbox"
+  INBOX_PATH="${OBSIDIAN_VAULT_PATH:-$HOME/Documents/Vault}/00-Inbox"
   if [ -d "$INBOX_PATH" ]; then
     STALE_COUNT=0
     NOW=$(date +%s)

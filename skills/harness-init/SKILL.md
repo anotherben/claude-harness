@@ -106,7 +106,7 @@ Store in `stack-profile.json` under `test_lanes`:
 Detection: scan `package.json` scripts for test-related entries. Check for `playwright.config.*` or `cypress.config.*` files. For monorepos, check each app's package.json.
 
 **Vault path** — check these locations in order:
-1. `~/Documents/Product Ideas` (if exists)
+1. `${OBSIDIAN_VAULT_PATH:-~/Documents/Vault}` (if exists)
 2. `~/Documents/Vault`
 3. `~/Vault`
 4. `~/Documents/Obsidian`

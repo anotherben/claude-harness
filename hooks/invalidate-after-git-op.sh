@@ -33,7 +33,7 @@ import os, sys, glob
 project_dir = sys.argv[1] if len(sys.argv) > 1 else ''
 project_name = os.path.basename(project_dir) if project_dir else None
 
-evidence_dir = os.path.expanduser('~/Documents/Product Ideas/_evidence')
+evidence_dir = os.path.expanduser('${OBSIDIAN_VAULT_PATH:-~/Documents/Vault}/_evidence')
 if not os.path.isdir(evidence_dir):
     sys.exit(0)
 
