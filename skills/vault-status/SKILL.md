@@ -99,11 +99,11 @@ Prefer project/action language over queue dumps. Example:
 |---------|------|-------|--------|---------|----------|
 
 ## Needs Attention Today
-- [critical] helpdesk — Shopify Order Ingress Completeness Watchdog
-- [blocked] bundle-deals — Bundle Deals MVP Remaining
+- [critical] my-project — Shopify Order Ingress Completeness Watchdog
+- [blocked] my-project — Bundle Deals MVP Remaining
 
 ## Ghost Work
-- helpdesk — Supplier portal phase5 rbac users 006
+- my-project — Supplier portal phase5 rbac users 006
 ```
 
 ### 6. Close with one recommendation

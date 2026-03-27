@@ -7,7 +7,7 @@
 
 ## Step 1: Read Skill and References
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
 
 Key observations from skill:
 - This is a BUG FIX — use the Bug Fix Contract structure (not the feature structure)
@@ -17,7 +17,7 @@ Key observations from skill:
 - Banned words check: zero occurrences of "should", "probably", "appropriate", "reasonable", "properly", "correct" in postconditions
 - Every postcondition must have a concrete `expect(X).toBe(Y)` skeleton — tautology check required
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md` in full.
 
 Key observations:
 - Standard invariants INV-1 through INV-7 must all appear; mark N/A with justification if not applicable
@@ -240,7 +240,7 @@ Score: 11/11 — LOCKED
 
 Status changed from DRAFT to LOCKED in contract header.
 
-**Contract artifact:** `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-2/outputs/contract.md`
+**Contract artifact:** `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-2/outputs/contract.md`
 
 ---
 
@@ -260,7 +260,7 @@ NOT in scope: 8 explicit exclusions
 
 Quality gate: 11/11 PASSED — STATUS: LOCKED
 
-Contract: /Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-2/outputs/contract.md
+Contract: {{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-2/outputs/contract.md
 
 Ready to build? (/enterprise-build)
 ```

@@ -7,7 +7,7 @@
 
 ## Step 1: Read the Skill
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/SKILL.md`.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/SKILL.md`.
 
 Key observations:
 - This is a **feature** contract (not a bug fix). Uses the standard contract structure, not the bugfix template.
@@ -260,7 +260,7 @@ Ran all 11 checks mentally (simulated, since codebase is hypothetical):
 ## Step 18: Lock Contract
 
 Changed contract header status from DRAFT to LOCKED. Contract artifact written to:
-`/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/scenario-3/outputs/contract.md`
+`{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/scenario-3/outputs/contract.md`
 
 ---
 

@@ -7,8 +7,8 @@
 
 ## Step 1: Read Skill and Standards
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md` in full.
 
 Key rules extracted:
 - Contract structure: Preconditions → Postconditions (by layer) → Invariants → Error Cases → Consumer Map → Blast Radius → Side Effects → Error Strategy → NOT in Scope → Traceability Matrix → Quality Gate
@@ -198,8 +198,8 @@ Ran all 11 criteria:
 
 ## Output Files
 
-- Contract: `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-3/champion/scenario-3/outputs/contract.md`
-- Transcript: `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-3/champion/scenario-3/transcript.md`
+- Contract: `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-3/champion/scenario-3/outputs/contract.md`
+- Transcript: `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-3/champion/scenario-3/transcript.md`
 
 ---
 

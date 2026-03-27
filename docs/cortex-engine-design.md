@@ -177,7 +177,7 @@ During AST parsing, Cortex classifies symbols with semantic tags. These aren't A
 | `error_handler` | Contains try/catch or .catch() | "Has error handling" |
 | `no_error_handling` | DB/API call without try/catch | "Missing error handling" |
 
-These tags are project-configurable. The helpdesk project would add:
+These tags are project-configurable. The my-project project would add:
 - `rex_soap` — calls to REX SOAP API
 - `shopify_api` — calls to Shopify
 - `queue_worker` — processes items from a queue
@@ -212,7 +212,7 @@ These tags are project-configurable. The helpdesk project would add:
 - File watcher (chokidar) for real-time updates
 - MCP server with: tree, outline, read_symbol, read_symbols, read_range, context, find_symbol, find_text, find_references, find_importers, status, reindex
 
-**Acceptance:** Can replace jcodemunch in helpdesk project. suggest-jcodemunch.sh hook points to Cortex instead.
+**Acceptance:** Can replace jcodemunch in my-project project. suggest-jcodemunch.sh hook points to Cortex instead.
 
 ### Phase 2: Git Integration
 

@@ -170,10 +170,10 @@ npm install --save-dev jest
 ## Step 7: Integration Test Against Real Codebase
 
 **Files:**
-- `cortex-engine/test/integration.test.js` — test against helpdesk codebase
+- `cortex-engine/test/integration.test.js` — test against my-project codebase
 
 **Postconditions:**
-1. Indexes ~/helpdesk (5000+ files) without truncation or error
+1. Indexes ~/my-project (5000+ files) without truncation or error
 2. `cortex_outline` returns symbols for `apps/api/src/services/orderService.js`
 3. `cortex_find_symbol` finds `listOrders` by name
 4. `cortex_read_symbol` returns the function source

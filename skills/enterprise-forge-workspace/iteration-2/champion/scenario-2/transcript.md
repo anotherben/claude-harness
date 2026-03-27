@@ -18,7 +18,7 @@
 
 **Step 1: Read SKILL.md**
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-forge-workspace/skill-snapshot/SKILL.md` in full. Noted:
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-forge-workspace/skill-snapshot/SKILL.md` in full. Noted:
 - 3-part pipeline: Mechanical Checks → Contract Probing → Adversarial Lenses
 - Recycle rule: any bug becomes new PC, gets TDD treatment, forge re-runs
 - 5-iteration recycle cap; monotonic progress requirement; per-check circuit breaker at 3 failures

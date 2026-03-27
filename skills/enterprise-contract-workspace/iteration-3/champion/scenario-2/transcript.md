@@ -9,7 +9,7 @@
 
 ## Step 1: Read the Skill
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
 
 Key observations extracted:
 - Bug fix contracts use the BUG FIX structure (Root Cause → Preconditions Bug Exists → Postconditions Bug Fixed → Blast Radius → Write Site Audit → NOT in Scope)
@@ -24,7 +24,7 @@ Key observations extracted:
 
 ## Step 2: Read the Standards
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md`.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md`.
 
 Key standards applicable to this bug fix:
 - INV-2: Every SELECT must scope to `tenant_id` — must verify the fixed queries retain this

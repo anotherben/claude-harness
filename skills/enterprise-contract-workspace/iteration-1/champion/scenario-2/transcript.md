@@ -7,7 +7,7 @@
 
 ## Step 1: Read the Skill
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
 
 **Key observations from the skill:**
 - This is a BUG FIX scenario, so the skill's "BUG FIX CONTRACTS" section applies (lines 346–399), not the standard feature contract structure.
@@ -20,7 +20,7 @@ Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-sna
 
 ## Step 2: Read the Standards Reference
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md` in full.
 
 **Key observations from standards:**
 - Standard invariants INV-1 through INV-7 must all be listed; those not applicable get N/A + justification.
@@ -215,7 +215,7 @@ Score: 11/11 — Status set to LOCKED.
 
 ## Contract Output
 
-Written to: `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/champion/scenario-2/outputs/contract.md`
+Written to: `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/champion/scenario-2/outputs/contract.md`
 
 ```
 CONTRACT READY

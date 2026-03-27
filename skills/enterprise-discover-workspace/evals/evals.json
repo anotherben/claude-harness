@@ -44,8 +44,8 @@
     },
     {
       "id": 3,
-      "prompt": "Run verify.sh (new version) WITH --profile flag pointing to helpdesk stack-profile.json",
-      "expected_output": "JSON evidence equivalent to old version (since profile describes the same helpdesk stack)",
+      "prompt": "Run verify.sh (new version) WITH --profile flag pointing to my-project stack-profile.json",
+      "expected_output": "JSON evidence equivalent to old version (since profile describes the same my-project stack)",
       "files": [],
       "assertions": [
         {

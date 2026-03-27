@@ -7,7 +7,7 @@ description: Walk through inbox items one by one and route them to the right que
 
 Walk through all inbox items one by one, presenting each to the user and routing it to the correct queue.
 
-Vault path: `/Users/ben/Documents/Product Ideas`
+Vault path: `{{VAULT_PATH}}`
 Vault folders: 00-Inbox, 01-Bugs, 02-Tasks, 03-Ideas, 04-In-Progress, 05-Archive
 Frontmatter schema: type, priority, project, module, agent, status, branch, complexity, blocked-by, related, tags, created, updated
 

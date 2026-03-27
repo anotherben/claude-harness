@@ -7,7 +7,7 @@ description: Move vault items through the lifecycle — claim them, promote them
 
 Update the status of a vault item and move it to the correct folder.
 
-Vault path: `/Users/ben/Documents/Product Ideas`
+Vault path: `{{VAULT_PATH}}`
 
 ## Controller Contract
 

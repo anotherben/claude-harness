@@ -180,4 +180,4 @@
 - **Replaces:** jcodemunch MCP server
 - **Modifies:** suggest-jcodemunch.sh hook (rename + retarget)
 - **Modifies:** install.sh (add cortex-engine to MCP config)
-- **No impact on:** helpdesk source code, vault-index, context-mode, any other MCP server
+- **No impact on:** my-project source code, vault-index, context-mode, any other MCP server

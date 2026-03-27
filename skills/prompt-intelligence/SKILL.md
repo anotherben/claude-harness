@@ -93,7 +93,7 @@ If `.cortex/knowledge.jsonl` has zero feedback entries, seed from existing memor
 | `feedback_e2e_contract_gate.md` | `['feedback', 'testing', 'auto-enforce']` |
 | `feedback_agent_task_sizing.md` | `['feedback', 'sizing', 'auto-enforce']` |
 
-For each memory file that exists in `~/.claude/projects/-Users-ben-helpdesk/memory/`:
+For each memory file that exists in `~/.claude/projects/-Users-you-my-project/memory/`:
 1. Read the file content
 2. Write a JSONL entry to `.cortex/knowledge.jsonl` with the appropriate tags
 3. Mark with `"author": "bootstrap"` so they aren't double-seeded

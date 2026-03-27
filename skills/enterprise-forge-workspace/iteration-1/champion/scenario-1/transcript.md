@@ -872,4 +872,4 @@ Total tests: 21 (all passing)
 Circuit breakers: 0
 ```
 
-Forge report written to: `/Users/ben/helpdesk/.claude/skills/enterprise-forge-workspace/iteration-1/champion/scenario-1/outputs/forge-report.md`
+Forge report written to: `{{PROJECT_DIR}}/.claude/skills/enterprise-forge-workspace/iteration-1/champion/scenario-1/outputs/forge-report.md`

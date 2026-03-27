@@ -1,7 +1,7 @@
 {
   "metadata": {
     "skill_name": "enterprise-verify",
-    "skill_path": "/Users/ben/helpdesk/.claude/skills/enterprise-verify",
+    "skill_path": "{{PROJECT_DIR}}/.claude/skills/enterprise-verify",
     "executor_model": "claude-sonnet-4-6",
     "analyzer_model": "claude-opus-4-6",
     "timestamp": "2026-03-14T10:30:00Z",

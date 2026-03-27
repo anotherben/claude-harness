@@ -9,9 +9,9 @@
 
 ## Step 1: Read Skill and References
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` to understand the contract pipeline, required sections, quality gate criteria, and locking rules.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` to understand the contract pipeline, required sections, quality gate criteria, and locking rules.
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md` to internalize the 7 standard invariants (INV-1 through INV-7), multi-tenant isolation requirements, SQL safety rules, file size limits, route order rules, debug artifact rules, and error handling patterns.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md` to internalize the 7 standard invariants (INV-1 through INV-7), multi-tenant isolation requirements, SQL safety rules, file size limits, route order rules, debug artifact rules, and error handling patterns.
 
 **Key rules extracted from skill:**
 - Contract structure: Preconditions → Postconditions (API/Service/UI/Cross-layer) → Invariants → Error Cases → Consumer Map → Blast Radius → Side Effects → Error Strategy → NOT in Scope → Traceability Matrix
@@ -171,7 +171,7 @@ Ran all 11 checks:
 ## Step 13: Lock and Write Artifact
 
 Changed status from DRAFT to LOCKED. Wrote contract to:
-`/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-1/outputs/contract.md`
+`{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-1/outputs/contract.md`
 
 ---
 
@@ -192,7 +192,7 @@ NOT in scope: 7 explicit exclusions
 
 Quality gate: 11/11 PASSED — STATUS: LOCKED
 
-Contract: /Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-1/outputs/contract.md
+Contract: {{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-1/outputs/contract.md
 
 Ready to build? (/enterprise-build)
 ```

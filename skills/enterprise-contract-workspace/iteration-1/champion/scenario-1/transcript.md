@@ -8,7 +8,7 @@
 
 ## Step 1: Read the Skill
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
 
 **Key sections extracted:**
 - BEFORE YOU START checklist (5 steps: read plan, read TDD, read affected source files, query memory, run blast radius scan)
@@ -23,7 +23,7 @@ Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-sna
 
 ## Step 2: Read the Standards Reference
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md`.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md`.
 
 **Key information extracted:**
 - INV-1 through INV-7 definitions (multi-tenant isolation, SQL safety, file size limits, auth middleware order, error message safety, TIMESTAMPTZ)
@@ -171,7 +171,7 @@ Ran all 11 objective checks:
 ## Step 9: Lock the Contract
 
 Changed status from DRAFT to LOCKED. Wrote final contract to:
-`/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/champion/scenario-1/outputs/contract.md`
+`{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/champion/scenario-1/outputs/contract.md`
 
 Note: In a real pipeline execution, would also:
 1. Save contract to `docs/contracts/2026-03-14-alert-configs-contract.md`

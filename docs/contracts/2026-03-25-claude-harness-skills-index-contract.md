@@ -12,7 +12,7 @@ Port the indexed skill engine into `claude-harness` as a first-class package and
 
 | Fact | Verified Against | Result | Timestamp |
 | --- | --- | --- | --- |
-| Local target repo exists at `/Users/ben/claude-harness` | shell | CONFIRMED | 2026-03-25 |
+| Local target repo exists at `$HOME/claude-harness` | shell | CONFIRMED | 2026-03-25 |
 | Main checkout is dirty and unsuitable for direct edits | `git status --short --branch` | CONFIRMED | 2026-03-25 |
 | Clean worktree exists at `.Codex/worktrees/skills-index-20260325` on `feat/skills-index-20260325` | `git worktree add` | CONFIRMED | 2026-03-25 |
 | Root repo currently lists only `cortex-engine` and `vault-index` as MCP servers | `README.md`, `harness.json` | CONFIRMED | 2026-03-25 |

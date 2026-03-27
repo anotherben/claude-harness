@@ -9,7 +9,7 @@ Quick-capture items into the Obsidian vault with smart routing.
 
 ## Vault Path
 
-`/Users/ben/Documents/Product Ideas`
+`{{VAULT_PATH}}`
 
 ## Controller Contract
 

@@ -246,14 +246,14 @@ Both MCP servers must be registered for the harness to enforce properly. Without
 "cortex-engine": {
   "type": "stdio",
   "command": "node",
-  "args": ["/Users/ben/claude-harness/cortex-engine/src/server.js"]
+  "args": ["$HOME/claude-harness/cortex-engine/src/server.js"]
 }
 ```
 No project path — cortex uses the working directory automatically.
 
 **Codex CLI** — check `codex mcp list` for cortex-engine. If missing:
 ```bash
-codex mcp add cortex-engine -- node /Users/ben/claude-harness/cortex-engine/src/server.js
+codex mcp add cortex-engine -- node $HOME/claude-harness/cortex-engine/src/server.js
 ```
 
 ### vault-index (Obsidian vault query engine)
@@ -263,13 +263,13 @@ codex mcp add cortex-engine -- node /Users/ben/claude-harness/cortex-engine/src/
 "vault-index": {
   "type": "stdio",
   "command": "node",
-  "args": ["/Users/ben/.vault-index/src/server.js"]
+  "args": ["$HOME/.vault-index/src/server.js"]
 }
 ```
 
 **Codex CLI:**
 ```bash
-codex mcp add vault-index -- node /Users/ben/.vault-index/src/server.js
+codex mcp add vault-index -- node $HOME/.vault-index/src/server.js
 ```
 
 ### Verification

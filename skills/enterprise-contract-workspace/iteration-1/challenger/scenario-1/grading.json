@@ -3,7 +3,7 @@
     {
       "text": "Contract file created at docs/contracts/ path",
       "passed": false,
-      "evidence": "The contract summary states the output is at 'docs/contracts/2026-03-14-alert-configs-contract.md', but no such file exists. The file is only present at the sandbox outputs path '/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-1/outputs/contract.md'. A glob of /Users/ben/helpdesk/docs/contracts/ confirms no alert-configs contract file exists there. The executor wrote the file to the wrong location."
+      "evidence": "The contract summary states the output is at 'docs/contracts/2026-03-14-alert-configs-contract.md', but no such file exists. The file is only present at the sandbox outputs path '{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-1/outputs/contract.md'. A glob of {{PROJECT_DIR}}/docs/contracts/ confirms no alert-configs contract file exists there. The executor wrote the file to the wrong location."
     },
     {
       "text": "All postconditions have specific test names (not generic placeholders)",
@@ -71,7 +71,7 @@
       "claim": "Contract written to docs/contracts/2026-03-14-alert-configs-contract.md",
       "type": "factual",
       "verified": false,
-      "evidence": "The file does not exist at that path. Glob of /Users/ben/helpdesk/docs/contracts/ shows no alert-configs contract. The file was only written to the sandbox outputs directory."
+      "evidence": "The file does not exist at that path. Glob of {{PROJECT_DIR}}/docs/contracts/ shows no alert-configs contract. The file was only written to the sandbox outputs directory."
     },
     {
       "claim": "Banned words grep count: 0",

@@ -185,10 +185,10 @@ For each file:
 
 ## 12. Success Criteria (Phase 1)
 
-- [ ] Indexes helpdesk codebase (5000+ files) without truncation
+- [ ] Indexes my-project codebase (5000+ files) without truncation
 - [ ] Handles .cjs files natively (no staging bridge)
 - [ ] File changes reflected in index within 200ms
 - [ ] All 12 MCP tools return correct results on fixture files
-- [ ] Can replace jcodemunch in helpdesk project (update hooks + settings)
+- [ ] Can replace jcodemunch in my-project project (update hooks + settings)
 - [ ] Startup time < 5s on warm cache, < 30s on cold (full reindex)
 - [ ] Zero external API dependencies (no Anthropic/Google keys needed)

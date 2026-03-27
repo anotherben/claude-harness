@@ -1,7 +1,7 @@
 #!/bin/bash
 # PostToolUse:Bash — record JSON test evidence to local file + Obsidian vault
 # Writes structured evidence to .claude/evidence/last-test-run.json (local, hooks read this)
-# AND to ~/Documents/Product Ideas/_evidence/firearm-systems-test-evidence.md (shared, vault-index reads this)
+# AND to ~/Documents/Product Ideas/_evidence/my-project-test-evidence.md (shared, vault-index reads this)
 # Stale-marking is handled exclusively by invalidate-after-git-op.sh.
 
 EVIDENCE_DIR="$CLAUDE_PROJECT_DIR/.claude/evidence"
@@ -221,7 +221,7 @@ with open(evidence_file, 'w') as f:
 
 # --- Detect project from CLAUDE_PROJECT_DIR ---
 project_dir = os.environ.get('CLAUDE_PROJECT_DIR', '')
-project_name = os.path.basename(project_dir) if project_dir else 'firearm-systems'
+project_name = os.path.basename(project_dir) if project_dir else 'my-project'
 
 # --- Write Obsidian vault note (cross-agent visibility) ---
 vault_path = os.path.expanduser('~/Documents/Product Ideas')

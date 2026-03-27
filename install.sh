@@ -11,7 +11,7 @@ set -euo pipefail
 #   ./install.sh --project <path>   # Project setup only (assumes global already done)
 #   ./install.sh --update           # Update global hooks/skills from repo
 
-VERSION="2.0.0"
+VERSION="2.1.0"
 HARNESS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GLOBAL_DIR="$HOME/.claude"
 MODE="full"  # full | global | project | update

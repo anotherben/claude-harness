@@ -34,7 +34,7 @@ Built a complete code intelligence MCP server that outperforms jcodemunch on eve
 
 - **97 tests** across **14 test suites** — all pass
 - **25 MCP tools** registered
-- Integration test: 1,645 files indexed from helpdesk/apps/api/src, 1ms queries
+- Integration test: 1,645 files indexed from my-project/apps/api/src, 1ms queries
 
 ### Key Files
 
@@ -71,7 +71,7 @@ Add to `~/.claude/settings.json` (or per-project settings):
   "mcpServers": {
     "cortex-engine": {
       "command": "node",
-      "args": ["/Users/ben/claude-harness/cortex-engine/src/server.js", "/Users/ben/helpdesk"]
+      "args": ["$HOME/claude-harness/cortex-engine/src/server.js", "{{PROJECT_DIR}}"]
     }
   }
 }
@@ -81,7 +81,7 @@ For multi-repo, the server needs to be updated to accept multiple roots via CLI 
 
 ### 2. Update suggest-jcodemunch.sh → suggest-cortex.sh
 
-File: `/Users/ben/helpdesk/.claude/hooks/suggest-jcodemunch.sh`
+File: `{{PROJECT_DIR}}/.claude/hooks/suggest-jcodemunch.sh`
 
 Changes needed:
 - Rename to `suggest-cortex.sh`
@@ -90,7 +90,7 @@ Changes needed:
 
 ### 3. Update /vault-context skill
 
-File: `/Users/ben/.claude/skills/vault-context/SKILL.md`
+File: `$HOME/.claude/skills/vault-context/SKILL.md`
 
 Step 2 currently calls `mcp__jcodemunch__get_repo_outline`. Replace with:
 - `cortex_status` for repo stats
@@ -101,7 +101,7 @@ Update the project-to-repo mapping to use cortex repo names instead of jcodemunc
 
 ### 4. Update /vault-init skill — check 11
 
-File: `/Users/ben/.claude/skills/vault-init/SKILL.md`
+File: `$HOME/.claude/skills/vault-init/SKILL.md`
 
 Replace check 11 (jcodemunch Index) with a cortex-engine check:
 - Verify cortex-engine MCP is in settings.json mcpServers
@@ -124,7 +124,7 @@ Read `~/.claude/settings.json` and check for a `cortex-engine` entry in `mcpServ
 \`\`\`json
 "cortex-engine": {
   "command": "node",
-  "args": ["/Users/ben/claude-harness/cortex-engine/src/server.js", "<cwd>"]
+  "args": ["$HOME/claude-harness/cortex-engine/src/server.js", "<cwd>"]
 }
 \`\`\`
 
@@ -132,7 +132,7 @@ Merge into existing mcpServers — do NOT overwrite other entries.
 
 Also add to Codex if available:
 \`\`\`bash
-codex mcp add cortex-engine -- node /Users/ben/claude-harness/cortex-engine/src/server.js <cwd>
+codex mcp add cortex-engine -- node $HOME/claude-harness/cortex-engine/src/server.js <cwd>
 \`\`\`
 
 Note: cortex-engine replaces jcodemunch. If jcodemunch is present, it can remain as a fallback during transition — remove it when confident cortex is stable.
@@ -163,7 +163,7 @@ chokidar v5 is ESM-only, incompatible with Jest/CommonJS. Pinned to v3. If upgra
 `tree-sitter@0.21.1`, `tree-sitter-javascript@0.21.4`, `tree-sitter-typescript@0.23.2` — pinned for peer dependency compatibility. Do not upgrade tree-sitter to 0.25 without also upgrading tree-sitter-typescript.
 
 ### Full-repo indexing
-With the ignore fix, full helpdesk indexes 3,058 files (not 199K). The function-based ignore in `watcher.js` checks path segments against a Set of dir names — more reliable than chokidar's glob-based ignore.
+With the ignore fix, full my-project indexes 3,058 files (not 199K). The function-based ignore in `watcher.js` checks path segments against a Set of dir names — more reliable than chokidar's glob-based ignore.
 
 ## How to Continue
 

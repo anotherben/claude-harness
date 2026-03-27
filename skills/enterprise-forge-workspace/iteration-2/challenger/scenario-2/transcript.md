@@ -10,7 +10,7 @@ This transcript records agent reasoning and decisions in execution order. It is 
 
 ## Initialization
 
-**Read**: `/Users/ben/helpdesk/.claude/skills/enterprise-forge-workspace/iteration-2/challenger/SKILL.md` — loaded forge protocol.
+**Read**: `{{PROJECT_DIR}}/.claude/skills/enterprise-forge-workspace/iteration-2/challenger/SKILL.md` — loaded forge protocol.
 **Read**: `references/mechanical-checks.md` — loaded 7 binary checks with bash commands.
 **Read**: `references/adversarial-lenses.md` — loaded 5 adversarial lenses with finding formats.
 

@@ -4,11 +4,11 @@
 
 A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) and [Codex CLI](https://github.com/openai/codex) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
 
-**Current release:** `v2.0.0`
+**Current release:** `v2.1.0`
 
-> **v2.0.0 — Global-first architecture.** Hooks, skills, and commands now install to `~/.claude/` globally — no more stale per-project copies. HMAC-signed markers prevent agents from forging plan approval or vault context. Bash file writes to source code are detected and reverted. Evidence files are HMAC-signed and tamper-checked. The `block-bash-file-writes` hook prevents agents from modifying hooks, settings, or evidence via shell commands.
+> **v2.1.0 — `claude-unlock` 2FA elevation + zero-friction `/enterprise`.** Protected infrastructure (hooks, settings, evidence) now requires a one-time 6-digit code from `claude-unlock` before agents can write to them. The `/enterprise` orchestrator auto-handles vault context and capture — just run `/enterprise` and the full pipeline executes start to finish. Resume by running `/enterprise` again.
 
-Three built-in MCP servers. An Obsidian vault as the shared brain. 57 MCP tools across code, vault, and skill retrieval. 64 enterprise skills. 44 quality gate hooks. 11 slash commands. Zero escape hatches.
+Three built-in MCP servers. An Obsidian vault as the shared brain. 57 MCP tools across code, vault, and skill retrieval. 64 enterprise skills. 45 quality gate hooks. 11 slash commands. Zero escape hatches.
 
 ---
 
@@ -27,8 +27,24 @@ Three built-in MCP servers. An Obsidian vault as the shared brain. 57 MCP tools 
 | Agent `echo`s fake test summary to inflate counts | Output parser strips non-ANSI lines, uses last match |
 | Agent hand-writes evidence JSON | HMAC integrity signature on evidence files |
 | Agent `cp`/`sed -i` to modify hooks | `block-bash-file-writes.sh` blocks write verbs on protected paths |
-| Agent uses Edit/Write on hooks or settings | `protect-files.sh` blocks `.claude/hooks/`, `.git/hooks/`, settings |
+| Agent uses Edit/Write on hooks or settings | `protect-files.sh` blocks unless `claude-unlock` code provided |
 | Agent reads hook source to find exploit patterns | HMAC salts are in the hooks themselves — forging requires the agent to deliberately commit fraud visible in the session transcript |
+
+### `claude-unlock` — 2FA for Infrastructure Edits
+
+When the agent legitimately needs to modify protected files (hook updates, settings changes), the user provides a one-time elevation code:
+
+```bash
+$ claude-unlock
+
+  Elevation code: 847291
+  Expires: 10 minutes
+  Single use — burned after one write operation
+```
+
+The agent includes `ELEVATE=847291` in its command or edit. The hook verifies the code, allows the write, and burns the code. Marker forgery (`/tmp/claude-plan-approved-*`) is **never elevatable** — no code can unlock it.
+
+Install: `cp ~/claude-harness/hooks/claude-unlock.sh /usr/local/bin/claude-unlock`
 
 ### Updated Counts
 | Component | v1.9.0 | v2.0.0 |
@@ -158,7 +174,7 @@ your-project/                           # PER-PROJECT — minimal footprint
 ### 1. Clone and install globally
 
 ```bash
-git clone https://github.com/anotherben/claude-harness.git ~/claude-harness
+git clone https://github.com/<your-org>/claude-harness.git ~/claude-harness
 cd ~/claude-harness && ./install.sh --global
 ```
 

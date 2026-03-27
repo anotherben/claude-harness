@@ -11,7 +11,7 @@ Accept a stream of consciousness. Parse it into vault items. Confirm. Done.
 
 ## Vault Path
 
-`/Users/ben/Documents/Product Ideas`
+`{{VAULT_PATH}}`
 
 ## Domain Detection (Per-Item)
 
@@ -39,7 +39,7 @@ Every item gets classified into a **domain** first, then a type. Domain determin
 For items classified as `dev` domain, infer the project:
 
 ### Priority order:
-1. **Explicit mention**: "on gundesk", "in helpdesk", "for cortex"
+1. **Explicit mention**: "on my-project", "in my-project", "for cortex"
 2. **Project keyword match**: scan against Known Project Keywords table
 3. **Inherit from context**: previous item in same dump named a project and topic continues
 4. **CWD fallback**: use CWD mapping if nothing else matches
@@ -49,25 +49,25 @@ For items classified as `dev` domain, infer the project:
 
 | Keywords (case-insensitive) | Project |
 |---|---|
-| helpdesk, help desk, HD | helpdesk |
-| gundesk, gun desk, GD, firearm, firearms | firearm-systems |
-| flexi, flexible deposits, flex deposits | flexible-deposits |
-| addons, flexi-addons, flexi addons | flexi-addons |
-| banners, shopify banners, shopify-banners | shopify-banners |
-| bundles, bundle deals, bundle-deals | bundle-deals |
+| my-project, help desk, HD | my-project |
+| my-project, gun desk, GD, firearm, firearms | my-project |
+| flexi, flexible deposits, flex deposits | my-project |
+| addons, my-project, flexi addons | my-project |
+| banners, shopify banners, my-project | my-project |
+| bundles, bundle deals, my-project | my-project |
 | cortex | cortex |
 
 ### CWD Fallback (only if text-based inference fails)
 
 | CWD contains | Project |
 |---|---|
-| `/Users/ben/helpdesk` | helpdesk |
-| `/Users/ben/Projects/firearm-systems` | firearm-systems |
-| `/Users/ben/Projects/flexible-deposits` | flexible-deposits |
-| `/Users/ben/Projects/flexi-addons` | flexi-addons |
-| `/Users/ben/Projects/shopify-banners` | shopify-banners |
-| `/Users/ben/bundle-deals` | bundle-deals |
-| `gundesk` or `gun-desk` | gundesk |
+| `{{PROJECT_DIR}}` | my-project |
+| `{{PROJECT_DIR}}` | my-project |
+| `{{PROJECT_DIR}}` | my-project |
+| `{{PROJECT_DIR}}` | my-project |
+| `{{PROJECT_DIR}}` | my-project |
+| `{{PROJECT_DIR}}` | my-project |
+| `my-project` or `gun-desk` | my-project |
 | `cortex` | cortex |
 | Otherwise | `general` |
 
@@ -92,7 +92,7 @@ Split the stream into individual actionable items. Each item gets **independentl
 Look for:
 - **Sentence boundaries** and topic shifts
 - **Signal phrases**: "also", "oh and", "another thing", "what about", "I should", "we need to", "bug:", "idea:", "todo:", "feature:", "maybe we could"
-- **Batched-prefix patterns**: When the user says "bugs on helpdesk: X, Y, Z" — parse X, Y, Z as **separate items**, all inheriting the prefix type (bug) and project (helpdesk). Same for "personal stuff: call dentist, buy milk, renew rego" → 3 separate personal items.
+- **Batched-prefix patterns**: When the user says "bugs on my-project: X, Y, Z" — parse X, Y, Z as **separate items**, all inheriting the prefix type (bug) and project (my-project). Same for "personal stuff: call dentist, buy milk, renew rego" → 3 separate personal items.
 - **Comma/and-separated lists** after a type prefix: "the login is broken, the search is slow, and the export times out" → 3 separate bugs
 
 ### Type classification
@@ -204,7 +204,7 @@ Captured {N} items from your brain dump:
 
 | # | Domain   | Type    | Project  | Priority | Routed To   | Summary                    | Flag   |
 |---|----------|---------|----------|----------|-------------|----------------------------|--------|
-| 1 | dev      | bug     | helpdesk | high     | 01-Bugs     | PO approval fails on...    |        |
+| 1 | dev      | bug     | my-project | high     | 01-Bugs     | PO approval fails on...    |        |
 | 2 | personal | task    | general  | medium   | 07-Personal | Call the accountant        |        |
 | 3 | learning | idea    | general  | low      | 08-Learning | Look into Rust for APIs    |        |
 | 4 | creative | idea    | general  | low      | 09-Creative | SaaS for gun dealers       |        |

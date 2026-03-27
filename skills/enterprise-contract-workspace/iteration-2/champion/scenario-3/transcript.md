@@ -7,7 +7,7 @@
 
 ## Step 1: Read the Skill
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full.
 
 Key obligations extracted:
 - Contract must exist before any source file edits
@@ -22,7 +22,7 @@ Key obligations extracted:
 
 ## Step 2: Read the Standards Reference
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md` in full.
 
 Key constraints extracted:
 - Multi-tenant: every INSERT needs `tenant_id` from `req.user.tenant_id`, every SELECT scopes to tenant
@@ -238,8 +238,8 @@ Score: 11/11 — contract status changed from DRAFT to LOCKED.
 
 ## Step 15: Output Files Written
 
-- Contract: `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-3/outputs/contract.md`
-- Transcript: `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-3/transcript.md`
+- Contract: `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-3/outputs/contract.md`
+- Transcript: `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/champion/scenario-3/transcript.md`
 
 ---
 

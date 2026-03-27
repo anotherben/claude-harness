@@ -71,7 +71,7 @@ Result: PASS
 ### Check 2 — Postcondition Trace
 
 Contract source: Derived from task description + design doc
-  /Users/ben/helpdesk/docs/plans/2026-03-14-shopify-order-ingress-ownership-pilot-design.md
+  {{PROJECT_DIR}}/docs/plans/2026-03-14-shopify-order-ingress-ownership-pilot-design.md
 
 #### API Layer Postconditions (13)
 

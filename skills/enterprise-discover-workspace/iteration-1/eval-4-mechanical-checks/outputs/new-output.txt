@@ -1,4 +1,4 @@
-[profile] Loading stack profile from /Users/ben/helpdesk/.claude/enterprise-state/stack-profile.json
+[profile] Loading stack profile from {{PROJECT_DIR}}/.claude/enterprise-state/stack-profile.json
 === M1: Import Resolution ===
   PASS
 === M2: Uncommitted Files ===

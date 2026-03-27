@@ -9,7 +9,7 @@ Shelve a vault item with a reminder. No guilt, no loss — it stays where it is 
 
 ## Vault Path
 
-`/Users/ben/Documents/Product Ideas`
+`{{VAULT_PATH}}`
 
 ## Step 1: Identify the Item
 

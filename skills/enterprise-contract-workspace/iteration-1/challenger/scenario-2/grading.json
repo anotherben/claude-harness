@@ -3,7 +3,7 @@
     {
       "text": "Contract file created at docs/contracts/ path",
       "passed": false,
-      "evidence": "The contract was written to '/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md'. The transcript Step 14 confirms: 'Wrote contract to: /Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md'. No file exists at any docs/contracts/ path."
+      "evidence": "The contract was written to '{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md'. The transcript Step 14 confirms: 'Wrote contract to: {{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md'. No file exists at any docs/contracts/ path."
     },
     {
       "text": "All postconditions have specific test names",

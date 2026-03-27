@@ -195,7 +195,7 @@ Checks run mentally (simulation mode — no grep available against real codebase
 ## Step 14: Output Files
 
 Wrote contract to:
-`/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md`
+`{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md`
 
 ---
 
@@ -216,7 +216,7 @@ NOT in scope: 6 explicit exclusions
 
 Quality gate: 11/11 PASSED — STATUS: LOCKED
 
-Contract: /Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md
+Contract: {{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-2/outputs/contract.md
 
 Ready to build? (/enterprise-build)
 ```

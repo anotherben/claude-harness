@@ -6,7 +6,7 @@
 
 Fixed the full-tier installer so it emits valid command strings, removed the retired `fleet-commander` and `full-cycle*` skill packages from the repo, and updated the shipped manifests/docs so `claude-harness` now exposes only the current skill surface.
 
-Also added a project-level [cortex.config.js](/Users/ben/claude-harness/.Codex/worktrees/skills-index-20260325/cortex.config.js) so `cortex-engine` ignores:
+Also added a project-level [cortex.config.js]($HOME/claude-harness/.Codex/worktrees/skills-index-20260325/cortex.config.js) so `cortex-engine` ignores:
 
 - `.codex`
 - `.agents`

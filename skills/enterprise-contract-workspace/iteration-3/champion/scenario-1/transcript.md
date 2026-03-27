@@ -7,9 +7,9 @@
 
 ## Step 1: Read the Skill and Standards
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` to understand the contract structure, required sections, quality gate criteria, and anti-patterns.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` to understand the contract structure, required sections, quality gate criteria, and anti-patterns.
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md` to understand the 7 standard invariants (INV-1 through INV-7), multi-tenant isolation requirements, SQL safety rules, file size limits, and authentication/route order patterns.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md` to understand the 7 standard invariants (INV-1 through INV-7), multi-tenant isolation requirements, SQL safety rules, file size limits, and authentication/route order patterns.
 
 Key constraints noted from standards:
 - Every INSERT must include `tenant_id` sourced from `req.user.tenant_id` (not user input)
@@ -137,7 +137,7 @@ Ran all 11 quality gate checks against the draft contract:
 Status changed from DRAFT to LOCKED.
 
 Contract written to:
-`/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-3/champion/scenario-1/outputs/contract.md`
+`{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-3/champion/scenario-1/outputs/contract.md`
 
 ---
 

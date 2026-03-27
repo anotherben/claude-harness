@@ -9,7 +9,7 @@
 
 **Skill section followed**: "BEFORE YOU START"
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full. Noted:
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/skill-snapshot/SKILL.md` in full. Noted:
 - Contract structure: Preconditions → Postconditions (API/Service/UI/Cross-layer) → Invariants → Error Cases → Consumer Map → Blast Radius → Side Effects → Error Strategy → NOT in Scope → Traceability Matrix
 - Quality gate has 11 objective criteria, all must pass before locking
 - Postconditions must be traceable to specific test name AND code location
@@ -17,7 +17,7 @@ Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/skill-sna
 - Consumer map requires grepping codebase for every consumer; since this is a simulation, I inventoried all plausible consumers from the feature description
 - Transaction boundaries must be explicitly defined for multi-step operations
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise/references/standards.md`. Noted:
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise/references/standards.md`. Noted:
 - INV-1 through INV-7 are mandatory (all 7 must appear)
 - Route order: public webhook routes BEFORE `authenticateStaff`
 - Raw body required for HMAC verification (must be called out in preconditions)

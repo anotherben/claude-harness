@@ -2,7 +2,7 @@
 ## Scenario 3 | enterprise-forge challenger SKILL.md
 
 **Date**: 2026-03-14
-**Skill**: `/Users/ben/helpdesk/.claude/skills/enterprise-forge-workspace/iteration-2/challenger/SKILL.md`
+**Skill**: `{{PROJECT_DIR}}/.claude/skills/enterprise-forge-workspace/iteration-2/challenger/SKILL.md`
 **Feature**: Shopify Order Ingress (2 new tables, 1 webhook handler, 4 API endpoints, 12 files)
 
 ---

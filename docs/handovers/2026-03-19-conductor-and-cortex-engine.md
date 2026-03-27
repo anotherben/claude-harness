@@ -56,7 +56,7 @@ Enterprise pipeline run: DISCOVER → BRAINSTORM → PLAN → CONTRACT complete.
 5. **Step 4: Index Engine** — `src/index.js` + `test/index.test.js` — 3 postconditions (PC-14 through PC-16)
 6. **Step 5: MCP Server + Tools** — `src/server.js` + `src/tools/*.js` + `test/server.test.js` — 4 postconditions (PC-17 through PC-20)
 7. **Step 6: CLI Entry Point** — `bin/cortex.js` + config
-8. **Step 7: Integration Test** — test against real helpdesk codebase
+8. **Step 7: Integration Test** — test against real my-project codebase
 9. **Step 8: Hook Migration** — update suggest-jcodemunch.sh → suggest-cortex.sh
 
 After BUILD: REVIEW → FORGE → VERIFY → COMPOUND → COMPLETE

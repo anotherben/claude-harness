@@ -7,7 +7,7 @@
 
 ## Step 1: Read the Skill
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/SKILL.md` in full.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/SKILL.md` in full.
 
 Key structure extracted:
 - **Before You Start**: 5 preparatory steps (read plan, read TDD, read source files, query memory, blast radius scan)
@@ -252,7 +252,7 @@ Score: 11/11 — LOCKED
 ## Step 15: Final Output
 
 Contract written to:
-`/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-1/outputs/contract.md`
+`{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-1/challenger/scenario-1/outputs/contract.md`
 
 Status set to `LOCKED`.
 

@@ -9,7 +9,7 @@ Full auto-setup for the vault+enterprise ecosystem in a new project. Runs a 12-p
 
 ## Vault Path
 
-`/Users/ben/Documents/Product Ideas`
+`{{VAULT_PATH}}`
 
 ## Execution Mode
 
@@ -55,13 +55,13 @@ Look for `dataview` and `templater` in the output.
 Check if obsidian-skills are present in the vault's `.claude/` folder:
 
 ```bash
-ls "/Users/ben/Documents/Product Ideas/.claude/"
+ls "{{VAULT_PATH}}/.claude/"
 ```
 
 Look for these directories/files: `obsidian-markdown`, `obsidian-bases`, `json-canvas`, `obsidian-cli`
 
 - **All present**: PASS
-- **Missing**: FIX — Clone from https://github.com/kepano/obsidian-skills and copy the relevant skill folders to `/Users/ben/Documents/Product Ideas/.claude/`. Only copy the 4 skills listed above.
+- **Missing**: FIX — Clone from https://github.com/kepano/obsidian-skills and copy the relevant skill folders to `{{VAULT_PATH}}/.claude/`. Only copy the 4 skills listed above.
 
 ```bash
 cd /tmp && git clone --depth 1 https://github.com/kepano/obsidian-skills.git obsidian-skills-repo 2>/dev/null
@@ -104,9 +104,9 @@ Read `~/.claude.json` and check for a `vault-index` entry in `mcpServers`.
   "mcpServers": {
     "vault-index": {
       "command": "node",
-      "args": ["/Users/ben/.vault-index/src/server.js"],
+      "args": ["$HOME/.vault-index/src/server.js"],
       "env": {
-        "VAULT_PATH": "/Users/ben/Documents/Product Ideas"
+        "VAULT_PATH": "{{VAULT_PATH}}"
       }
     }
   }
@@ -167,7 +167,7 @@ Determine the current project from the CWD:
 - Check if it matches any existing mapping in the vault-capture skill
 
 - **Mapped**: PASS
-- **Not mapped**: FIX — Add a new row to the project inference table in vault-capture's SKILL.md. Derive the project name from the directory name (e.g., `/Users/ben/Projects/my-app` → `my-app`). Ask the user to confirm the project name before writing.
+- **Not mapped**: FIX — Add a new row to the project inference table in vault-capture's SKILL.md. Derive the project name from the directory name (e.g., `$HOME/Projects/my-app` → `my-app`). Ask the user to confirm the project name before writing.
 
 ### 10. Project Folder in Vault
 
@@ -218,7 +218,7 @@ Read `~/.claude.json` and check for a `cortex-engine` entry in `mcpServers`.
 "cortex-engine": {
   "type": "stdio",
   "command": "node",
-  "args": ["/Users/ben/claude-harness/cortex-engine/src/server.js"]
+  "args": ["$HOME/claude-harness/cortex-engine/src/server.js"]
 }
 ```
 
@@ -228,7 +228,7 @@ Merge into existing mcpServers — do NOT overwrite other entries.
 
 Also add to Codex if available:
 ```bash
-codex mcp add cortex-engine -- node /Users/ben/claude-harness/cortex-engine/src/server.js
+codex mcp add cortex-engine -- node $HOME/claude-harness/cortex-engine/src/server.js
 ```
 
 If `jcodemunch` is present in `mcpServers`, **remove it** — cortex-engine is the replacement. Delete the entire `jcodemunch` entry from `~/.claude.json`.
@@ -248,7 +248,7 @@ Read `~/.claude.json` and check for a `skills-index` entry in `mcpServers`.
 "skills-index": {
   "type": "stdio",
   "command": "node",
-  "args": ["/Users/ben/claude-harness/skills-index/src/server.js"]
+  "args": ["$HOME/claude-harness/skills-index/src/server.js"]
 }
 ```
 
@@ -256,7 +256,7 @@ Merge into existing `mcpServers` — do NOT overwrite other entries.
 
 Also add to Codex if available:
 ```bash
-codex mcp add skills-index -- node /Users/ben/claude-harness/skills-index/src/server.js
+codex mcp add skills-index -- node $HOME/claude-harness/skills-index/src/server.js
 ```
 
 Verify the engine works by calling `mcp__skills-index__skill_status()`. If it returns counts and freshness data, the index is live.

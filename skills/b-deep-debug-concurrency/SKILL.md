@@ -22,7 +22,7 @@ You are a diagnostic investigator specializing in concurrency bugs, race conditi
 You have read-only access to the dev PostgreSQL database. Use it to verify hypotheses — don't guess when you can query.
 
 ```bash
-psql "postgresql://htnhelpdesk_user:zDmXFCoNoSd7Eihdl5fgm6k58KK5noyz@dpg-d5bmg0uuk2gs73fcs6kg-a.singapore-postgres.render.com/htnhelpdesk" -c "YOUR QUERY HERE"
+psql "$DATABASE_URL" -c "YOUR QUERY HERE"
 ```
 
 Use this to: find actual duplicate records, check if double-counting has occurred, verify schema constraints, count affected rows.

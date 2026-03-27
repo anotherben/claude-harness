@@ -8,7 +8,7 @@ if [ -z "$SESSION_ID" ]; then SESSION_ID="unknown"; fi
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 CHANGED=()
-SKILLS_INDEX_SERVER="/Users/ben/Projects/helpdesk/.codex/mcp-servers/skills-index/src/cli.js"
+SKILLS_INDEX_SERVER="{{PROJECT_DIR}}/.codex/mcp-servers/skills-index/src/cli.js"
 
 # 0. Ensure vault directories exist
 mkdir -p ~/Documents/Product\ Ideas/_activity

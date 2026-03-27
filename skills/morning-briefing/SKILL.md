@@ -11,7 +11,7 @@ Your ADHD-friendly start-of-day system. Conversational, direct, and actionable. 
 
 ## Vault Path
 
-`/Users/ben/Documents/Product Ideas`
+`{{VAULT_PATH}}`
 
 ## Vault Folders
 
@@ -32,14 +32,14 @@ Your ADHD-friendly start-of-day system. Conversational, direct, and actionable. 
 
 | Project | Path |
 |---|---|
-| helpdesk | `/Users/ben/helpdesk` |
-| firearm-systems | `/Users/ben/Projects/firearm-systems` |
-| flexible-deposits | `/Users/ben/Projects/flexible-deposits` |
-| flexi-addons | `/Users/ben/Projects/flexi-addons` |
-| shopify-banners | `/Users/ben/Projects/shopify-banners` |
-| bundle-deals | `/Users/ben/bundle-deals` |
-| gundesk | `/Users/ben/Projects/gundesk` |
-| cortex | `/Users/ben/Projects/cortex` |
+| my-project | `{{PROJECT_DIR}}` |
+| my-project | `{{PROJECT_DIR}}` |
+| my-project | `{{PROJECT_DIR}}` |
+| my-project | `{{PROJECT_DIR}}` |
+| my-project | `{{PROJECT_DIR}}` |
+| my-project | `{{PROJECT_DIR}}` |
+| my-project | `{{PROJECT_DIR}}` |
+| cortex | `{{PROJECT_DIR}}` |
 
 ## Tone
 
@@ -72,9 +72,9 @@ git -C {project_path} log --oneline --since="2 days ago" --all 2>/dev/null | hea
 **Summarize**:
 ```
 Since you were last here:
-- helpdesk: 4 commits, agent completed "PO approval bug fix"
-- gundesk: 2 commits, left off on "V3 disposal form migration"
-- No activity on: flexible-deposits, shopify-banners (last touched 12 days ago)
+- my-project: 4 commits, agent completed "PO approval bug fix"
+- my-project: 2 commits, left off on "V3 disposal form migration"
+- No activity on: my-project, my-project (last touched 12 days ago)
 ```
 
 ### Step 1.2: Dev Vault State

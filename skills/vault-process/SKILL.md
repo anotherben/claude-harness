@@ -16,7 +16,7 @@ Can be run on a loop with `/loop 10m /vault-process` for continuous processing.
 Read coding standards from the vault's `_standards/` directory:
 
 ```
-Glob for files: /Users/ben/Documents/Product Ideas/_standards/**/*
+Glob for files: {{VAULT_PATH}}/_standards/**/*
 ```
 
 Read each standards file. These standards MUST be enforced during any autonomous code changes made in later steps.
@@ -66,9 +66,9 @@ If the item has no `complexity` field:
 1. Update item status to `in-progress` and move to `04-In-Progress/` folder
 2. Feed into `/enterprise` **QUICK** path:
    - Identify the project repo from the `project` field:
-     - `helpdesk` → `/Users/ben/helpdesk`
-     - `firearm-systems` → `/Users/ben/Projects/firearm-systems`
-     - `flexible-deposits` → `/Users/ben/Projects/flexible-deposits`
+     - `my-project` → `{{PROJECT_DIR}}`
+     - `my-project` → `{{PROJECT_DIR}}`
+     - `my-project` → `{{PROJECT_DIR}}`
    - Create a worktree for the work
    - Implement the fix/task following loaded standards
    - Run tests
@@ -142,9 +142,9 @@ If invoked via `/loop 10m /vault-process`:
 
 ## Notes
 
-- The vault path is `/Users/ben/Documents/Product Ideas`.
+- The vault path is `{{VAULT_PATH}}`.
 - Standard folders: `00-Inbox`, `01-Bugs`, `02-Tasks`, `03-Ideas`, `04-In-Progress`, `05-Archive`, `_standards`.
-- Project repos: helpdesk (`/Users/ben/helpdesk`), firearm-systems (`/Users/ben/Projects/firearm-systems`), flexible-deposits (`/Users/ben/Projects/flexible-deposits`).
+- Project repos: my-project (`{{PROJECT_DIR}}`), my-project (`{{PROJECT_DIR}}`), my-project (`{{PROJECT_DIR}}`).
 - Frontmatter schema: `type`, `priority`, `project`, `module`, `agent`, `status`, `branch`, `complexity`, `blocked-by`, `related`, `tags`, `created`, `updated`.
 - This skill depends on `/enterprise` being available for the QUICK/STANDARD/FULL execution paths.
 - Standards loaded in Step 1 apply to ALL autonomous code changes — never skip standards enforcement.

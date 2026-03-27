@@ -9,7 +9,7 @@
 
 ## Step 1: Read the Skill
 
-Read `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/SKILL.md`.
+Read `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/SKILL.md`.
 
 Key instructions extracted:
 - Input: plan at `docs/plans/YYYY-MM-DD-<slug>-plan.md`
@@ -215,7 +215,7 @@ Checked all 11 criteria:
 ## Step 13: Write Contract
 
 Contract written to:
-`/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/scenario-1/outputs/contract.md`
+`{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/scenario-1/outputs/contract.md`
 
 Canonical path (per skill output convention):
 `docs/contracts/2026-03-14-alert-configs-contract.md`

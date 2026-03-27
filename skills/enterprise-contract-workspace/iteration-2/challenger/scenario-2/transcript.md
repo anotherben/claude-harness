@@ -1,7 +1,7 @@
 # Execution Transcript: enterprise-contract (Challenger v2, Scenario 2)
 **Date**: 2026-03-14
 **Task**: Bug fix contract — wrong stock quantity on product detail page
-**Skill**: `/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/SKILL.md`
+**Skill**: `{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/SKILL.md`
 
 ---
 
@@ -191,7 +191,7 @@ Score: 11/11 — LOCKED.
 ## Step 12: Lock and Output
 
 Changed status to LOCKED in contract header. Wrote contract to:
-`/Users/ben/helpdesk/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/scenario-2/outputs/contract.md`
+`{{PROJECT_DIR}}/.claude/skills/enterprise-contract-workspace/iteration-2/challenger/scenario-2/outputs/contract.md`
 
 ---
 
