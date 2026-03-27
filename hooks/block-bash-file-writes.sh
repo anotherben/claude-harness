@@ -17,11 +17,12 @@ SESSION_ID=$(python3 -c "import json; print(json.load(open('$HOOK_TMP')).get('se
 COMMAND=$(python3 -c "import json; print(json.load(open('$HOOK_TMP')).get('tool_input',{}).get('command',''))" 2>/dev/null)
 
 # --- Duty 1: Timestamp marker for post-hook audit ---
+# Refresh marker EVERY Bash command (not just first).
+# The audit post-hook compares files against this timestamp.
+# A fresh marker each time prevents false positives from prior Edit/Write changes.
 MARKER="/tmp/claude-bash-pre-${SESSION_ID}"
-if [ ! -f "$MARKER" ]; then
-  PAST=$(date -v-2S +%Y%m%d%H%M.%S 2>/dev/null || date -d '-2 seconds' +%Y%m%d%H%M.%S 2>/dev/null)
-  touch -t "$PAST" "$MARKER" 2>/dev/null || touch "$MARKER"
-fi
+PAST=$(date -v-2S +%Y%m%d%H%M.%S 2>/dev/null || date -d '-2 seconds' +%Y%m%d%H%M.%S 2>/dev/null)
+touch -t "$PAST" "$MARKER" 2>/dev/null || touch "$MARKER"
 
 # --- Elevation check function ---
 check_elevation() {
