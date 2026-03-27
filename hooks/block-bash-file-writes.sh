@@ -1,11 +1,11 @@
 #!/bin/bash
-# PreToolUse:Bash — Two duties:
+# PreToolUse:Bash — Three duties:
 # 1. Drop a timestamp marker for the post-hook filesystem audit
-# 2. BLOCK commands that WRITE to protected files
+# 2. BLOCK commands that WRITE to protected files (unless elevated)
+# 3. BLOCK forgery of gate marker files
 #
-# IMPORTANT: This hook must distinguish between commands that MENTION
-# protected paths (e.g. grep, git commit messages) vs commands that
-# WRITE to them (cp, mv, sed -i, >, >>, tee, writeFileSync).
+# Elevation: user runs `claude-unlock` for a one-time 6-digit code.
+# Agent includes ELEVATE=<code> anywhere in the command to bypass.
 
 HOOK_TMP=$(mktemp /tmp/claude-hook-XXXXXX)
 cat > "$HOOK_TMP"
@@ -23,43 +23,70 @@ if [ ! -f "$MARKER" ]; then
   touch -t "$PAST" "$MARKER" 2>/dev/null || touch "$MARKER"
 fi
 
+# --- Elevation check function ---
+check_elevation() {
+  ELEVATE_FILE="/tmp/claude-unlock"
+  [ ! -f "$ELEVATE_FILE" ] && return 1
+
+  STORED=$(cat "$ELEVATE_FILE" 2>/dev/null)
+  STORED_CODE=$(echo "$STORED" | cut -d'|' -f1)
+  STORED_EXPIRY=$(echo "$STORED" | cut -d'|' -f2)
+  NOW=$(date +%s)
+
+  # Check expiry
+  if [ -n "$STORED_EXPIRY" ] && [ "$NOW" -gt "$STORED_EXPIRY" ]; then
+    rm -f "$ELEVATE_FILE"
+    return 1
+  fi
+
+  # Check if command contains ELEVATE=<code>
+  AGENT_CODE=$(echo "$COMMAND" | grep -oE 'ELEVATE=[0-9]{6}' | head -1 | cut -d= -f2)
+  if [ "$AGENT_CODE" = "$STORED_CODE" ]; then
+    rm -f "$ELEVATE_FILE"  # Burn the code
+    echo "ELEVATED: Code verified. Protected write allowed (one-time)." >&2
+    return 0
+  fi
+
+  return 1
+}
+
 # --- Duty 2: Block WRITE operations targeting protected infrastructure ---
-# Strategy: detect write verbs + protected paths in the same command.
-# Read-only commands (grep, cat, diff, git log, git commit -m "text") are allowed
-# even if they mention protected paths in arguments or message text.
-
 PROTECTED_PATHS='\.git/hooks/|\.claude/hooks/|\.claude/settings\.json|\.claude/evidence/.*\.json'
-
-# Write operation patterns — these verbs modify files
 WRITE_VERBS='(^|\s|;|&&|\|)\s*(cp|mv|rm|sed\s+-i|chmod|chown|tee|install|rsync)\s'
 REDIRECT_PATTERN='>\s*\S*('$PROTECTED_PATHS')'
 WRITE_FILE_PATTERN='(writeFileSync|writeFile|open\(.*(w|a)\)|fs\.write)'
 
-# Check 1: Write verb + protected path in same command
+NEEDS_ELEVATION=false
+
+# Check 1: Write verb + protected path
 if echo "$COMMAND" | grep -qE "$WRITE_VERBS" && echo "$COMMAND" | grep -qE "$PROTECTED_PATHS"; then
+  NEEDS_ELEVATION=true
+fi
+
+# Check 2: Redirect to protected path
+if echo "$COMMAND" | grep -qE "$REDIRECT_PATTERN"; then
+  NEEDS_ELEVATION=true
+fi
+
+# Check 3: Script file write to protected path
+if echo "$COMMAND" | grep -qE "$WRITE_FILE_PATTERN" && echo "$COMMAND" | grep -qE "$PROTECTED_PATHS"; then
+  NEEDS_ELEVATION=true
+fi
+
+if [ "$NEEDS_ELEVATION" = true ]; then
+  if check_elevation; then
+    exit 0  # Elevated — allow
+  fi
   echo "BLOCKED: Write command targets protected infrastructure." >&2
   echo "Protected: .git/hooks/, .claude/hooks/, .claude/settings.json, .claude/evidence/*.json" >&2
-  echo "Agents must not modify hooks, settings, or evidence files via Bash." >&2
+  echo "To allow: user runs 'claude-unlock', then gives the code to the agent." >&2
   exit 2
 fi
 
-# Check 2: Redirect (> or >>) to protected path
-if echo "$COMMAND" | grep -qE "$REDIRECT_PATTERN"; then
-  echo "BLOCKED: Redirect targets protected infrastructure." >&2
-  exit 2
-fi
-
-# Check 3: Node/Python file write to protected path
-if echo "$COMMAND" | grep -qE "$WRITE_FILE_PATTERN" && echo "$COMMAND" | grep -qE "$PROTECTED_PATHS"; then
-  echo "BLOCKED: Script writes to protected infrastructure." >&2
-  exit 2
-fi
-
-# --- Duty 3: Block forgery of gate marker files ---
-# touch/echo/printf targeting /tmp/claude-{plan-approved,vault-context,bash-pre}-*
+# --- Duty 3: Block forgery of gate marker files (never elevatable) ---
 if echo "$COMMAND" | grep -qE '(touch|echo|printf).*(/tmp/claude-(plan-approved|vault-context|bash-pre)-)'; then
   echo "BLOCKED: Command attempts to forge a gate marker file." >&2
-  echo "Gate markers must be created by hooks, not by agent commands." >&2
+  echo "Gate markers must be created by hooks, not by agent commands. No elevation available." >&2
   exit 2
 fi
 
