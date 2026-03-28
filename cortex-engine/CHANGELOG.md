@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1] - 2026-03-29
+
+### Fixed
+- **`cortex_tree` depth parameter** — the `depth` parameter was accepted but never applied, causing the full file list to be returned regardless. On large monorepos this exceeded MCP response limits (579K+ chars). Depth is now enforced relative to `path_prefix` (or root if no prefix).
+
+### Changed
+- Removed unused `stats` variable from `getTree()`
+
 ## [1.4.0] - 2026-03-20
 
 ### Added

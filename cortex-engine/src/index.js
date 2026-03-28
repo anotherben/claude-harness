@@ -1,17 +1,33 @@
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const Store = require('./store');
-const { getSourceType } = require('./store');
-const Parser = require('./parser');
-const Watcher = require('./watcher');
-const Tagger = require('./tagger');
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const Store = require("./store");
+const { getSourceType } = require("./store");
+const Parser = require("./parser");
+const Watcher = require("./watcher");
+const Tagger = require("./tagger");
 
 const DEFAULT_EXTENSIONS = [
-  '.js', '.jsx', '.cjs', '.mjs', '.ts', '.tsx',
-  '.json', '.yaml', '.yml', '.graphql', '.gql',
-  '.md', '.toml', '.xml', '.html', '.css', '.scss', '.less',
-  '.vue', '.svelte',
+  ".js",
+  ".jsx",
+  ".cjs",
+  ".mjs",
+  ".ts",
+  ".tsx",
+  ".json",
+  ".yaml",
+  ".yml",
+  ".graphql",
+  ".gql",
+  ".md",
+  ".toml",
+  ".xml",
+  ".html",
+  ".css",
+  ".scss",
+  ".less",
+  ".vue",
+  ".svelte",
 ];
 
 class IndexEngine {
@@ -22,10 +38,10 @@ class IndexEngine {
     // Store in .cortex/index.db or in-memory for tests
     const dbPath = config.dbPath
       ? path.join(this.projectRoot, config.dbPath)
-      : ':memory:';
+      : ":memory:";
 
     // Ensure .cortex dir exists if using file-based DB
-    if (dbPath !== ':memory:') {
+    if (dbPath !== ":memory:") {
       const dbDir = path.dirname(dbPath);
       if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
     }
@@ -44,9 +60,9 @@ class IndexEngine {
     // File content cache for readSymbol
     this._contentCache = new Map();
 
-    this.watcher.on('add', (absPath) => this._indexFile(absPath));
-    this.watcher.on('change', (absPath) => this._indexFile(absPath));
-    this.watcher.on('unlink', (absPath) => this._removeFile(absPath));
+    this.watcher.on("add", (absPath) => this._indexFile(absPath));
+    this.watcher.on("change", (absPath) => this._indexFile(absPath));
+    this.watcher.on("unlink", (absPath) => this._removeFile(absPath));
   }
 
   async ready() {
@@ -61,7 +77,7 @@ class IndexEngine {
 
     // Get all indexed files from DB
     const dbFiles = this.store.db
-      .prepare('SELECT path, indexed_at FROM files')
+      .prepare("SELECT path, indexed_at FROM files")
       .all();
     const dbCount = dbFiles.length;
 
@@ -74,7 +90,11 @@ class IndexEngine {
     const countDiff = Math.abs(diskCount - dbCount);
     if (countDiff > dbCount * 0.1) {
       process.stderr.write(
-        'Cortex: file count mismatch (disk=' + diskCount + ' db=' + dbCount + '), triggering full reindex\n'
+        "Cortex: file count mismatch (disk=" +
+          diskCount +
+          " db=" +
+          dbCount +
+          "), triggering full reindex\n",
       );
       this._reindexAll(diskFiles);
       return;
@@ -113,7 +133,7 @@ class IndexEngine {
 
       // indexed_at is stored as SQLite datetime string (UTC, no trailing Z).
       // Add a 2-second buffer to avoid false positives from second-precision truncation.
-      const indexedMs = new Date(row.indexed_at + 'Z').getTime();
+      const indexedMs = new Date(row.indexed_at + "Z").getTime();
       if (stat.mtimeMs > indexedMs + 2000) {
         staleFiles.push(absPath);
       }
@@ -123,13 +143,18 @@ class IndexEngine {
 
     if (staleRatio > 0.1) {
       process.stderr.write(
-        'Cortex: ' + staleFiles.length + ' stale files detected (>' +
-        Math.round(staleRatio * 100) + '% of sample), triggering full reindex\n'
+        "Cortex: " +
+          staleFiles.length +
+          " stale files detected (>" +
+          Math.round(staleRatio * 100) +
+          "% of sample), triggering full reindex\n",
       );
       this._reindexAll(diskFiles);
     } else if (staleFiles.length > 0) {
       process.stderr.write(
-        'Cortex: ' + staleFiles.length + ' stale file(s) detected, reindexing...\n'
+        "Cortex: " +
+          staleFiles.length +
+          " stale file(s) detected, reindexing...\n",
       );
       for (const absPath of staleFiles) {
         // Force re-parse by clearing the stored hash
@@ -142,7 +167,7 @@ class IndexEngine {
 
   _reindexAll(diskFiles) {
     // Clear DB and reindex every file from disk
-    this.store.db.exec('DELETE FROM files');
+    this.store.db.exec("DELETE FROM files");
     this._contentCache.clear();
     for (const absPath of diskFiles) {
       this._indexFile(absPath);
@@ -157,19 +182,19 @@ class IndexEngine {
     const relPath = this._relPath(absPath);
     let content;
     try {
-      content = fs.readFileSync(absPath, 'utf-8');
+      content = fs.readFileSync(absPath, "utf-8");
     } catch {
       return; // File may have been deleted between event and read
     }
 
-    const hash = crypto.createHash('md5').update(content).digest('hex');
-    const lines = content.split('\n');
+    const hash = crypto.createHash("md5").update(content).digest("hex");
+    const lines = content.split("\n");
 
     // Check if file has changed
     const existing = this.store.getFile(relPath);
     if (existing && existing.hash === hash) return; // No change
 
-    const language = this.parser.detectLanguage(relPath) || 'unknown';
+    const language = this.parser.detectLanguage(relPath) || "unknown";
     const file = this.store.upsertFile({
       path: relPath,
       language,
@@ -190,7 +215,10 @@ class IndexEngine {
 
     // Also pick up module-level route patterns (e.g. router.post() at file scope)
     // and attribute them to whichever symbol spans that line.
-    const sourceSymbolTags = this.tagger.tagSourceSymbols(result.symbols, content);
+    const sourceSymbolTags = this.tagger.tagSourceSymbols(
+      result.symbols,
+      content,
+    );
     for (const [symName, extraTags] of sourceSymbolTags) {
       const existing = symbolTags.get(symName) || [];
       for (const t of extraTags) {
@@ -232,15 +260,15 @@ class IndexEngine {
     if (!content) {
       const absPath = path.join(this.projectRoot, filePath);
       try {
-        content = fs.readFileSync(absPath, 'utf-8');
+        content = fs.readFileSync(absPath, "utf-8");
         this._contentCache.set(filePath, content);
       } catch {
         return null;
       }
     }
 
-    const lines = content.split('\n');
-    return lines.slice(sym.startLine - 1, sym.endLine).join('\n');
+    const lines = content.split("\n");
+    return lines.slice(sym.startLine - 1, sym.endLine).join("\n");
   }
 
   readSymbols(specs) {
@@ -257,13 +285,13 @@ class IndexEngine {
     if (!content) {
       const absPath = path.join(this.projectRoot, filePath);
       try {
-        content = fs.readFileSync(absPath, 'utf-8');
+        content = fs.readFileSync(absPath, "utf-8");
       } catch {
         return null;
       }
     }
-    const lines = content.split('\n');
-    return lines.slice(startLine - 1, endLine).join('\n');
+    const lines = content.split("\n");
+    return lines.slice(startLine - 1, endLine).join("\n");
   }
 
   getContext(filePath, symbolName) {
@@ -288,10 +316,10 @@ class IndexEngine {
   findText(pattern, opts = {}) {
     // Simple grep-like search across cached files
     const results = [];
-    const regex = new RegExp(pattern, opts.caseSensitive ? '' : 'i');
+    const regex = new RegExp(pattern, opts.caseSensitive ? "" : "i");
 
     for (const [filePath, content] of this._contentCache) {
-      const lines = content.split('\n');
+      const lines = content.split("\n");
       lines.forEach((line, i) => {
         if (regex.test(line)) {
           results.push({
@@ -311,7 +339,7 @@ class IndexEngine {
     const regex = new RegExp(`\\b${identifier}\\b`);
 
     for (const [filePath, content] of this._contentCache) {
-      const lines = content.split('\n');
+      const lines = content.split("\n");
       lines.forEach((line, i) => {
         if (regex.test(line)) {
           results.push({ filePath, line: i + 1, content: line.trim() });
@@ -326,16 +354,25 @@ class IndexEngine {
   }
 
   getTree(pathPrefix, depth, glob) {
-    // Simple file tree from store
-    const stats = this.store.getStats();
-    // Return stored file paths filtered by prefix
     const allFiles = this.store.db
-      .prepare('SELECT path FROM files ORDER BY path')
+      .prepare("SELECT path FROM files ORDER BY path")
       .pluck()
       .all();
 
-    if (!pathPrefix) return allFiles;
-    return allFiles.filter((p) => p.startsWith(pathPrefix));
+    let filtered = pathPrefix
+      ? allFiles.filter((p) => p.startsWith(pathPrefix))
+      : allFiles;
+
+    if (depth != null) {
+      const baseDepth = pathPrefix
+        ? pathPrefix.replace(/\/$/, "").split("/").length
+        : 0;
+      filtered = filtered.filter((p) => {
+        return p.split("/").length - baseDepth <= depth;
+      });
+    }
+
+    return filtered;
   }
 
   getStatus() {
