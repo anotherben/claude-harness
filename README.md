@@ -4,11 +4,37 @@
 
 A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) and [Codex CLI](https://github.com/openai/codex) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
 
-**Current release:** `v2.1.0`
+**Current release:** `v2.2.1`
 
-> **v2.1.0 — `claude-unlock` 2FA elevation + zero-friction `/enterprise`.** Protected infrastructure (hooks, settings, evidence) now requires a one-time 6-digit code from `claude-unlock` before agents can write to them. The `/enterprise` orchestrator auto-handles vault context and capture — just run `/enterprise` and the full pipeline executes start to finish. Resume by running `/enterprise` again.
+> **v2.2.1 — global MCP registration that actually sticks.** `./install.sh --global` now installs the bundled runtimes to stable global paths, writes `~/.claude.json` MCP entries, and re-registers the same servers in Codex so the harness works without repo-local MCP paths.
 
-Three built-in MCP servers. An Obsidian vault as the shared brain. 57 MCP tools across code, vault, and skill retrieval. 64 enterprise skills. 45 quality gate hooks. 11 slash commands. Zero escape hatches.
+Four built-in MCP servers. An Obsidian vault as the shared brain. 71 MCP tools across code, memory, vault, and skill retrieval. 63 enterprise skills. 47 quality gate hooks. 11 slash commands. Zero escape hatches.
+
+---
+
+## What's New in v2.2.1
+
+### Global MCP Install That Just Works
+- **Stable runtime home** at `~/.claude-harness` for bundled shared runtimes.
+- **Global Claude registration** now writes the harness MCP entries into `~/.claude.json`.
+- **Global Codex registration** now reconciles `codex mcp` entries to the same runtime paths.
+- **`cortex-memory` stays global** at `~/.cortex-memory`, with the installer ensuring both Claude and Codex point at it.
+
+---
+
+## What's New in v2.2.0
+
+### Shared Memory, Not Single-Platform Memory
+- **Bundled `cortex-memory`** as a first-class MCP package in the harness distribution.
+- **Cross-platform transcript recall** with Claude and Codex session roots configured by default.
+- **Installer + project wiring updated** so `.mcp.json`, Codex MCP setup, and runtime checks all include the memory server.
+
+### Counts Updated
+| Component | v2.1.0 | v2.2.0 |
+|---|---|---|
+| MCP servers | 3 | 4 |
+| MCP tools | 57 | 71 |
+| Default transcript platforms | 1 | 2 |
 
 ---
 
@@ -69,7 +95,7 @@ AI coding tools are powerful but undisciplined. Left to defaults, they:
 
 ---
 
-## The Four Pillars
+## The Five Pillars
 
 ### 1. Cortex Engine — Code Intelligence MCP
 
@@ -100,13 +126,25 @@ cortex_read_symbol("src/routes/orders.js", "POST /orders")
 - compile fast local policy bundles for hook decisions
 - track token savings from section reads and blocked full-file reads
 
-**7 MCP tools** | section-level retrieval | compiled policy bundles | telemetry-aware
+**14 MCP tools** | section-level retrieval | compiled policy bundles | telemetry-aware
 
-### 3. Obsidian Vault — The Shared Brain
+### 3. Cortex Memory — Cross-Platform Recall
+
+`cortex-memory` indexes agent session transcripts into a searchable SQLite + vector store so agents can recover prior decisions, bug hunts, and implementation context across platforms.
+
+Default sources:
+- Claude Code: `~/.claude/projects`
+- Codex CLI: `~/.codex/archived_sessions`
+
+It stays a recall layer, not the source of truth. The vault still owns tasks and state; `cortex-memory` answers "what did we discuss before?"
+
+**4 MCP tools** | semantic session search | full-session retrieval | recent/project/all indexing | multi-platform transcript normalization
+
+### 4. Obsidian Vault — The Shared Brain
 
 Every bug, task, idea, and decision lives in an [Obsidian](https://obsidian.md/) vault. Two MCP servers connect agents to this brain:
 
-**vault-index** — Query engine (20 MCP tools): list, search, claim, complete, coordinate
+**vault-index** — Query engine (23 MCP tools): list, search, claim, complete, coordinate
 **cortex-engine** — Knowledge store: annotate, recall, sync to Obsidian
 
 ```
@@ -119,9 +157,9 @@ Agent annotates learnings → cortex knowledge store → syncs to Obsidian
 Next agent reads vault + knowledge → starts with full context
 ```
 
-### 4. Quality Gate Hooks — Can't Be Bypassed
+### 5. Quality Gate Hooks — Can't Be Bypassed
 
-44 shell hooks intercept every action. Exit code 2 = hard block. The agent cannot proceed until the requirement is met. Markers are HMAC-signed — agents cannot forge them.
+47 shell hooks intercept every action. Exit code 2 = hard block. The agent cannot proceed until the requirement is met. Markers are HMAC-signed — agents cannot forge them.
 
 ```
 You: "Just push the fix"
@@ -143,15 +181,21 @@ Hook chain:
 
 ```
 ~/.claude/                              # GLOBAL — single source of truth
-├── hooks/          44 shell scripts    # Quality gates (HMAC-signed markers)
-├── skills/         64 skill dirs       # Enterprise workflows
+├── hooks/          47 shell scripts    # Quality gates (HMAC-signed markers)
+├── skills/         63 skill dirs       # Enterprise workflows
 ├── commands/       11 slash commands   # Quick actions
 └── settings.json                       # Hook wiring → $HOME/.claude/hooks/
 
+~/.claude-harness/                      # GLOBAL MCP runtime
+├── cortex-engine/  Code intelligence MCP (30 tools, 8 languages)
+├── skills-index/   Skill retrieval MCP (14 tools, section-aware)
+└── hooks/          Optional runtime copy source for bundled components
+
 ~/claude-harness/                       # SOURCE REPO
 ├── cortex-engine/  Code intelligence MCP (30 tools, 8 languages)
-├── skills-index/   Skill retrieval MCP (7 tools, section-aware)
-├── vault-index/    Vault query MCP (20 tools, claim coordination)
+├── skills-index/   Skill retrieval MCP (14 tools, section-aware)
+├── cortex-memory/  Cross-platform memory MCP (4 tools, transcript recall)
+├── vault-index/    Vault query MCP (23 tools, claim coordination)
 ├── hooks/          Source of truth for hooks
 ├── skills/         Source of truth for skills
 ├── commands/       Source of truth for commands
@@ -161,7 +205,7 @@ Hook chain:
 └── install.sh      Global + project installer
 
 your-project/                           # PER-PROJECT — minimal footprint
-├── .mcp.json       MCP server registration (cortex, vault, skills)
+├── .mcp.json       MCP server registration (cortex, vault, skills, memory)
 ├── CLAUDE.md       Enforcement chain docs
 └── .claude/
     └── evidence/   Test evidence JSON (HMAC-signed)
@@ -178,7 +222,8 @@ git clone https://github.com/<your-org>/claude-harness.git ~/claude-harness
 cd ~/claude-harness && ./install.sh --global
 ```
 
-This installs hooks, skills, commands, and settings to `~/.claude/`, and sets up the three MCP servers.
+This installs hooks, skills, commands, and settings to `~/.claude/`, and sets up the four bundled MCP servers.
+It also installs the reusable runtimes under `~/.claude-harness/`, `~/.vault-index/`, and `~/.cortex-memory/`, then registers them globally in both `~/.claude.json` and `codex mcp`.
 
 ### 2. Set up a project
 
@@ -199,19 +244,24 @@ All projects pick up the update immediately.
 
 ### 4. Register MCP servers (manual alternative)
 
-**Claude Code** — add to your project's `.mcp.json`:
+**Claude Code** — add to `~/.claude.json`:
 ```json
 {
   "mcpServers": {
     "cortex-engine": {
       "type": "stdio",
       "command": "node",
-      "args": ["/Users/you/claude-harness/cortex-engine/src/server.js"]
+      "args": ["/Users/you/.claude-harness/cortex-engine/src/server.js"]
     },
     "skills-index": {
       "type": "stdio",
       "command": "node",
-      "args": ["/Users/you/claude-harness/skills-index/src/server.js"]
+      "args": ["/Users/you/.claude-harness/skills-index/src/server.js"]
+    },
+    "cortex-memory": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/Users/you/.cortex-memory/src/server.js"]
     },
     "vault-index": {
       "type": "stdio",
@@ -224,8 +274,9 @@ All projects pick up the update immediately.
 
 **Codex CLI:**
 ```bash
-codex mcp add cortex-engine -- node ~/claude-harness/cortex-engine/src/server.js
-codex mcp add skills-index -- node ~/claude-harness/skills-index/src/server.js
+codex mcp add cortex-engine -- node ~/.claude-harness/cortex-engine/src/server.js
+codex mcp add skills-index -- node ~/.claude-harness/skills-index/src/server.js
+codex mcp add cortex-memory -- node ~/.cortex-memory/src/server.js
 codex mcp add vault-index -- node ~/.vault-index/src/server.js
 ```
 
@@ -245,7 +296,7 @@ Claude: [enterprise pipeline activates → discover → plan → contract → TD
 
 ---
 
-## Skills — 64 Enterprise Workflows
+## Skills — 63 Enterprise Workflows
 
 ### The Enterprise Pipeline (9 stages + auto-bootstrap)
 
@@ -345,7 +396,7 @@ Run **`/enterprise`** to orchestrate the full pipeline.
 
 ---
 
-## Hooks — 44 Quality Gates
+## Hooks — 47 Quality Gates
 
 ### Infrastructure Protection (v2.0 — new)
 | Hook | When | Enforces |
@@ -431,10 +482,10 @@ require-test-evidence.sh reads JSON:
 
 | Component | Count |
 |-----------|-------|
-| MCP servers | 3 (cortex-engine + skills-index + vault-index) |
-| MCP tools | 57 (30 + 7 + 20) |
-| Skills | 64 |
-| Hooks | 44 |
+| MCP servers | 4 (cortex-engine + skills-index + cortex-memory + vault-index) |
+| MCP tools | 71 (30 + 14 + 4 + 23) |
+| Skills | 63 |
+| Hooks | 47 |
 | Slash commands | 11 |
 | Tree-sitter languages | 8 |
 | Install modes | 4 (full, global, project, update) |

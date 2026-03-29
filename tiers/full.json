@@ -1,6 +1,6 @@
 {
   "name": "Full",
-  "description": "Standard + context injection, cortex-engine, skills-index, prompt refinement.",
+  "description": "Standard + context injection, cortex-engine, skills-index, cortex-memory, prompt refinement.",
   "extends": "standard",
   "hooks": {
     "PreToolUse": [

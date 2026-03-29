@@ -237,7 +237,7 @@ All hook paths use: `"$CLAUDE_PROJECT_DIR"/.claude/hooks/`
 
 ## Step 5b: Register MCP Servers (ALL TIERS)
 
-Both MCP servers must be registered for the harness to enforce properly. Without them, vault gates and cortex hooks are toothless.
+All bundled MCP servers must be registered for the harness to enforce properly. Without them, vault gates, symbol lookup, and shared recall are toothless.
 
 ### cortex-engine (code intelligence)
 
@@ -246,14 +246,14 @@ Both MCP servers must be registered for the harness to enforce properly. Without
 "cortex-engine": {
   "type": "stdio",
   "command": "node",
-  "args": ["$HOME/claude-harness/cortex-engine/src/server.js"]
+  "args": ["$HOME/.claude-harness/cortex-engine/src/server.js"]
 }
 ```
 No project path — cortex uses the working directory automatically.
 
 **Codex CLI** — check `codex mcp list` for cortex-engine. If missing:
 ```bash
-codex mcp add cortex-engine -- node $HOME/claude-harness/cortex-engine/src/server.js
+codex mcp add cortex-engine -- node $HOME/.claude-harness/cortex-engine/src/server.js
 ```
 
 ### vault-index (Obsidian vault query engine)
@@ -272,13 +272,47 @@ codex mcp add cortex-engine -- node $HOME/claude-harness/cortex-engine/src/serve
 codex mcp add vault-index -- node $HOME/.vault-index/src/server.js
 ```
 
+### skills-index (section-level skill retrieval)
+
+**Claude Code** — check `~/.claude.json` for a `skills-index` entry. If missing, add:
+```json
+"skills-index": {
+  "type": "stdio",
+  "command": "node",
+  "args": ["$HOME/.claude-harness/skills-index/src/server.js"]
+}
+```
+
+**Codex CLI:**
+```bash
+codex mcp add skills-index -- node $HOME/.claude-harness/skills-index/src/server.js
+```
+
+### cortex-memory (cross-platform transcript recall)
+
+**Claude Code** — check `~/.claude.json` for a `cortex-memory` entry. If missing, add:
+```json
+"cortex-memory": {
+  "type": "stdio",
+  "command": "node",
+  "args": ["$HOME/.cortex-memory/src/server.js"]
+}
+```
+
+**Codex CLI:**
+```bash
+codex mcp add cortex-memory -- node $HOME/.cortex-memory/src/server.js
+```
+
 ### Verification
 
-After registration, verify both are live:
+After registration, verify all four are live:
 - `cortex_status()` — should return file/symbol counts
 - `mcp__vault-index__list_vault(project="...")` — should return vault items
+- `mcp__skills-index__skill_status()` — should return counts/freshness
+- `mcp__cortex-memory__list_sessions(limit=5)` — should return recent sessions or an empty list without error
 
-If either fails, check that the server code exists at the path and `npm install` has been run.
+If any check fails, confirm the server code exists at the path and `npm install` has been run in that package.
 
 **If jcodemunch is present in mcpServers, remove it** — cortex-engine is the replacement.
 

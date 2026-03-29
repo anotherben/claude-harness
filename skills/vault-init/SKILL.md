@@ -218,7 +218,7 @@ Read `~/.claude.json` and check for a `cortex-engine` entry in `mcpServers`.
 "cortex-engine": {
   "type": "stdio",
   "command": "node",
-  "args": ["$HOME/claude-harness/cortex-engine/src/server.js"]
+  "args": ["$HOME/.claude-harness/cortex-engine/src/server.js"]
 }
 ```
 
@@ -228,7 +228,7 @@ Merge into existing mcpServers — do NOT overwrite other entries.
 
 Also add to Codex if available:
 ```bash
-codex mcp add cortex-engine -- node $HOME/claude-harness/cortex-engine/src/server.js
+codex mcp add cortex-engine -- node $HOME/.claude-harness/cortex-engine/src/server.js
 ```
 
 If `jcodemunch` is present in `mcpServers`, **remove it** — cortex-engine is the replacement. Delete the entire `jcodemunch` entry from `~/.claude.json`.
@@ -248,7 +248,7 @@ Read `~/.claude.json` and check for a `skills-index` entry in `mcpServers`.
 "skills-index": {
   "type": "stdio",
   "command": "node",
-  "args": ["$HOME/claude-harness/skills-index/src/server.js"]
+  "args": ["$HOME/.claude-harness/skills-index/src/server.js"]
 }
 ```
 
@@ -256,10 +256,36 @@ Merge into existing `mcpServers` — do NOT overwrite other entries.
 
 Also add to Codex if available:
 ```bash
-codex mcp add skills-index -- node $HOME/claude-harness/skills-index/src/server.js
+codex mcp add skills-index -- node $HOME/.claude-harness/skills-index/src/server.js
 ```
 
 Verify the engine works by calling `mcp__skills-index__skill_status()`. If it returns counts and freshness data, the index is live.
+
+### 11c. Cortex Memory MCP Registered
+
+Check if cortex-memory is configured as an MCP server:
+
+Read `~/.claude.json` and check for a `cortex-memory` entry in `mcpServers`.
+
+- **Found**: PASS
+- **Not found**: FIX — Add cortex-memory MCP entry to `~/.claude.json`:
+
+```json
+"cortex-memory": {
+  "type": "stdio",
+  "command": "node",
+  "args": ["$HOME/.cortex-memory/src/server.js"]
+}
+```
+
+Merge into existing `mcpServers` — do NOT overwrite other entries.
+
+Also add to Codex if available:
+```bash
+codex mcp add cortex-memory -- node $HOME/.cortex-memory/src/server.js
+```
+
+Verify the engine works by calling `mcp__cortex-memory__list_sessions(limit=5)`. If it returns recent sessions or an empty list without error, the memory layer is live.
 
 ### 12. Master Dashboard
 

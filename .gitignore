@@ -1,0 +1,11 @@
+.Codex/
+.cortex/
+.DS_Store
+node_modules/
+*/node_modules/
+*/.cortex/
+*.db
+*.db-shm
+*.db-wal
+vitest.config.ts.timestamp-*
+

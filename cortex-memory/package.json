@@ -1,0 +1,26 @@
+{
+  "name": "cortex-memory",
+  "version": "0.2.0",
+  "description": "MCP server for semantic search over agent session transcripts",
+  "type": "module",
+  "main": "src/server.js",
+  "bin": {
+    "cortex-memory": "./cli.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "vitest"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "better-sqlite3": "^12.6.2",
+    "sqlite-vec": "0.1.7-alpha.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
+  }
+}

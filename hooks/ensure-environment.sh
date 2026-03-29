@@ -1,5 +1,5 @@
 #!/bin/bash
-# SessionStart hook — ensures cortex-memory and skills are installed.
+# SessionStart hook — ensures bundled MCP runtime and utility skills are installed.
 # Runs at session start. Fast no-op if everything is already set up.
 
 HOOK_INPUT=$(cat)
@@ -7,6 +7,7 @@ SESSION_ID=$(echo "$HOOK_INPUT" | python3 -c "import sys,json; print(json.load(s
 if [ -z "$SESSION_ID" ]; then SESSION_ID="unknown"; fi
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+HARNESS_HOME="${CLAUDE_HARNESS_HOME:-$HOME/.claude-harness}"
 CHANGED=()
 SKILLS_INDEX_SERVER="{{PROJECT_DIR}}/.codex/mcp-servers/skills-index/src/cli.js"
 
@@ -17,14 +18,16 @@ mkdir -p ~/Documents/Product\ Ideas/07-Personal
 mkdir -p ~/Documents/Product\ Ideas/08-Learning
 mkdir -p ~/Documents/Product\ Ideas/09-Creative
 
-# 1. Install cortex-memory MCP server
-if [ ! -d ~/.cortex-memory/node_modules ]; then
-  if [ -d "$PROJECT_DIR/.claude/cortex-memory-snapshot" ]; then
-    mkdir -p ~/.cortex-memory
-    cp -r "$PROJECT_DIR/.claude/cortex-memory-snapshot/"* ~/.cortex-memory/
-    cd ~/.cortex-memory && npm install --silent 2>/dev/null
+# 1. Ensure cortex-memory MCP server is installed
+if [ ! -d ~/.cortex-memory ]; then
+  if [ -d "$HARNESS_HOME/cortex-memory" ]; then
+    cp -r "$HARNESS_HOME/cortex-memory" ~/.cortex-memory
+    cd ~/.cortex-memory && npm install --production --silent 2>/dev/null
     CHANGED+=("cortex-memory installed")
   fi
+elif [ ! -d ~/.cortex-memory/node_modules ] && [ -f ~/.cortex-memory/package.json ]; then
+  cd ~/.cortex-memory && npm install --production --silent 2>/dev/null
+  CHANGED+=("cortex-memory dependencies installed")
 fi
 
 # 2. Install utility skills (workflow skills removed — use Superpowers/Compound Engineering plugins directly)
@@ -36,10 +39,14 @@ for skill in run-verification create-migration senior-architect rex-soap-protoco
   fi
 done
 
-# 3. Check cortex-memory is registered in user settings
-if [ -f ~/.claude/settings.json ]; then
-  if ! grep -q 'cortex-memory' ~/.claude/settings.json 2>/dev/null; then
-    CHANGED+=("WARNING: cortex-memory not in ~/.claude/settings.json mcpServers — add it manually")
+# 3. Check cortex-memory is registered in MCP config
+if [ -f ~/.claude.json ]; then
+  if ! grep -q 'cortex-memory' ~/.claude.json 2>/dev/null; then
+    CHANGED+=("WARNING: cortex-memory not in ~/.claude.json mcpServers")
+  fi
+elif [ -f "$PROJECT_DIR/.mcp.json" ]; then
+  if ! grep -q 'cortex-memory' "$PROJECT_DIR/.mcp.json" 2>/dev/null; then
+    CHANGED+=("WARNING: cortex-memory not in $PROJECT_DIR/.mcp.json mcpServers")
   fi
 fi
 
