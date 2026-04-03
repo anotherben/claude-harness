@@ -11,11 +11,19 @@ This is the main entrypoint for the platform and the fastest way to get a projec
 - `./install.sh --global` (recommended for most environments)
 - `./install.sh --project <path>` for repo-specific MCP wiring
 
-**Current release:** `v2.2.1`
+**Current release:** `v2.2.2`
 
-> **v2.2.1 — global MCP registration that actually sticks.** `./install.sh --global` now installs the bundled runtimes to stable global paths, writes `~/.claude.json` MCP entries, and re-registers the same servers in Codex so the harness works without repo-local MCP paths.
+> **v2.2.2 — welcome page refreshed and startup guidance clarified.** The main README now includes clearer entrypoint onboarding, including the recommended global install path for getting projects into enterprise mode.
 
 Four built-in MCP servers. An Obsidian vault as the shared brain. 71 MCP tools across code, memory, vault, and skill retrieval. 63 enterprise skills. 47 quality gate hooks. 11 slash commands. Zero escape hatches.
+
+---
+
+## What's New in v2.2.2
+
+### Welcome Flow Improvements
+- **Main README onboarding** now starts with an explicit welcome and quick-start guidance for common install paths.
+- **Global install emphasis** for new users to activate MCP and enterprise components with fewer steps.
 
 ---
 
