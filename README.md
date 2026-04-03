@@ -1,8 +1,15 @@
 # claude-harness
 
+Welcome to **claude-harness**.
+
 **Vibe prompt in, enterprise quality out.**
 
 A governance harness for [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) and [Codex CLI](https://github.com/openai/codex) that enforces planning, TDD, evidence-based verification, independent review, and institutional knowledge capture — through hooks that can't be bypassed.
+
+This is the main entrypoint for the platform and the fastest way to get a project into enterprise mode is:
+
+- `./install.sh --global` (recommended for most environments)
+- `./install.sh --project <path>` for repo-specific MCP wiring
 
 **Current release:** `v2.2.1`
 
