@@ -250,8 +250,8 @@ All projects pick up the update immediately.
   "mcpServers": {
     "cortex-engine": {
       "type": "stdio",
-      "command": "node",
-      "args": ["/Users/you/.claude-harness/cortex-engine/src/server.js"]
+      "command": "/Users/you/.codex/bin/cortex-engine-wrapper.sh",
+      "args": []
     },
     "skills-index": {
       "type": "stdio",
@@ -274,7 +274,7 @@ All projects pick up the update immediately.
 
 **Codex CLI:**
 ```bash
-codex mcp add cortex-engine -- node ~/.claude-harness/cortex-engine/src/server.js
+codex mcp add cortex-engine -- /Users/you/.codex/bin/cortex-engine-wrapper.sh
 codex mcp add skills-index -- node ~/.claude-harness/skills-index/src/server.js
 codex mcp add cortex-memory -- node ~/.cortex-memory/src/server.js
 codex mcp add vault-index -- node ~/.vault-index/src/server.js

@@ -115,6 +115,7 @@ If the work involves important decisions, gotchas, or patterns worth preserving:
 ```bash
 git add docs/handovers/YYYY-MM-DD-<task-slug>.md
 git commit -m "docs: add handover for [task name]"
+git push origin "$(git branch --show-current)"
 ```
 
 ## Quality Criteria

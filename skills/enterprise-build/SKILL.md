@@ -236,11 +236,14 @@ If it FAILS → fix the production code (not the test).
 
 Improve code quality without changing behavior. Run tests again — still green.
 
-### Step 6: COMMIT
+### Step 6: COMMIT AND PUSH
 
 ```bash
 git add -A && git commit -m "feat: [what this unit does]"
+git push origin "$(git branch --show-current)"
 ```
+
+**CRITICAL: Always push immediately after commit.** Unpushed commits on shared branches (dev) get rebased away by concurrent agents. This is not optional — a commit without a push is a commit that will be lost.
 
 ### Step 7: SAVE PROGRESS (memory + JSON)
 

@@ -469,7 +469,10 @@ git add -A && git commit -m "fix: [root cause description]
 
 Blast radius: [N] sibling bugs fixed, [N] edge cases covered
 Tests: [N] new tests, [N] total passing"
+git push origin "$(git branch --show-current)"
 ```
+
+**Always push immediately after commit.** Unpushed commits on shared branches get rebased away by concurrent agents.
 
 ---
 

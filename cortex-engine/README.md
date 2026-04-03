@@ -41,8 +41,8 @@ npm install
   "mcpServers": {
     "cortex-engine": {
       "type": "stdio",
-      "command": "node",
-      "args": ["/path/to/cortex-engine/src/server.js"]
+      "command": "/path/to/.codex/bin/cortex-engine-wrapper.sh",
+      "args": []
     }
   }
 }
@@ -50,7 +50,7 @@ npm install
 
 **Codex CLI:**
 ```bash
-codex mcp add cortex-engine -- node /path/to/cortex-engine/src/server.js
+codex mcp add cortex-engine -- /path/to/.codex/bin/cortex-engine-wrapper.sh
 ```
 
 No project path needed — Cortex uses the working directory automatically.

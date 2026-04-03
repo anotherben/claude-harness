@@ -46,7 +46,30 @@ echo -e "${BLUE}claude-harness${NC} installer v${VERSION}"
 echo "Vibe prompt in, enterprise quality out."
 echo ""
 
-cortex_server_path() { echo "${RUNTIME_HOME}/cortex-engine/src/server.js"; }
+cortex_server_command_from_path() {
+  local path="$1"
+  if [ "${path##*/}" = "cortex-engine-wrapper.sh" ]; then
+    echo "$path"
+  else
+    echo "node"
+  fi
+}
+cortex_server_args_from_path() {
+  local path="$1"
+  if [ "${path##*/}" = "cortex-engine-wrapper.sh" ]; then
+    echo "[]"
+  else
+    echo "[\"$path\"]"
+  fi
+}
+cortex_server_path() {
+  local wrapper_path="$HOME/.codex/bin/cortex-engine-wrapper.sh"
+  if [ -x "$wrapper_path" ]; then
+    echo "$wrapper_path"
+    return
+  fi
+  echo "${RUNTIME_HOME}/cortex-engine/src/server.js"
+}
 skills_server_path() { echo "${RUNTIME_HOME}/skills-index/src/server.js"; }
 vault_server_path() { echo "$HOME/.vault-index/src/server.js"; }
 memory_server_path() { echo "$HOME/.cortex-memory/src/server.js"; }
@@ -321,10 +344,14 @@ install_mcp_servers() {
 
 register_global_claude_mcp_servers() {
   local claude_json="$HOME/.claude.json"
+  local cortex_server="$(cortex_server_path)"
+  local cortex_command="$(cortex_server_command_from_path "$cortex_server")"
+  local cortex_args="$(cortex_server_args_from_path "$cortex_server")"
   info "Registering global MCP servers in ${claude_json}"
 
   CLAUDE_JSON_PATH="$claude_json" \
-  CORTEX_SERVER_PATH="$(cortex_server_path)" \
+  CORTEX_SERVER_COMMAND="$cortex_command" \
+  CORTEX_SERVER_ARGS="$cortex_args" \
   VAULT_SERVER_PATH="$(vault_server_path)" \
   SKILLS_SERVER_PATH="$(skills_server_path)" \
   MEMORY_SERVER_PATH="$(memory_server_path)" \
@@ -343,8 +370,8 @@ servers = data.setdefault("mcpServers", {})
 desired = {
     "cortex-engine": {
         "type": "stdio",
-        "command": "node",
-        "args": [os.environ["CORTEX_SERVER_PATH"]],
+        "command": os.environ["CORTEX_SERVER_COMMAND"],
+        "args": json.loads(os.environ["CORTEX_SERVER_ARGS"]),
     },
     "vault-index": {
         "type": "stdio",
@@ -386,21 +413,43 @@ register_global_codex_mcp_servers() {
 
   info "Registering global MCP servers in Codex"
   local failures=0
+  local cortex_server="$(cortex_server_path)"
+  local cortex_command="$(cortex_server_command_from_path "$cortex_server")"
 
-  while IFS='|' read -r name path; do
+  local vault_server="$(vault_server_path)"
+  local skills_server="$(skills_server_path)"
+  local memory_server="$(memory_server_path)"
+
+  codex mcp remove cortex-engine >/dev/null 2>&1 || true
+  if [ "$cortex_command" = "node" ]; then
+    if codex mcp add cortex-engine -- "$cortex_command" "$cortex_server" >/dev/null 2>&1; then
+      ok "Codex MCP registered: cortex-engine"
+    else
+      warn "Codex MCP registration failed: cortex-engine"
+      failures=$((failures + 1))
+    fi
+  else
+    if codex mcp add cortex-engine -- "$cortex_server" >/dev/null 2>&1; then
+      ok "Codex MCP registered: cortex-engine"
+    else
+      warn "Codex MCP registration failed: cortex-engine"
+      failures=$((failures + 1))
+    fi
+  fi
+
+  for pair in \
+    "vault-index:${vault_server}:node" \
+    "skills-index:${skills_server}:node" \
+    "cortex-memory:${memory_server}:node"; do
+    IFS=':' read -r name path command <<< "$pair"
     codex mcp remove "$name" >/dev/null 2>&1 || true
-    if codex mcp add "$name" -- node "$path" >/dev/null 2>&1; then
+    if codex mcp add "$name" -- "$command" "$path" >/dev/null 2>&1; then
       ok "Codex MCP registered: ${name}"
     else
       warn "Codex MCP registration failed: ${name}"
       failures=$((failures + 1))
     fi
-  done <<EOF
-cortex-engine|$(cortex_server_path)
-vault-index|$(vault_server_path)
-skills-index|$(skills_server_path)
-cortex-memory|$(memory_server_path)
-EOF
+  done
 
   if [ "$failures" -gt 0 ]; then
     warn "Codex MCP registration completed with ${failures} failure(s)"
@@ -421,31 +470,66 @@ setup_project() {
 
   # --- .mcp.json ---
   local mcp_json="$target/.mcp.json"
-  local cortex_dir
-  cortex_dir="$(dirname "$(dirname "$(cortex_server_path)")")"
+  local cortex_server="$(cortex_server_path)"
+  local cortex_command="$(cortex_server_command_from_path "$cortex_server")"
+  local cortex_args="$(cortex_server_args_from_path "$cortex_server")"
   local vault_dir="$HOME/.vault-index"
-  local skills_dir
-  skills_dir="$(dirname "$(dirname "$(skills_server_path)")")"
+  local skills_dir="$(dirname "$(dirname "$(skills_server_path)")")"
   local memory_dir="$HOME/.cortex-memory"
 
   if [ -f "$mcp_json" ]; then
     info "Existing .mcp.json found — merging MCP servers"
+    MCP_JSON_PATH="$mcp_json" \
+    CORTEX_SERVER_COMMAND="$cortex_command" \
+    CORTEX_SERVER_ARGS="$cortex_args" \
+    VAULT_SERVER_PATH="$vault_dir/src/server.js" \
+    SKILLS_SERVER_PATH="$skills_dir/src/server.js" \
+    MEMORY_SERVER_PATH="$memory_dir/src/server.js" \
     python3 -c "
 import json
-with open('$mcp_json') as f:
+from pathlib import Path
+import os
+
+path = Path(os.environ["MCP_JSON_PATH"])
+with open(path) as f:
     data = json.load(f)
+
 servers = data.setdefault('mcpServers', {})
+desired = {
+    'cortex-engine': {
+        'type': 'stdio',
+        'command': os.environ['CORTEX_SERVER_COMMAND'],
+        'args': json.loads(os.environ['CORTEX_SERVER_ARGS']),
+    },
+    'vault-index': {
+        'type': 'stdio',
+        'command': 'node',
+        'args': [os.environ['VAULT_SERVER_PATH']],
+    },
+    'skills-index': {
+        'type': 'stdio',
+        'command': 'node',
+        'args': [os.environ['SKILLS_SERVER_PATH']],
+    },
+    'cortex-memory': {
+        'type': 'stdio',
+        'command': 'node',
+        'args': [os.environ['MEMORY_SERVER_PATH']],
+    },
+}
+
 changed = False
-for name, args_path in [('cortex-engine','$cortex_dir/src/server.js'),('vault-index','$vault_dir/src/server.js'),('skills-index','$skills_dir/src/server.js'),('cortex-memory','$memory_dir/src/server.js')]:
-    if name not in servers:
-        servers[name] = {'type':'stdio','command':'node','args':[args_path]}
+for name, config in desired.items():
+    if servers.get(name) != config:
+        servers[name] = config
         changed = True
+
 if changed:
-    with open('$mcp_json','w') as f:
+    with open(path, 'w') as f:
         json.dump(data, f, indent=2)
-    print('added missing servers')
+    print('updated mcp servers')
 else:
-    print('all servers present')
+    print('all servers current')
 " 2>/dev/null
   else
     cat > "$mcp_json" <<MCP_EOF
@@ -453,8 +537,8 @@ else:
   "mcpServers": {
     "cortex-engine": {
       "type": "stdio",
-      "command": "node",
-      "args": ["${cortex_dir}/src/server.js"]
+      "command": "${cortex_command}",
+      "args": ${cortex_args}
     },
     "vault-index": {
       "type": "stdio",

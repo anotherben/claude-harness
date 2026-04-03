@@ -70,14 +70,12 @@ Add to `~/.claude/settings.json` (or per-project settings):
 {
   "mcpServers": {
     "cortex-engine": {
-      "command": "node",
-      "args": ["$HOME/claude-harness/cortex-engine/src/server.js", "{{PROJECT_DIR}}"]
+      "command": "/Users/you/.codex/bin/cortex-engine-wrapper.sh",
+      "args": []
     }
   }
 }
 ```
-
-For multi-repo, the server needs to be updated to accept multiple roots via CLI args, or use a config file. Currently `server.js` takes a single root as argv[2].
 
 ### 2. Update suggest-jcodemunch.sh → suggest-cortex.sh
 
@@ -123,8 +121,8 @@ Read `~/.claude/settings.json` and check for a `cortex-engine` entry in `mcpServ
 
 \`\`\`json
 "cortex-engine": {
-  "command": "node",
-  "args": ["$HOME/claude-harness/cortex-engine/src/server.js", "<cwd>"]
+  "command": "/Users/you/.codex/bin/cortex-engine-wrapper.sh",
+  "args": []
 }
 \`\`\`
 
@@ -132,7 +130,7 @@ Merge into existing mcpServers — do NOT overwrite other entries.
 
 Also add to Codex if available:
 \`\`\`bash
-codex mcp add cortex-engine -- node $HOME/claude-harness/cortex-engine/src/server.js <cwd>
+codex mcp add cortex-engine -- /Users/you/.codex/bin/cortex-engine-wrapper.sh
 \`\`\`
 
 Note: cortex-engine replaces jcodemunch. If jcodemunch is present, it can remain as a fallback during transition — remove it when confident cortex is stable.

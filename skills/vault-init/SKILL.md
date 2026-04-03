@@ -217,8 +217,8 @@ Read `~/.claude.json` and check for a `cortex-engine` entry in `mcpServers`.
 ```json
 "cortex-engine": {
   "type": "stdio",
-  "command": "node",
-  "args": ["$HOME/.claude-harness/cortex-engine/src/server.js"]
+  "command": "/Users/you/.codex/bin/cortex-engine-wrapper.sh",
+  "args": []
 }
 ```
 
@@ -228,7 +228,7 @@ Merge into existing mcpServers — do NOT overwrite other entries.
 
 Also add to Codex if available:
 ```bash
-codex mcp add cortex-engine -- node $HOME/.claude-harness/cortex-engine/src/server.js
+codex mcp add cortex-engine -- /Users/you/.codex/bin/cortex-engine-wrapper.sh
 ```
 
 If `jcodemunch` is present in `mcpServers`, **remove it** — cortex-engine is the replacement. Delete the entire `jcodemunch` entry from `~/.claude.json`.
