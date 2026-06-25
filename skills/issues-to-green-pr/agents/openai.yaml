@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issues to Green PR"
+  short_description: "Turn bug issues into proved PRs safely"
+  default_prompt: "Use $issues-to-green-pr to process eligible GitHub bug issues into reviewed, proved PRs."

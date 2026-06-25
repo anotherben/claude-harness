@@ -1,0 +1,78 @@
+{
+  "skill_name": "blast-radius",
+  "iteration": 2,
+  "description": "Same 3 input modes as iteration 1, but assertions are substantive (target specific known bugs in the codebase) rather than structural.",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "file-mode-productEditService",
+      "prompt": "Run a blast-radius analysis on apps/api/src/services/productEditService.js in the helpdesk repo (cwd: /Users/ben/helpdesk). Treat the entire file as the change set. Produce report.md and checklist.md.",
+      "expected_output": "Must identify dropship-mode column schema drift, missing soft-delete filter in getProductForEdit, missing tenantId in updateProductDualSync route call, mocked DB tests as HIGH risk, and the broken require path in productEditService.module-graph.test.js.",
+      "files": [],
+      "assertions": [
+        {"text": "Report explicitly names the dropship-mode column schema drift (e.g. mentions can_dropship, dropship_setup_source, or dropship_mode_updated_at as referenced in code but absent on live products table)"},
+        {"text": "Report flags the absence of WHERE deleted_at IS NULL on the productEditService SELECT (soft-delete leak)"},
+        {"text": "Report flags that the route handler in editing.js does not pass tenantId to updateProductDualSync (relies on DEFAULT_TENANT_ID fallback)"},
+        {"text": "Report flags at least one jest.mock-based test in the radius as HIGH risk, naming the file"},
+        {"text": "Report identifies the broken require path in productEditService.module-graph.test.js (or equivalent silently-skipping test) — bonus assertion testing for deeper find"},
+        {"text": "Report names the speed mode used (lite/standard/deep) at the top"},
+        {"text": "Report includes a Live Schema Verification section with either actual psql output OR explicit graceful-degradation acknowledgement (NEEDS REVIEW verdict, manual-verify list, follow-up steps)"},
+        {"text": "Checklist is risk-ranked HIGH/MEDIUM/LOW with at least one HIGH item naming a specific file:line"},
+        {"text": "Report references at least one pattern from bug-patterns.md by name (e.g. schema drift, mock drift, soft-delete filter missing, tenant-scope leak)"}
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "symbol-mode-orderRouteService",
+      "prompt": "Run a blast-radius analysis on the symbol orderRouteService.getRoute in the helpdesk repo (cwd: /Users/ben/helpdesk). Start from the function itself, fan out to every caller, every test, every route handler that invokes it, and the cache layer in apps/api/src/services/orderRouteService/cache.js. Produce report.md and checklist.md.",
+      "expected_output": "Must identify that getRoute does not exist as a symbol, handle that gracefully, fan out to closest matches in orderRouteService, identify recalcCachedCounts mock-drift in test files, and flag the getOrderByShopifyId tenant-scope concern.",
+      "files": [],
+      "assertions": [
+        {"text": "Report explicitly notes that the symbol getRoute does not exist in orderRouteService and explains the fallback approach taken"},
+        {"text": "Report identifies recalcCachedCounts mock drift (tests still attach recalcCachedCounts to mocked orderRouteService even though the real function has been moved to ordersGatekeeperService or no longer exists there) — quote at least one test file path"},
+        {"text": "Report flags getOrderByShopifyId as potentially not tenant-scoped (or equivalent tenant-isolation concern) with a clear rationale"},
+        {"text": "Report names the speed mode used (lite/standard/deep) at the top"},
+        {"text": "Report includes a Live Schema Verification section with either psql output OR explicit graceful-degradation acknowledgement"},
+        {"text": "Checklist is risk-ranked HIGH/MEDIUM/LOW with at least one HIGH item naming a specific file:line"},
+        {"text": "Report references at least one pattern from bug-patterns.md by name (e.g. mock drift, tenant-scope leak)"},
+        {"text": "Report identifies the cache.js module as a touchpoint with at least one file:line reference"}
+      ]
+    },
+    {
+      "id": 4,
+      "eval_name": "pr-mode-pr-1856-circular-require",
+      "prompt": "Run a blast-radius analysis on PR #1856 in the helpdesk repo. Use 'gh pr diff 1856' and 'gh pr view 1856 --json title,body,headRefName,baseRefName,files'. The PR fixes a circular-require bug in refundAutoVoidService.js by moving a destructure inside the function (deferred require). Trace the blast radius — who else uses orderCommandService, are there other circular requires lurking, will the fix break any test, are there sibling circular-require sites that should also be fixed. Produce report.md, checklist.md, and blast-radius-inline.md.",
+      "expected_output": "Must identify this as Pattern 14 (circular require), enumerate any other circular requires in the codebase, confirm the regression test will catch a recurrence, identify whether the fix's mock-interception edge case is correct, and flag the post-fix sibling sweep.",
+      "files": [],
+      "assertions": [
+        {"text": "Report explicitly names PR #1856 (or the head ref) and quotes the production crash (TypeError: dispatchOrderCancelInRexCommand is not a function)"},
+        {"text": "Report references Pattern 14 (circular require / partial module init) from bug-patterns.md by name"},
+        {"text": "Report performs a sibling-bug sweep — either lists other top-level destructures of orderCommandService elsewhere in the codebase, OR runs `npx madge --circular` / equivalent to enumerate other circular cycles"},
+        {"text": "Report confirms the new regression test (refundAutoVoidService.circular-require.test.js) covers the production load-order scenario, or flags that it does not"},
+        {"text": "Report names the speed mode used (should be lite — 2 files, small fix)"},
+        {"text": "Report identifies the input form as PR mode and uses gh CLI to fetch the diff (cites 'gh pr diff 1856' or equivalent)"},
+        {"text": "Report flags whether the deferred-require pattern should be applied to other modules with top-level destructures from sibling services (sibling-bug hunt)"},
+        {"text": "Report includes a Verification Plan with the actual jest commands from the PR description (cd apps/api && npx jest refundAutoVoidService)"},
+        {"text": "Checklist is risk-ranked HIGH/MEDIUM/LOW and reflects a small-blast-radius fix (most items should be MEDIUM/LOW; the fix itself is HIGH-confidence)"}
+      ]
+    },
+    {
+      "id": 3,
+      "eval_name": "diff-mode-uncommitted-changes",
+      "prompt": "Run a blast-radius analysis on the uncommitted changes in the helpdesk working tree (cwd: /Users/ben/helpdesk). Use 'git diff' and 'git diff --staged' to discover what's changed. Produce report.md, checklist.md, and blast-radius-inline.md.",
+      "expected_output": "Must identify the unfulfilled→pending rename incompleteness (writers vs readers), the new catalog-scrape batch-ingest route missing from HMAC raw-body whitelist, jest.mock usage in catalogScrape.batchIngest.test.js as HIGH risk, and call out the deleted HTN Helpdesk.env as a secrets-in-git-history concern.",
+      "files": [],
+      "assertions": [
+        {"text": "Report identifies the 'unfulfilled' → 'pending' rename as incomplete, naming at least one writer-side file (e.g. fulfillmentReplayService, shopifyOrderSyncService/persistence, or rexSyncState) that still uses 'unfulfilled'"},
+        {"text": "Report flags the new /api/portal/catalog-scrape/batch-ingest route as missing from the HMAC raw-body whitelist (or equivalent webhook signature/raw-body concern)"},
+        {"text": "Report flags jest.mock usage in catalogScrape.batchIngest.test.js as HIGH risk per the project's real-DB-only rule"},
+        {"text": "Report flags the deleted HTN Helpdesk.env or production secrets as a git-history concern requiring rotation"},
+        {"text": "Report names the speed mode used (lite/standard/deep) at the top — for this diff size, should be standard or deep"},
+        {"text": "Report references at least two patterns from bug-patterns.md by name (e.g. incomplete rename, HMAC wiring, mock drift)"},
+        {"text": "blast-radius-inline.md exists with per-hunk annotations referencing actual files from the diff"},
+        {"text": "Checklist is risk-ranked HIGH/MEDIUM/LOW with the secrets-rotation item appearing as CRITICAL or HIGH"},
+        {"text": "Report includes Trace Boundaries explaining what was deferred (large diff)"}
+      ]
+    }
+  ]
+}

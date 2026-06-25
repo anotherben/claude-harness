@@ -116,6 +116,34 @@ install_global() {
     ok "Installed ${cmd_count} commands to ~/.claude/commands/"
   fi
 
+  # --- Scripts (shared engines: worktree cleanup, etc.) ---
+  if [ -d "$HARNESS_DIR/scripts" ]; then
+    mkdir -p "$GLOBAL_DIR/scripts"
+    local script_count=0
+    for s in "$HARNESS_DIR/scripts/"*.sh; do
+      [ -f "$s" ] || continue
+      cp "$s" "$GLOBAL_DIR/scripts/$(basename "$s")"
+      chmod +x "$GLOBAL_DIR/scripts/$(basename "$s")"
+      script_count=$((script_count + 1))
+    done
+    ok "Installed ${script_count} scripts to ~/.claude/scripts/"
+  fi
+
+  # --- launchd automation (macOS only; __HOME__-templated plists) ---
+  if [ -d "$HARNESS_DIR/launchd" ] && command -v launchctl >/dev/null 2>&1; then
+    local job_count=0
+    for p in "$HARNESS_DIR/launchd/"*.plist; do
+      [ -f "$p" ] || continue
+      local base=$(basename "$p"); local label="${base%.plist}"
+      local dst="$HOME/Library/LaunchAgents/$base"
+      sed "s#__HOME__#$HOME#g" "$p" > "$dst"
+      launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+      launchctl bootstrap "gui/$(id -u)" "$dst" 2>/dev/null || launchctl load "$dst" 2>/dev/null || true
+      job_count=$((job_count + 1))
+    done
+    ok "Installed ${job_count} launchd jobs to ~/Library/LaunchAgents/"
+  fi
+
   # --- Settings.json (hooks wiring) ---
   if [ -f "$GLOBAL_DIR/settings.json" ]; then
     # Check if hooks are already wired
@@ -251,6 +279,13 @@ generate_global_settings() {
       {
         "hooks": [
           { "type": "command", "command": "${hp}/ensure-environment.sh", "timeout": 30 }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          { "type": "command", "command": "${hp}/cleanup-session-worktree.sh", "timeout": 20 }
         ]
       }
     ],

@@ -9,6 +9,27 @@ description: Use when worktrees are accumulating in .claude/worktrees/ or .workt
 
 Audit and clean up git worktrees that are no longer needed. Stale worktrees waste disk space, cause confusion about which branch is active, and can lead to merge conflicts. This skill provides a safe process for identifying and removing worktrees that have been merged or abandoned.
 
+## Fast path: the shared engine (use this first)
+
+For helpdesk-style repos, prefer the single hardened engine over hand-rolling the steps below — it encodes the full proven-safe recipe (memory: `worktree-accumulation`, 2026-06-25):
+
+```bash
+# DRY-RUN (default — shows KEEP/WOULD REMOVE per worktree, changes nothing):
+~/.claude/scripts/cleanup-merged-worktrees.sh --repo /Users/ben/helpdesk --fetch
+# APPLY (patch-backs uncommitted work, then removes):
+~/.claude/scripts/cleanup-merged-worktrees.sh --repo /Users/ben/helpdesk --fetch --apply
+```
+
+What it gets right that the manual steps below miss:
+- **Every location in one pass.** `git worktree list` enumerates `.cursor/`, `~/.codex/`, `.Codex/` (case variant), `.cache/`, `.claude/`, `.worktrees/` — all registered to the same `.git`. No per-dir hunting.
+- **Removable = merged into dev OR main, OR remote branch GONE** (deleted on merge; repo has `delete_branch_on_merge:true`). The old `git branch --merged dev`-only check misses main-merged and rebase/merge-deleted branches.
+- **KEEPS active worktrees** — remote branch still exists AND not merged = open/in-flight PR. Never touched.
+- **Commits are never lost** — branch refs survive `worktree remove`; only uncommitted *working-tree* changes are at risk, and those are **patch-backed** to `~/.claude/worktree-backups/<date>/` before any `--force`.
+- **Never touches** the main checkout, the current session's worktree, or locked worktrees. Git ops are wrapped with an 8s timeout (worktree ops hang under Cursor/agent lock contention).
+- `--scope session --current <path>` cleans just one worktree (used by the SessionEnd hook and skill teardown steps). `--no-force` leaves dirty worktrees untouched instead of patch-and-force.
+
+The manual process below is the fallback / explanation of what the engine does — use it for non-helpdesk repos or to understand the classification.
+
 ## When to Use
 
 - Before starting a new feature (verify clean state)

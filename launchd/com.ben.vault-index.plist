@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ben.vault-index</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>__HOME__/.vault-index/src/daemon-entry.js</string>
+    <string>--sockPath=__HOME__/.vault-index/daemon.sock</string>
+    <string>--pidPath=__HOME__/.vault-index/daemon.pid</string>
+    <string>--dbPath=__HOME__/.vault-index/index.db</string>
+    <string>--vaultPath=__HOME__/Documents/Product Ideas</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>__HOME__/.vault-index</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>VAULT_INDEX_VAULT_PATH</key>
+    <string>__HOME__/Documents/Product Ideas</string>
+    <key>VAULT_INDEX_DISABLE_WATCHER</key>
+    <string>1</string>
+    <key>VAULT_INDEX_FILE_DISCOVERY</key>
+    <string>find</string>
+    <key>VAULT_INDEX_INTERVAL_MS</key>
+    <string>300000</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>__HOME__/.vault-index/logs/launchd.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>__HOME__/.vault-index/logs/launchd.err.log</string>
+</dict>
+</plist>
