@@ -1,0 +1,45 @@
+{
+  "skill_name": "enterprise-next",
+  "definition_of_100_percent": [
+    "read_only_next_action",
+    "warm_agent_session_routing",
+    "discover_required_for_cold_state",
+    "blocked_artifact_detection",
+    "no_automatic_stage_invocation"
+  ],
+  "evals": [
+    {
+      "id": "next-cold-repo-discovers-first",
+      "prompt": "The user asks what to do next in a repo with no .codex/enterprise-state/repo-profile.json, no repo traps, and no agent session files.",
+      "expected_output": "The skill must run the read-only controller, report DISCOVER_REQUIRED, recommend enterprise-discover, and avoid creating state or invoking discover automatically.",
+      "assertions": [
+        "Reports DISCOVER_REQUIRED when repo profile or traps are missing.",
+        "Names enterprise-discover as the recommended skill.",
+        "States that the check is read-only and does not create files.",
+        "Does not advance to plan, contract, build, or verify."
+      ]
+    },
+    {
+      "id": "next-blocks-unlocked-contract",
+      "prompt": "The agent session has plan and plan-360 artifacts, plus a contract artifact whose status is DRAFT, and the user asks what should happen next.",
+      "expected_output": "The skill must report BLOCKED, recommend returning to enterprise-contract, and explain that build cannot start until the recorded contract is LOCKED.",
+      "assertions": [
+        "Reports BLOCKED for an unlocked contract.",
+        "Recommends enterprise-contract rather than enterprise-build.",
+        "Mentions the agent session artifact state as the source of truth.",
+        "Does not bypass the blocked gate."
+      ]
+    },
+    {
+      "id": "next-routes-standard-lane-through-review-forge-verify",
+      "prompt": "A STANDARD agent session has locked contract and build packet artifacts, build is recorded, review is recorded, forge is not recorded, and the user asks for the next step.",
+      "expected_output": "The skill must recommend enterprise-forge as the next stage. After forge is recorded, it should recommend enterprise-verify, and after verification is recorded it should recommend enterprise-harness.",
+      "assertions": [
+        "Uses the agent session history and artifacts to choose the next stage.",
+        "Requires forge before verify for a non-QUICK lane.",
+        "Uses READY_TO_VERIFY only after review and forge evidence exists.",
+        "Uses READY_TO_SHIP with enterprise-harness after verification exists."
+      ]
+    }
+  ]
+}

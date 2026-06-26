@@ -1,0 +1,16 @@
+{
+  "captured_at": "2026-06-16T18:02:12Z",
+  "api_base": "https://htn-helpdesk.onrender.com",
+  "health_path": "/health",
+  "http_code": 503,
+  "status": "unhealthy",
+  "database": "connected",
+  "total_backlog": 826,
+  "issue_codes": [
+    "total_backlog"
+  ],
+  "gate": {
+    "backlog_mult": 1.2,
+    "backlog_slack": 25
+  }
+}

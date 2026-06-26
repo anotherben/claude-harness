@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-06-16T21:51:19Z",
+  "cycle": 1,
+  "http_code": 503,
+  "status": "unhealthy",
+  "database": "connected",
+  "total_backlog": 825,
+  "baseline": 826,
+  "threshold": 1016,
+  "delta_pct": -0.1,
+  "backlog_ok": true,
+  "new_issues": [
+    "order_outbox_oldest_due"
+  ],
+  "fail_reasons": [
+    "new_issue_order_outbox_oldest_due"
+  ],
+  "verdict": "FAIL"
+}

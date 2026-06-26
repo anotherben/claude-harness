@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blast Radius"
+  short_description: "Trace downstream and review-trap risk"
+  default_prompt: "Use $blast-radius to trace a PR, diff, file, or bugfix for downstream, async, field-contract, review-derived trap, and operator workflow risks before merging."

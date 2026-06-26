@@ -1,13 +1,36 @@
 {
-  "version": "2.2.1",
+  "version": "2.3.0",
   "name": "claude-harness",
   "description": "Vibe prompt in, enterprise quality out.",
-  "tiers": ["lite", "standard", "full"],
+  "tiers": [
+    "lite",
+    "standard",
+    "full"
+  ],
   "default_tier": "lite",
-  "supported_project_types": ["node", "python", "go", "rust"],
-  "required_tools": ["python3", "git", "bash", "node"],
-  "optional_tools": ["jq", "npx", "obsidian"],
-  "mcp_servers": ["cortex-engine", "vault-index", "skills-index", "cortex-memory"],
-  "skill_count": 63,
-  "hook_count": 47
+  "supported_project_types": [
+    "node",
+    "python",
+    "go",
+    "rust"
+  ],
+  "required_tools": [
+    "python3",
+    "git",
+    "bash",
+    "node"
+  ],
+  "optional_tools": [
+    "jq",
+    "npx",
+    "obsidian"
+  ],
+  "mcp_servers": [
+    "cortex-engine",
+    "vault-index",
+    "skills-index",
+    "cortex-memory"
+  ],
+  "skill_count": 71,
+  "hook_count": 48
 }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ben.worktree-cleanup-daily</string>
+
+    <!-- Daily catch-all sweep: remove merged / remote-gone worktrees across every store,
+         keep active open-PR worktrees, patch-back any uncommitted work first.
+         Engine is safe-by-construction; see ~/.claude/scripts/cleanup-merged-worktrees.sh -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__HOME__/.claude/scripts/cleanup-merged-worktrees.sh</string>
+        <string>--repo</string>
+        <string>__HOME__/helpdesk</string>
+        <string>--fetch</string>
+        <string>--apply</string>
+    </array>
+
+    <!-- 7:30 AM local (system TZ Australia/Melbourne); offset from the 7:00 schema audit. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <key>WorkingDirectory</key>
+    <string>__HOME__/helpdesk</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/.claude/scripts/worktree-cleanup-daily.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/.claude/scripts/worktree-cleanup-daily.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

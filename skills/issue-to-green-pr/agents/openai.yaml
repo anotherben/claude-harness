@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issue to Green PR"
+  short_description: "Run one GitHub issue to PR"
+  default_prompt: "Use $issue-to-green-pr for GitHub issue <url-or-number> and stop at a proved green PR."
