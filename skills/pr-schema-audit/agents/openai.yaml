@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Schema Audit"
+  short_description: "Audit PR SQL against live schema"
+  default_prompt: "Use $pr-schema-audit to audit PR 123 against the live Helpdesk schema."

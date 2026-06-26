@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Variable Audit"
+  short_description: "Audit variable usage and hand off issues"
+  default_prompt: "Use $code-variable-audit to audit PR 123 for suspicious variable usage and publish an investigation handoff if authorized."
