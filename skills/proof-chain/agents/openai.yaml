@@ -1,0 +1,4 @@
+interface:
+  display_name: "Proof Chain"
+  short_description: "Verify done means proved through the right gates"
+  default_prompt: "Check whether this work is actually done: patch-or-fix, prove-it, PR checks, review threads, merge, and deployed proof as needed."

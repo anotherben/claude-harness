@@ -1,0 +1,45 @@
+{
+  "schema_version": "helpdesk.quality_gates.ownership_ledger.v1",
+  "artifact_type": "ownership_ledger",
+  "goal_id": "{{goal_id}}",
+  "scope_owner": {
+    "domain": "{{domain_or_skill}}",
+    "primary_boundary": "{{owning_module_or_artifact}}",
+    "reason_to_change": "{{single_reason_to_change}}"
+  },
+  "authoritative_source": "{{authoritative_source}}",
+  "write_owner": "{{write_owner}}",
+  "route_or_service_seam": "{{route_or_service_seam}}",
+  "downstream_consumers": [
+    "{{downstream_consumer}}"
+  ],
+  "sibling_flows": [
+    "{{sibling_flow}}"
+  ],
+  "worktree_or_route_card_state": "{{worktree_or_route_card_state}}",
+  "files": [
+    {
+      "path": "{{path}}",
+      "single_responsibility": "{{single_responsibility}}",
+      "owner": "{{owner}}",
+      "allowed_action": "{{create|edit|move|delete|read_only}}",
+      "status": "{{planned|touched|verified}}"
+    }
+  ],
+  "boundary_checks": [
+    {
+      "id": "{{boundary_check_id}}",
+      "claim": "{{ownership_or_srp_claim}}",
+      "evidence": "{{file_line_command_or_artifact}}",
+      "result": "{{proven|blocked|not_applicable}}"
+    }
+  ],
+  "handoffs": [
+    {
+      "from": "{{producer}}",
+      "to": "{{consumer}}",
+      "contract": "{{contract_or_artifact}}",
+      "status": "{{unchanged|updated|blocked}}"
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "skill_name": "enterprise-forge",
+  "definition_of_100_percent": [
+    "adversarial_not_recap",
+    "contract_probe_from_new_angle",
+    "runtime_file_execution_trace",
+    "e2e_edge_case_attack",
+    "live_db_and_headless_required_when_relevant",
+    "repo_gate_matrix_attacked",
+    "bugs_recycle_to_contract_and_tdd",
+    "pr_timing_and_advisory_attack",
+    "structured_attack_lens_packet_required",
+    "attack_lens_agent_session_receipt_proof",
+    "codex_headless_default_attack_runtime",
+    "contract clause coverage required",
+    "proof subject integrity required",
+    "runtime surface inventory required",
+    "vague receipts rejected",
+    "subset overclaims rejected",
+    "stale artifact provenance rejected",
+    "intent_continuity_attacked",
+    "intent continuity attacked",
+    "touched_file_srp_attacked",
+    "db_query_ownership_attacked_for_reads",
+    "last150_pr_trap_replay_forged"
+  ],
+  "evals": [
+    {
+      "id": "forge-finds-missing-proof",
+      "prompt": "Forge a reviewed change where all tests pass, but one changed runtime file has no direct execution or E2E trace evidence.",
+      "expected_output": "Forge must mark missing proof as a bug, append or require a contract item, recycle through TDD, and refuse FORGED until the runtime file has execution proof or a documented non-runtime reason.",
+      "assertions": [
+        "Treats missing runtime proof as a forge bug.",
+        "Does not accept test count as sufficient evidence.",
+        "Requires contract/TDD recycle.",
+        "Refuses FORGED until proof exists."
+      ]
+    },
+    {
+      "id": "forge-attacks-real-risk",
+      "prompt": "Forge a money/order/invoice change with SQL filters and a rendered UI result.",
+      "expected_output": "Forge must attack SQL precedence/type/sargability/falsy hazards, concurrency/idempotence, E2E workflow edges, tenant/security boundaries, headless UI proof, repo gate evidence, and record a structured attack lens packet with agent/session/receipt proof for every lens. Delegated attack lenses should use Codex headless by default after MCP preflight.",
+      "assertions": [
+        "Attacks schema/query hazards with live DB proof.",
+        "Attacks concurrency and idempotence.",
+        "Requires headless UI proof.",
+        "Attacks repo gate matrix and stale evidence.",
+        "Uses Codex headless as the default delegated attack-lens runtime when delegation is available.",
+        "Records structured attack lens packet evidence with agent/session/receipt proof."
+      ]
+    },
+    {
+      "id": "forge-attacks-copilot-timing",
+      "prompt": "Forge a high-risk inventory PR where Copilot reviewed an earlier commit, the latest commit changed query behavior, and comments are marked non-blocking.",
+      "expected_output": "Forge must treat the old Copilot review as stale for changed files, attack the high-risk draft/open exception, and require advisory-harvest routing for useful non-blocking comments while escalating correctness risks to blocking recycle.",
+      "assertions": [
+        "Treats Copilot review on an older head as stale for changed files.",
+        "Attacks whether high-risk PR draft policy or open exception is justified.",
+        "Requires advisory-harvest routing for non-blocking comments.",
+        "Escalates credible correctness risks into contract/TDD recycle."
+      ]
+    },
+    {
+      "id": "forge-attacks-deep-module-quality",
+      "prompt": "Forge a change that introduces a new service seam which only forwards arguments and leaks retry ordering and query shape to every caller.",
+      "expected_output": "Forge must use the deep-module lens to attack shallow pass-through modules, leaked internals, one-adapter seams, and tests coupled to private implementation. Material findings should recycle into contract items or fail forge.",
+      "assertions": [
+        "Applies the deep-module lens to changed seams.",
+        "Uses deletion test and locality/leverage reasoning.",
+        "Flags leaked retry, cache, ordering, or query-shape internals.",
+        "Classifies material architecture-depth failures as recycle-worthy bugs or blockers."
+      ]
+    },
+    {
+      "id": "forge-rejects-browser-worker-proof-gap",
+      "prompt": "Forge a browser-worker reliability lane where the report says PC-1 PASS at suite level, the accept route still returns the old payload, the contract required runId, bullmq queue id, worker identity, and readinessSnapshot, /api/health compatibility was not exercised, Chrome proof only hit /api/ready and an admin recovery UI, terminal worker branches and /data disk readiness were not proved, full SJS scrape/data semantics were claimed without source-to-consumer proof, and gate summary, Chrome proof, and final HEAD use different SHAs.",
+      "expected_output": "Forge must reject the lane. It must require contract clause coverage with source, executable assertion, and runtime proof for each clause; fail proof subject integrity because artifact heads drift; require a runtime surface inventory covering accept metadata, /api/health, /api/ready, terminal worker branches, disk/data volume readiness, and claimed scrape/data semantics; and recycle the missing clauses through contract/TDD instead of accepting PC-level PASS.",
+      "assertions": [
+        "Rejects PC-level or suite-level PASS without clause-level source, assertion, and runtime proof.",
+        "Fails forge when final HEAD, gate summary, browser proof, receipt, or runtime provenance SHAs drift.",
+        "Requires runtime route/surface inventory for accept metadata, health/readiness routes, terminal branches, disk/data readiness, and scrape/data semantics.",
+        "Rejects Chrome proof that only exercises /api/ready and admin UI when the contract claims broader browser-worker behavior.",
+        "Treats vague receipts and stale artifacts as missing proof even when they say PASS.",
+        "Rejects full workflow or full-system claims when any in-scope browser-worker surface remains NOT PROVED.",
+        "Requires missing browser-worker clauses to recycle through contract/TDD before FORGED."
+      ]
+    },
+    {
+      "id": "forge-rejects-subset-overclaim",
+      "prompt": "Forge an async worker change where receipts show a passing unit suite and one Chrome smoke against readiness, but the report claims full-system reliability while queue retries, terminal failure branches, data persistence, and runtime volume health were not exercised and one receipt predates the final commit.",
+      "expected_output": "Forge must reject the final claim. It must mark vague suite/smoke receipts and stale artifacts as missing proof, build a proved/not-proved surface inventory, narrow the proof scope to the proved subset or fail, and recycle the missing runtime branches and data semantics through contract/TDD.",
+      "assertions": [
+        "Rejects vague suite or smoke receipts as proof for unexercised runtime surfaces.",
+        "Fails stale receipt or pre-final-commit artifact provenance.",
+        "Requires proved/not-proved inventory before accepting async worker claims.",
+        "Rejects full-system reliability claims from subset proof.",
+        "Routes missing runtime branches and data semantics back to contract/TDD."
+      ]
+    },
+    {
+      "id": "forge-attacks-intent-srp-and-query-ownership",
+      "prompt": "Forge a reviewed diff where tests pass, but the operator acceptance from the original vague request is not proved, a touched mixed service skipped its fix-now refactor, and a read-only live-proof SELECT bypasses the owning reader seam.",
+      "expected_output": "Forge must reject the lane. It must apply intent-continuity, touched-file SRP, and DB/query ownership lenses; classify the skipped fix-now refactor and unowned read-only query as forge bugs; require owner seam, current DB/schema, scope predicates, bounded proof, readback, cleanup, and redaction evidence; and recycle missing rows through contract/TDD before FORGED.",
+      "assertions": [
+        "Attacks original user intent and operator acceptance proof, not just test pass status.",
+        "Treats skipped fix-now touched-file SRP/refactor as a forge bug.",
+        "Requires DB/query ownership for read-only SELECT/live-proof queries.",
+        "Requires bounded proof, readback, cleanup, current DB/schema, and scoping evidence.",
+        "Recycles missing intent, SRP, and query ownership rows through contract/TDD."
+      ]
+    },
+    {
+      "id": "forge-recycles-last150-trap-misses",
+      "prompt": "Forge a reviewed PR after a code pivot where normal tests pass, but no artifact proves the recent trap classes: stale UI rehydration, config outage/unlinked semantics, proof-lane false greens, stale proof-subject preflight, weak assertions, DB ownership, integration side effects, redaction, and SRP domain boundaries.",
+      "expected_output": "Forge must apply a Last-150 PR replay lens, classify missing applicable rows as forge bugs, and recycle them through contract/TDD before FORGED.",
+      "assertions": [
+        "Applies a Last-150 PR replay lens or equivalent current trap-bank attack.",
+        "Treats missing applicable stale UI/config/proof-lane/proof-subject/weak-assertion rows as forge bugs.",
+        "Requires DB/query ownership, integration fault/idempotency, redaction, and SRP/domain proof where applicable.",
+        "Rejects stale pre-pivot proof after code changed.",
+        "Recycles missing trap rows through contract/TDD before FORGED."
+      ]
+    }
+  ]
+}

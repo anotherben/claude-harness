@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pre Code Hardening"
+  short_description: "Gate work before coding starts"
+  default_prompt: "Before coding, run the hardening gate: source truth, live proof plan, domain/SRP opportunities, ownership, blast radius, and stop rules."

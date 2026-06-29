@@ -1,0 +1,4 @@
+interface:
+  display_name: "Specialist Dispatch"
+  short_description: "Create one-job specialist agent briefs"
+  default_prompt: "Split this work into bounded specialist agents with one job each, evidence outputs, stop rules, and forbidden actions."

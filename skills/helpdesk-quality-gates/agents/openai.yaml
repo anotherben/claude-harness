@@ -1,0 +1,7 @@
+interface:
+  display_name: "Helpdesk Quality Gates"
+  short_description: "Current-head quality gates for Helpdesk work"
+  default_prompt: "Use $helpdesk-quality-gates to validate this Helpdesk PR, goal, skill, or workflow before claiming it is ready."
+
+policy:
+  allow_implicit_invocation: true

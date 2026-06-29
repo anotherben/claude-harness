@@ -1,0 +1,43 @@
+{
+  "skill_name": "enterprise-compound",
+  "definition_of_100_percent": [
+    "verified_proof_boundary_preserved",
+    "review_failure_prevention_is_machine_readable",
+    "prevention_records_have_enforced_status",
+    "no_story_only_solution_notes",
+    "follow_up_blockers_are_explicit"
+  ],
+  "evals": [
+    {
+      "id": "compound-preserves-proof-boundary",
+      "prompt": "Compound a verified slice-level fix after tests passed for one invoice path but not every return leg.",
+      "expected_output": "The compound skill must carry forward the slice-level proof boundary, describe what remains unproven, and refuse to imply full-system completion in the solution note.",
+      "assertions": [
+        "Preserves the upstream proof boundary exactly.",
+        "Names unproven legs instead of upgrading the claim.",
+        "Keeps the solution note retrieval-focused rather than story-only."
+      ]
+    },
+    {
+      "id": "compound-enforces-prevention-records",
+      "prompt": "Copilot caught a schema/query bug in review. Compound the learning so future runs catch it earlier.",
+      "expected_output": "The compound skill must write machine-readable prevention records for every real finding, with a status of implemented, tracked-follow-up, gate-added, eval-added, or blocked-with-reason.",
+      "assertions": [
+        "Requires machine-readable prevention records.",
+        "Maps each finding to the earliest upstream stage that should catch it.",
+        "Rejects vague prevention such as add more tests or be careful."
+      ]
+    },
+    {
+      "id": "compound-preserves-domain-language-decisions",
+      "prompt": "Compound a lane that resolved a terminology conflict between purchase order, supplier order, and draft PO, and deferred an ADR about ownership.",
+      "expected_output": "The compound skill must capture canonical terms, avoided synonyms, resolved code/user-language conflicts, ADR written or deferred status, and why the language decision belongs in retrieval memory.",
+      "assertions": [
+        "Captures canonical domain terms and avoided synonyms.",
+        "Records code/user-language conflicts that were resolved.",
+        "Records ADR written or deferred status with rationale.",
+        "Explains why the terminology or decision should be retrievable later."
+      ]
+    }
+  ]
+}

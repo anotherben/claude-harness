@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagnostic Cohort"
+  short_description: "Bounded consensus loops for diagnostic handoffs"
+  default_prompt: "Use $diagnostic-cohort to run a bounded diagnostic consensus review and produce a validated contract."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Clean Architecture"
+  short_description: "Structure UI code without proof drift"
+  default_prompt: "Use $frontend-clean-architecture to plan or review this React/TypeScript UI change."

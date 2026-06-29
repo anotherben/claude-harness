@@ -1,16 +1,6 @@
 ---
 name: contract-manager
-description: >
-  Reviews plans, bug fixes, and feature designs to produce a Contract Review Document before
-  any implementation begins. The contract must be so precise that any model at any level can
-  implement it mechanically — no interpretation, no assumptions, just applying code to files.
-  Use this skill BEFORE any implementation work: after a plan is written, after a bug is analysed,
-  after a design is agreed. If someone says "let's start coding", "implement this", "build this",
-  or is about to enter executing-plans — invoke contract-manager first. Also use when the user
-  says "contract review", "audit this plan", "verify the spec", or "is this ready to implement".
-  Has a verification mode: after implementation, re-read the contract and verify every
-  postcondition was met. Trigger verification when user says "verify contract", "check the
-  contract", or "did we meet the spec".
+description: "Review plans, fixes, and designs before implementation so code can be built mechanically. Use before coding, contract review, spec audit, readiness checks, or post-implementation contract verification. Fails vague contracts and missing Mechanical Build Packet fields."
 ---
 
 # Contract Manager
@@ -44,6 +34,42 @@ This skill has two modes:
 Before ANY implementation work that isn't a trivial one-liner (typo fix, obvious constant change).
 If in doubt, run the contract — the cost of over-specifying is near zero compared to the cost of
 a wrong assumption.
+
+### Mechanical Build Packet Standard
+
+For enterprise or multi-file work, the contract review fails unless the source
+plan/contract includes a Mechanical Build Packet with these exact fields:
+
+- `Allowed Runtime Paths`
+- `Allowed Test Paths`
+- `Allowed Artifact Paths`
+- `Module Boundary`
+- `Folder Placement`
+- `Public Seam`
+- `Owner Layer`
+- `Allowed Dependency Direction`
+- `Forbidden Imports`
+- `Architecture Tests`
+- `Postcondition Execution Order`
+- `Expected RED`
+- `Expected GREEN`
+- `Required Commands`
+- `Forbidden Changes`
+- `Refusal Conditions`
+
+Each field must contain concrete paths, commands, postcondition ids, seams,
+layers, dependency directions, forbidden imports, architecture tests, or explicit
+stop rules. `TBD`, `figure out during build`, `as needed`, `probably`, `clean
+architecture`, `standard layout`, `normal layering`, or empty lists are failures.
+If build would need to choose a path, invent a helper, pick a test strategy,
+decide architecture, discover a proof command, infer folder layout, decide an
+owner layer, or interpret a forbidden seam/import, the contract is not mechanical.
+
+For PR-producing or enterprise work, the source plan/contract also fails unless it includes a concrete `PR Review Prevention Matrix`. Every applicable recent-review class must be mapped to a contract item and proof command before implementation: branch/reason coverage, async/deferred state, request/response/config fields, SQL cast/index/migration safety, runtime-to-proof parity, proof-lane routing, tenant/owner scoping, external fallback/idempotent retry, security/log redaction, public seam/UI/accessibility, performance/bounded work, artifact hygiene, and test integrity.
+
+For multi-file, refactor, extraction, or architecture-sensitive work, the source plan/contract also fails unless it includes an `Architecture Ratchet Matrix`. Every boundary must name current source evidence, target shape, public seam, owner layer, allowed dependency direction, forbidden imports/couplings, architecture test, and future regression that should fail fast. Deep modules without a protected public seam are blockers, not implementation details.
+
+For schema/query/data-sensitive work, the source plan/contract also fails unless it includes a `Local Full-Schema Proof Plan`. Prefer a local Postgres clone or restored snapshot that matches the migrated schema; raw live data requires explicit approval, least-privilege local use, no production writes, no printed secrets, no repo dumps, and cleanup/reset instructions. If this proof is unavailable, the contract must block or narrow the claim.
 
 ### Step 1: Identify the Source
 
@@ -220,6 +246,32 @@ For each change, how to undo it:
 | Contract 1 | `git checkout -- path/to/file.js` | Yes — file has no other pending changes |
 | Migration | Run rollback SQL above | Yes — tested on dev |
 
+## Mechanical Build Packet Review
+
+| Required Field | Present | Concrete | Evidence / Notes |
+|----------------|---------|----------|------------------|
+| Allowed Runtime Paths | Yes/No | Yes/No | Exact files/directories only |
+| Allowed Test Paths | Yes/No | Yes/No | Exact test files/directories only |
+| Allowed Artifact Paths | Yes/No | Yes/No | Exact docs/proof/state artifacts |
+| Module Boundary | Yes/No | Yes/No | Exact boundary being preserved or introduced |
+| Folder Placement | Yes/No | Yes/No | Exact destination folder and why that layer owns it |
+| Public Seam | Yes/No | Yes/No | Export, route, component, worker, or command consumers use |
+| Owner Layer | Yes/No | Yes/No | Owning architectural layer and responsibility |
+| Allowed Dependency Direction | Yes/No | Yes/No | Permitted import/call direction between layers |
+| Forbidden Imports | Yes/No | Yes/No | Explicit imports, helper shortcuts, and couplings that must fail |
+| Architecture Tests | Yes/No | Yes/No | Module-graph, startup seam, seam-load, or consumer smoke proof |
+| Postcondition Execution Order | Yes/No | Yes/No | Ordered PC ids |
+| Expected RED | Yes/No | Yes/No | Command and expected failing assertion |
+| Expected GREEN | Yes/No | Yes/No | Command and expected passing assertion |
+| Required Commands | Yes/No | Yes/No | Local/CI/live/headless commands |
+| Forbidden Changes | Yes/No | Yes/No | Files/seams/actions build must not touch |
+| Refusal Conditions | Yes/No | Yes/No | Conditions that stop build and recycle upstream |
+| PR Review Prevention Matrix | Yes/No | Yes/No | Applicable recent-review classes mapped to contract items and proof commands |
+| Architecture Ratchet Matrix | Yes/No | Yes/No | Boundaries, public seams, dependency direction, forbidden imports, and architecture tests locked |
+| Local Full-Schema Proof Plan | Yes/No/N/A | Yes/No | DB/schema-sensitive work has local Postgres proof or a blocking/narrowing decision |
+
+Any `Present = No` or `Concrete = No` row is a blocker.
+
 ## Blockers
 
 List anything that prevents this contract from being VERIFIED:
@@ -232,6 +284,7 @@ List anything that prevents this contract from being VERIFIED:
 - [ ] All change contracts complete (no TBD, no "figure out", no "probably")
 - [ ] All test contracts defined with exact code
 - [ ] All rollback contracts verified
+- [ ] Mechanical Build Packet has every required field and every field is concrete
 - [ ] No blockers remain
 - [ ] Zero assumptions — every fact verified against live system
 
@@ -256,7 +309,14 @@ The contract FAILS if any of these are true:
 | "Similar to X" | Specify exactly, don't reference by analogy |
 | Missing tenant_id | Any INSERT/query without tenant scoping (unless table has none) |
 | Mock data in tests | Tests must hit real dev DB, not mocked responses |
+| Missing PR Review Prevention Matrix | Recent-review classes are left for reviewers to find after PR submission |
+| Unmapped applicable risk cell | SQL cast/index, proof-lane, async race, external fallback, redaction, artifact, or UI accessibility risk lacks a contract item and proof command |
+| Missing Architecture Ratchet Matrix | File structure, deep modules, seams, or forbidden imports are left for build to invent |
+| Missing local full-schema proof plan | Schema/query behavior relies on migrations, mocks, or production-only proof instead of local Postgres evidence |
 | Missing rollback | Every change must be reversible |
+| Missing build packet field | No `Allowed Runtime Paths`, `Expected RED`, or `Refusal Conditions` |
+| Vague build packet field | `Allowed Runtime Paths: affected services` instead of exact paths |
+| Build must decide | The contract leaves paths, tests, proof, helper choice, or architecture to implementation |
 
 ### Step 5: Present for Review
 
@@ -264,7 +324,7 @@ After writing the contract:
 
 1. State the verdict clearly: PASS or FAIL
 2. If FAIL, list every violation with its location in the contract
-3. If PASS, confirm: "This contract is ready for peer review. Any model at any level can implement this mechanically."
+3. If PASS, confirm: "This contract is ready for peer review. The Mechanical Build Packet is complete; any model at any level can implement this mechanically."
 4. Ask: "Do you want to review the contract, or should I proceed to implementation?"
 
 ---
@@ -278,15 +338,18 @@ After implementation is complete, before marking work as done.
 ### Process
 
 1. Read the contract document from `docs/contracts/`
-2. For each change contract:
+2. Read the recorded Mechanical Build Packet and confirm implementation stayed
+   inside its allowed paths, postcondition order, required commands, forbidden
+   changes, and refusal conditions.
+3. For each change contract:
    - Read the actual file at the specified path
    - Compare against the Target State in the contract
    - Verify every postcondition is met
    - Run the test contract and confirm it passes
-3. For migration contracts:
+4. For migration contracts:
    - Verify the migration file matches the contract exactly
    - Verify the rollback SQL exists
-4. Produce a verification report:
+5. Produce a verification report:
 
 ```markdown
 # Contract Verification: [Name]
@@ -310,6 +373,20 @@ Any deviation from the contract — even a variable name change — must be reco
 |----------|-----------|-----------|-------|
 | Contract 1 | None | — | — |
 | Contract 2 | Used `modified_at` instead of `updated_at` | No — column name mismatch | Fix required |
+
+## Build Packet Compliance
+
+| Field | Compliant | Evidence |
+|-------|-----------|----------|
+| Allowed Runtime Paths | Yes/No | `git diff --name-only` comparison |
+| Allowed Test Paths | Yes/No | Test files changed |
+| Allowed Artifact Paths | Yes/No | Artifact files changed |
+| Postcondition Execution Order | Yes/No | Build receipts |
+| Expected RED | Yes/No | Runner output |
+| Expected GREEN | Yes/No | Runner output |
+| Required Commands | Yes/No | Command receipts |
+| Forbidden Changes | Yes/No | Diff and search proof |
+| Refusal Conditions | Yes/No | Build log / blockers |
 
 ## Verdict
 

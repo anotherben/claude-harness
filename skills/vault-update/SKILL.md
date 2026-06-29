@@ -48,6 +48,12 @@ Optional but high-value fields:
 - `blocked_by`
 - `related`
 
+Resume policy:
+
+- Quiet active work is not terminal and not failure.
+- For context-needed active slices, refresh `next_action`, `handoff_note`, branch/worktree, and ownership anchors instead of archiving or closing.
+- A project may have 5+ active slices, and the vault has no active-project cap.
+
 ## Steps
 
 ### 1. Find the item
@@ -117,4 +123,3 @@ Print one line:
 ## Fail-Closed Rule
 
 If live claim state and note state disagree, repair that before doing anything else.
-

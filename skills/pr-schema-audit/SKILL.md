@@ -12,7 +12,9 @@ Use this skill to run an audit-only schema check for a Helpdesk GitHub PR. It re
 - Never paste or store the database URL in this skill.
 - Read the URL from `HELPDESK_SCHEMA_AUDIT_DATABASE_URL` or from `~/.codex/secrets/helpdesk-schema-audit-db-url`.
 - Keep the secret file owner-only. The script refuses group or world-readable secret files.
-- Use the same canonical skill from Claude through the `~/.claude/skills/pr-schema-audit` symlink. Do not copy the skill or create a second secret.
+- Use the full skill body and bundled scripts from the invoked skill directory.
+  Keep the Codex and Claude copies in sync; do not create a second secret or
+  replace either copy with a redirect-only wrapper.
 - Do not edit repo code, run migrations, execute application write workflows, or fix findings.
 - Default to dry-run. Add `--publish` only when the user asked for GitHub publication or the current task explicitly authorizes it.
 - For open PRs, publication creates a PR conversation comment. For merged or closed PRs, publication opens a GitHub issue labeled `bug`.
@@ -76,7 +78,7 @@ Call-site / resolution:
 - **Object arguments** — `db.query({ text|sql: '...' })` resolves to the embedded SQL; `service.execute({ ...non-SQL... })` is recognized as a non-DB call, not an unresolved one.
 - **Ternary-of-literals** — `db.query(cond ? 'SELECT ...' : 'SELECT ...')` and `const q = cond ? '...' : '...'` resolve to a literal branch and are verified.
 - **Same-file SQL functions** — `db.query(buildSelect())` resolves to the SQL returned by a same-file `function buildSelect() { return '...' }` / `const buildSelect = () => '...'`, and that SQL is verified.
-- **Spread forwarding** — `client.query(...args)` is a pass-through shim, not a SQL site.
+- **Spread forwarding** — `client.query(...args)` is a pass-through wrapper, not a SQL site.
 - **JS comments** are blanked before parsing, so a commented-out `// db.query(...)` is never treated as a real call.
 
 SQL parsing:

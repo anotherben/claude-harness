@@ -1,0 +1,235 @@
+{
+  "schema_version": "diagnose.build_packet.v1",
+  "packet_id": "fixture-fixed-pending",
+  "created_at": "2026-06-03T00:00:00Z",
+  "repo_root": "/repo",
+  "head_sha": "abc123",
+  "branch": "dev",
+  "source_issue_or_pr": {
+    "type": "issue",
+    "id": 1,
+    "url": "https://example.test/1",
+    "title": "fixture"
+  },
+  "original_prompt": "$diagnose fixture bug",
+  "diagnosis_status": "fixed_pending_verify",
+  "root_cause_chain": [
+    {
+      "claim": "User-visible symptom",
+      "evidence": "fixture symptom",
+      "files": [
+        "apps/api/src/services/foo.js:1"
+      ],
+      "commands": [
+        "node repro.js"
+      ],
+      "confidence": "high"
+    },
+    {
+      "claim": "Immediate cause",
+      "evidence": "bad value reaches writer",
+      "files": [
+        "apps/api/src/services/foo.js:2"
+      ],
+      "commands": [
+        "node repro.js"
+      ],
+      "confidence": "high"
+    },
+    {
+      "claim": "Root cause",
+      "evidence": "owning boundary lacks invariant",
+      "files": [
+        "apps/api/src/domains/foo/service.js:3"
+      ],
+      "commands": [
+        "npm test -- foo.test.js"
+      ],
+      "confidence": "high"
+    }
+  ],
+  "ownership": {
+    "owner": "apps/api/src/domains/foo",
+    "source_of_truth": "foo domain service",
+    "consumers": [
+      "route"
+    ],
+    "wrong_owners": [
+      "formatter"
+    ],
+    "governed_paths": []
+  },
+  "srp_refactor": {
+    "fix_now": [
+      {
+        "id": "srp-1",
+        "description": "Move invariant to owner",
+        "reason": "consumer should not own domain rule",
+        "files": [
+          "apps/api/src/domains/foo/service.js"
+        ],
+        "acceptance": "invariant tested at owner"
+      }
+    ],
+    "follow_up": [],
+    "note_only": []
+  },
+  "domain_refactor": {
+    "decision": "Use existing foo domain boundary",
+    "existing_domain": "foo",
+    "new_domain_needed": false,
+    "fix_now": [],
+    "follow_up": [],
+    "non_goals": [
+      "rewrite route"
+    ]
+  },
+  "seam": {
+    "correct_seam": "foo domain service regression",
+    "false_confidence_seams": [
+      "formatter-only test"
+    ],
+    "missing_seam_findings": [],
+    "regression_test": {
+      "id": "verify-regression",
+      "command": "npm test -- foo.test.js",
+      "proof_type": "unit",
+      "expected_result": "fails before fix and passes after",
+      "required_before": "PR"
+    }
+  },
+  "write_leak_impact": {
+    "direct_writes": [
+      {
+        "claim": "foo write",
+        "evidence": "writer persists bad value",
+        "files": [
+          "apps/api/src/domains/foo/service.js:3"
+        ],
+        "commands": [],
+        "confidence": "high"
+      }
+    ],
+    "transitive_writes": [],
+    "external_side_effects": [],
+    "leak_paths": [],
+    "retries_jobs_events": [],
+    "affected_scope": {
+      "records": [
+        "foo rows"
+      ],
+      "users": [],
+      "tenants": [
+        "current tenant"
+      ],
+      "operators": [
+        "staff"
+      ],
+      "integrations": []
+    }
+  },
+  "recent_trap_replay": [
+    {
+      "source": "fixture recent PR",
+      "trap_class": "consumer-owned invariant",
+      "applies": true,
+      "evidence": "same shape",
+      "action": "test owner seam"
+    }
+  ],
+  "evidence_freshness": {
+    "head_sha": "abc123",
+    "branch": "dev",
+    "runtime": "local",
+    "schema_source": "local db",
+    "artifact_subjects": [
+      "fixture"
+    ],
+    "stale_rejected": []
+  },
+  "sibling_search": [
+    {
+      "claim": "sibling checked",
+      "evidence": "searched same writer class",
+      "files": [
+        "apps/api/src/domains/foo/service.js"
+      ],
+      "commands": [
+        "rg foo"
+      ],
+      "confidence": "medium"
+    }
+  ],
+  "ratchets": [
+    {
+      "id": "ratchet-1",
+      "description": "owner invariant test",
+      "reason": "prevents regression",
+      "files": [
+        "apps/api/src/__tests__/foo.test.js"
+      ],
+      "acceptance": "test fails on old shape"
+    }
+  ],
+  "build_plan": [
+    {
+      "id": "build-1",
+      "owner_role": "domain worker",
+      "description": "Implement owner invariant",
+      "files": [
+        "apps/api/src/domains/foo/service.js",
+        "apps/api/src/__tests__/foo.test.js"
+      ],
+      "dependencies": [],
+      "acceptance_criteria": [
+        "regression passes"
+      ],
+      "verification": [
+        {
+          "id": "verify-regression",
+          "command": "npm test -- foo.test.js",
+          "proof_type": "unit",
+          "expected_result": "pass",
+          "required_before": "PR"
+        }
+      ],
+      "stop_rule": "stop if owner seam is different"
+    }
+  ],
+  "subagent_tasks": [
+    {
+      "id": "agent-1",
+      "role": "seam investigator",
+      "one_job": "prove correct regression seam",
+      "scope": [
+        "apps/api/src/domains/foo/service.js"
+      ],
+      "inputs": [
+        "issue"
+      ],
+      "outputs": [
+        "seam evidence"
+      ],
+      "forbidden": [
+        "do not edit or implement"
+      ]
+    }
+  ],
+  "verification_plan": [
+    {
+      "id": "verify-regression",
+      "command": "npm test -- foo.test.js",
+      "proof_type": "unit",
+      "expected_result": "pass",
+      "required_before": "PR"
+    }
+  ],
+  "blockers": [],
+  "assumptions": [
+    "fixture"
+  ],
+  "open_questions": [],
+  "do_not_do": [
+    "Do not edit or implement during diagnosis"
+  ]
+}

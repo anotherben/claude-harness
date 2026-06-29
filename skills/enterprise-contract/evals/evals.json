@@ -1,0 +1,166 @@
+{
+  "skill_name": "enterprise-contract",
+  "definition_of_100_percent": [
+    "locked_only_after_code_and_db_grounding",
+    "source_grounding_before_lock",
+    "plan_360_audit_required",
+    "contract_manager_review_required",
+    "postconditions_trace_to_consumers",
+    "no_mock_only_schema_or_query_proof",
+    "file_module_srp_contract",
+    "e2e_edge_cases_and_headless_commands",
+    "repo_gate_matrix_required",
+    "mechanical_build_packet_required",
+    "architecture_contract_required",
+    "pr_review_prevention_matrix_required",
+    "applicable_review_cells_locked_before_build",
+    "fail_closed_unknowns",
+    "architecture_ratchet_matrix_required",
+    "local_full_schema_proof_required",
+    "runtime_shape_proof_gate_required",
+    "review_prevention_tristate_status",
+    "async_field_matrix_contract_carryforward",
+    "intent_continuity_locked_before_build",
+    "touched_file_srp_assessment_locked",
+    "db_query_ownership_packet_locked_for_reads",
+    "github_issue_claims_locked_from_current_evidence",
+    "last150_pr_trap_replay_locked"
+  ],
+  "evals": [
+    {
+      "id": "no-schema-by-migration",
+      "prompt": "Write a contract for a DB-backed order status fix. The plan cites a migration and a passing mocked test, but nobody has read the current query or dev DB.",
+      "expected_output": "The contract must refuse LOCKED status, require current code and consumer reads, require real migrated Postgres or live/dev DB proof, and map schema/query PCs to live or integration tests.",
+      "assertions": [
+        "Blocks LOCKED status until code and DB are read.",
+        "Says migrations, diffs, and mocks are insufficient.",
+        "Names live DB or real integration tests for schema/query PCs.",
+        "Maps consumers and blast radius before build."
+      ]
+    },
+    {
+      "id": "contract-pc-trace",
+      "prompt": "Lock a contract for a feature that changes service, API, and UI behavior.",
+      "expected_output": "The contract must include postconditions, invariants, file/module architecture, E2E trace, edge cases, headless UI proof, repo gate matrix, and a traceability matrix that downstream harness can check by PC id.",
+      "assertions": [
+        "Includes file/module architecture and SRP boundaries.",
+        "Includes E2E trace and edge cases.",
+        "Requires headless browser proof for UI behavior.",
+        "Includes PC ids, test files, test names, and runtime paths."
+      ]
+    },
+    {
+      "id": "contract-manager-before-lock",
+      "prompt": "Lock a contract from a plan that has not been through Plan 360 and skip contract-manager because the contract quality gate looks green.",
+      "expected_output": "The contract must refuse LOCKED status until a passing Plan 360 audit is recorded as plan_360_audit and contract-manager has reviewed the plan/contract evidence with a recorded contract_review and no blocking findings.",
+      "assertions": [
+        "Blocks LOCKED status without a recorded Plan 360 audit.",
+        "Runs contract-manager before contract lock.",
+        "Records contract-manager output as contract_review and recycles blocking findings."
+      ]
+    },
+    {
+      "id": "contract-refuses-missing-build-packet",
+      "prompt": "Lock a contract from a plan that has good postconditions but says build should update the affected services, add tests as needed, use clean architecture, follow the standard layout, and run the usual checks. The contract has no exact Mechanical Build Packet fields.",
+      "expected_output": "The contract must refuse LOCKED status and block build until the Mechanical Build Packet has exact Allowed Runtime Paths, Allowed Test Paths, Allowed Artifact Paths, Module Boundary, Folder Placement, Public Seam, Owner Layer, Allowed Dependency Direction, Forbidden Imports, Architecture Tests, Postcondition Execution Order, Expected RED, Expected GREEN, Required Commands, Forbidden Changes, and Refusal Conditions.",
+      "assertions": [
+        "Blocks LOCKED status when exact build_packet fields are missing.",
+        "Rejects vague path, test, proof, and command language before build.",
+        "Rejects vague architecture language and requires exact seams, layers, dependency direction, forbidden imports, and architecture tests.",
+        "Requires build_packet to be recorded before enterprise-build can start.",
+        "Routes the contract back to plan or contract-manager instead of letting build discover requirements."
+      ]
+    },
+    {
+      "id": "contract-refuses-missing-review-prevention-cells",
+      "prompt": "Lock a contract for a PR-producing async worker and proof-registry change. The plan mentions possible SQL casts, proof-lane routing, artifact cleanup, external retry behavior, and custom UI interaction, but the contract has no PR Review Prevention Matrix and says forge will find edge cases.",
+      "expected_output": "The contract must refuse LOCKED status. It must require every applicable PR Review Prevention Matrix cell to map to a postcondition, invariant, error case, proof command, or explicit non-goal before build: branch/reason coverage, async state, request/config fields, SQL cast/index/migration safety, runtime-to-proof parity, proof-lane collision/missing-resource tests, tenant/owner scope, external retry/fallback, redaction/log shape, public seam/UI/accessibility, performance bounds, artifact hygiene, and test integrity.",
+      "assertions": [
+        "Blocks LOCKED status without a PR Review Prevention Matrix for PR-producing work.",
+        "Requires applicable cells to map to PC/INV/ERR items and Required Commands.",
+        "Rejects leaving proof-lane, SQL/cast, async, artifact, accessibility, and redaction checks for forge to discover.",
+        "Requires source-evidenced N/A rationale for non-applicable cells.",
+        "Keeps build mechanical by refusing unknown proof cells."
+      ]
+    },
+    {
+      "id": "contract-refuses-missing-architecture-ratchet-and-local-schema",
+      "prompt": "Lock a contract for a multi-file extraction that changes query behavior. It has postconditions and a Mechanical Build Packet, but no Architecture Ratchet Matrix and no Local Full-Schema Proof Plan.",
+      "expected_output": "The contract must refuse LOCKED status until changed boundaries map to public seams, owner layers, dependency directions, forbidden imports, architecture tests, and future regression traps, and until schema/query claims have local full-schema Postgres restore/proof commands, safety controls, cleanup, or an explicit blocker/narrowed claim.",
+      "assertions": [
+        "Blocks LOCKED status without Architecture Ratchet Matrix for multi-file or extraction work.",
+        "Requires public seam, owner layer, allowed dependency direction, forbidden imports, and architecture tests.",
+        "Requires local full-schema Postgres proof plan for schema/query work.",
+        "Rejects relying on CI, migrations, mocks, or production proof targets for schema claims.",
+        "Requires blockers or narrowed claims when local full-schema proof is unavailable."
+      ]
+    },
+    {
+      "id": "contract-refuses-invented-runtime-shape",
+      "prompt": "Lock a contract for an async receive flow where the draft uses guessed route methods, near-miss quantity fields, and mocked producer payloads instead of reading current producers and consumers.",
+      "expected_output": "The contract must stay DRAFT and refuse LOCKED status until real runtime producer-to-consumer fields, aliases, route methods, helper return variants, and lifecycle states are traced to current source/live proof and mapped to postconditions and proof commands.",
+      "assertions": [
+        "Blocks LOCKED status for guessed route methods or invented payload shapes.",
+        "Requires current producer and consumer source evidence for field names and aliases.",
+        "Requires runtime-shape proof commands, not mocks or examples only.",
+        "Requires async lifecycle postconditions when stateful work is in scope."
+      ]
+    },
+    {
+      "id": "contract-preserves-review-prevention-tristate-status",
+      "prompt": "Contract a PR-producing feature where the plan uses PR Review Prevention Matrix statuses applies, not applicable with source evidence, and blocking open question, but the draft contract collapses them to yes/no.",
+      "expected_output": "Enterprise contract must FAIL until the matrix keeps the same tri-state status vocabulary end to end. Blocking open questions block contract lock, and not-applicable rows require source evidence.",
+      "assertions": [
+        "Rejects yes/no-only PR Review Prevention Matrix status.",
+        "Requires applies / not applicable with source evidence / blocking open question.",
+        "Treats blocking open question as fail-closed before contract lock."
+      ]
+    },
+    {
+      "id": "contract-carries-async-field-matrix-to-proof",
+      "prompt": "Contract an async invoice/order/inventory workflow where the plan names producer fields and lifecycle counterexamples, but the contract does not map them to PC/INV/ERR items and proof commands.",
+      "expected_output": "Enterprise contract must FAIL until Async And Field Contract Matrix rows map producer field names, runtime source, consumers, lifecycle counterexamples, contract items, and proof commands.",
+      "assertions": [
+        "Requires async field matrix carry-forward from plan to contract.",
+        "Requires exact field spelling through producer, route/service/DB/worker/read-model/UI consumers.",
+        "Requires proof commands for lifecycle counterexamples."
+      ]
+    },
+    {
+      "id": "contract-locks-intent-srp-and-query-ownership",
+      "prompt": "Lock a contract from a plan with good PCs, but the contract omits the original vague user intent, leaves a mixed-responsibility service as follow-up cleanup, and adds a SELECT report without a reader owner seam.",
+      "expected_output": "The contract must remain DRAFT. It must lock an Intent Continuity Ledger row into postconditions, invariants, proof commands, or non-goals; convert touched-file SRP rows into fix-now postconditions or source-backed non-goals; and require a DB/Query Ownership Packet for the SELECT report with owner seam, current DB/schema, tenant/owner scope, parameter typing, bounded proof, readback expectation, cleanup, and redaction controls.",
+      "assertions": [
+        "Blocks LOCKED status when original user intent is not preserved in contract items or non-goals.",
+        "Blocks LOCKED status when a mixed-responsibility touched file skips fix-now without blocker or narrowed claim.",
+        "Requires DB/query ownership packet for read-only SELECT/report paths.",
+        "Requires affected-row or readback expectation and bounded proof before build.",
+        "Prevents build from inventing SRP or query ownership decisions."
+      ]
+    },
+    {
+      "id": "contract-refuses-unverified-github-issue-claims",
+      "prompt": "Lock a contract for GitHub issue 2197 where the plan copied the issue body and suggested clamp but did not verify current source, schema precision, branch parity, or transaction context.",
+      "expected_output": "The contract must remain DRAFT. It must require GitHub Issue Intake and Issue Claim Verification rows to convert confirmed issue claims into postconditions, invariants, proof commands, or non-goals. Unverified or contradicted issue claims must block lock or narrow scope, and the suggested patch cannot become build authority without current source/runtime/schema evidence.",
+      "assertions": [
+        "Blocks LOCKED status when issue-backed claims are only supported by issue prose.",
+        "Requires current source and schema/query proof for confirmed issue claims.",
+        "Requires contradicted claims to become plan corrections or non-goals.",
+        "Requires unverified load-bearing claims to block or narrow scope.",
+        "Prevents suggested issue patches from becoming build authority without contract evidence."
+      ]
+    },
+    {
+      "id": "contract-locks-last150-dev-trap-bank",
+      "prompt": "Lock a contract for a PR-producing integration/UI fix. The plan has a last-150-dev trap replay with applies rows for stale read-model state, unlinked products during Shopify outages, live-proof registry matcher gaps, weak assertions, and stale proof-subject failures, but the draft contract says review will check them.",
+      "expected_output": "The contract must remain DRAFT until every applicable trap row is locked as a postcondition, invariant, error case, proof command, gate, or explicit non-goal with source evidence.",
+      "assertions": [
+        "Blocks LOCKED status when applicable last-150 trap replay rows are not converted into contract items.",
+        "Requires proof commands for stale UI/read-model rehydration and degraded config/outage semantics.",
+        "Requires proof-lane selector negative tests for mixed-file routing and missing resources.",
+        "Requires weak assertion hardening and stale proof-subject/preflight checks when those rows apply.",
+        "Keeps not-applicable rows source-evidenced and blocking open questions fail-closed."
+      ]
+    }
+  ]
+}

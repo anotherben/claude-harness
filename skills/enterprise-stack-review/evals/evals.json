@@ -1,0 +1,32 @@
+{
+  "skill_name": "enterprise-stack-review",
+  "definition_of_100_percent": [
+    "incumbent_stack_bias_for_existing_projects",
+    "decision_domains_detected",
+    "tradeoffs_documented",
+    "decisions_locked_for_plan",
+    "skips_when_no_stack_decision_needed"
+  ],
+  "evals": [
+    {
+      "id": "stack-review-preserves-incumbent-stack",
+      "prompt": "Run stack review for an existing React/Postgres app where the feature could be built with the current stack.",
+      "expected_output": "The stack review skill must apply incumbent bias, avoid unnecessary new technology, document decision tradeoffs, and lock only the decisions needed for downstream plan work.",
+      "assertions": [
+        "Uses incumbent bias for existing projects.",
+        "Does not introduce a new stack without a justified decision.",
+        "Locks decisions in an artifact consumed by planning."
+      ]
+    },
+    {
+      "id": "stack-review-detects-required-decisions",
+      "prompt": "A new background worker, auth boundary, and database storage choice are proposed in the TDD.",
+      "expected_output": "The skill must detect the required decision domains, evaluate options with constraints, record the chosen decisions, and fail artifact validation if any required decision remains unresolved.",
+      "assertions": [
+        "Detects multiple decision domains from the TDD.",
+        "Documents options and constraints before locking.",
+        "Fails if required decisions are not locked."
+      ]
+    }
+  ]
+}

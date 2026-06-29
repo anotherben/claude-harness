@@ -1,0 +1,4 @@
+interface:
+  display_name: "Issue To Agent"
+  short_description: "Turn live issues into agent-ready work"
+  default_prompt: "I pushed or found GitHub issues; classify what is ready and produce the next exact agent prompt."

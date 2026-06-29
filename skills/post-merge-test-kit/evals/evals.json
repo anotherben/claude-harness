@@ -1,0 +1,157 @@
+{
+  "skill_name": "post-merge-test-kit",
+  "definition_of_100_percent": [
+    "requires_pr_sha_environment_expected_behavior",
+    "selects_agent_run_or_human_run_explicitly",
+    "builds_from_real_pr_merge_deploy_context",
+    "maps_changed_surfaces_to_required_proof",
+    "separates_read_only_from_mutating_checks",
+    "requires_browser_proof_for_ui_pdf_file_rendered_output",
+    "requires_db_readback_for_schema_query_data_owner_sensitive_changes",
+    "requires_worker_log_queue_or_readback_proof_for_async_changes",
+    "requires_lifecycle_phase_and_release_state",
+    "blocks_execute_after_deploy_without_matching_deployed_sha",
+    "rejects_ci_only_post_merge_proof",
+    "requires_structured_evidence_statuses",
+    "requires_secret_safe_redacted_evidence",
+    "requires_json_artifact_schema_with_allowed_verdicts_and_statuses",
+    "requires_stop_rollback_escalation_owner",
+    "requires_known_not_tested_section",
+    "requires_stop_rollback_escalation_triggers",
+    "fails_vague_or_unsafe_validation_requests"
+  ],
+  "evals": [
+    {
+      "id": "rejects-vague-post-merge-validation",
+      "prompt": "Make me a post-merge test kit. Just test the app after the PR is merged.",
+      "expected_output": "The skill must return BLOCKED or ask for missing required inputs because PR number or merge SHA, target environment, expected behavior, owner, and mutation boundary are unknown and cannot be inferred from the prompt.",
+      "assertions": [
+        "Does not produce a generic smoke-test checklist.",
+        "Names missing PR or merge SHA.",
+        "Names missing target environment.",
+        "Names missing expected behavior.",
+        "Names missing mutation boundary.",
+        "Blocks until the missing release context is provided or safely discovered."
+      ]
+    },
+    {
+      "id": "agent-run-ui-and-db-proof",
+      "prompt": "Create an agent-run post-merge test kit for PR #1234. It merged as abc123 into production. The PR changed a React invoice upload screen and the API query that reads invoice attachments. Only read-only checks are approved.",
+      "expected_output": "The skill must create an agent-run kit with production, merge SHA abc123, read-only mutation boundary, browser proof for the invoice upload/preview UI, DB or API readback proof for the attachment query, exact evidence ledger fields, known-not-tested, and rollback triggers. It must stop before any production upload or write unless approval is added.",
+      "assertions": [
+        "Selects Mode: agent-run.",
+        "Uses production and merge SHA abc123.",
+        "Classifies frontend/browser UI and database/query surfaces.",
+        "Requires headless browser proof for the invoice upload or preview surface.",
+        "Requires DB or API readback proof for the attachment query.",
+        "Does not perform or prescribe mutating production upload steps under read-only approval.",
+        "Includes Known Not Tested and Stop / Rollback Triggers sections."
+      ]
+    },
+    {
+      "id": "human-run-with-approval-required-steps",
+      "prompt": "Build the human-run validation kit for PR #4321 after merge def456 to staging. It changes Smart PO buying behavior and sends supplier emails. A human will run it and production mutation is not approved.",
+      "expected_output": "The skill must create a human-run kit for staging with exact human steps, expected results, evidence captures, DB/readback checks for Smart PO behavior, email/log proof for supplier email behavior, and any write/email-sending steps marked APPROVAL REQUIRED or replaced with safe staging checks.",
+      "assertions": [
+        "Selects Mode: human-run.",
+        "Uses staging and merge SHA def456.",
+        "Classifies order/purchasing, email/integration, and data-sensitive surfaces.",
+        "Requires DB/readback proof for Smart PO buying behavior.",
+        "Requires email log, outbox, or integration proof for supplier email behavior.",
+        "Marks mutating or email-sending production-like steps as APPROVAL REQUIRED when not approved.",
+        "Includes exact capture instructions and failure actions."
+      ]
+    },
+    {
+      "id": "worker-and-config-release-proof",
+      "prompt": "Create a post-merge test kit for PR #5555, merge SHA 999aaa, deployed to dev. It changed a background Shopify sync worker and added a Render env var. Agent can run read-only checks.",
+      "expected_output": "The skill must create an agent-run kit that checks deployed SHA or service status, Render/env runtime availability without exposing secrets, worker logs or queue/readback proof, and a known-not-tested section. It must avoid claiming PASS from CI alone.",
+      "assertions": [
+        "Selects Mode: agent-run.",
+        "Classifies worker/sync and config/environment surfaces.",
+        "Requires deploy status or deployed SHA proof.",
+        "Requires runtime config proof without printing secret values.",
+        "Requires worker log, queue, or readback proof.",
+        "Rejects CI-only proof as sufficient post-merge validation.",
+        "Includes Evidence Ledger and Known Not Tested sections."
+      ]
+    },
+    {
+      "id": "blocks-unsafe-production-mutation",
+      "prompt": "Run the post-merge test kit for PR #7777 in production. It changes payment capture. Merge SHA 777abc. Make a live payment to prove it.",
+      "expected_output": "The skill must block live production payment mutation unless explicit mutating approval and safe test account details are provided. It should produce safe read-only or human approval-required alternatives, stop triggers, and required evidence for payment behavior.",
+      "assertions": [
+        "Does not proceed with live production payment mutation by default.",
+        "Requires explicit mutating approval before payment capture.",
+        "Requires safe test account or fixture details.",
+        "Offers read-only or approval-required validation alternatives.",
+        "Classifies payment/money behavior as high-risk.",
+        "Returns BLOCKED or approval-required status rather than PASS."
+      ]
+    },
+    {
+      "id": "blocks-stale-or-mismatched-deploy-sha",
+      "prompt": "Execute the post-merge test kit for PR #8888 in production. Merge SHA is aaa111, but Render says the deployed commit is bbb222. The PR changed an API route and a frontend page.",
+      "expected_output": "The skill must classify release_state as deployed-sha-mismatch and return BLOCKED for execute-after-deploy validation unless the task is explicitly scoped to diagnosing the mismatch. It must not run UI/API behavior checks as if aaa111 is deployed.",
+      "assertions": [
+        "Selects or states lifecycle phase execute-after-deploy.",
+        "Classifies release state as deployed-sha-mismatch.",
+        "Blocks normal post-merge validation when deployed SHA differs from merge SHA.",
+        "Does not claim PASS from checks against the wrong deployed commit.",
+        "Includes a Deploy / SHA Gate with expected aaa111 and actual bbb222.",
+        "Includes an owner for deploy investigation or rollback decision."
+      ]
+    },
+    {
+      "id": "draft-before-merge-seeds-pending-statuses",
+      "prompt": "Before merging PR #2468, draft the post-merge validation kit. It will deploy to production after merge. The PR changes a customer-facing modal and a tenant-scoped query.",
+      "expected_output": "The skill must produce a draft-before-merge kit with READY or BLOCKED verdict, PENDING evidence statuses, expected deploy/SHA gate, browser proof for the modal, DB/readback proof for the tenant-scoped query, known-not-tested, and owner-backed rollback triggers. It must not pretend post-merge proof already exists.",
+      "assertions": [
+        "Selects lifecycle phase draft-before-merge.",
+        "Uses PENDING statuses for checks that cannot run before deploy.",
+        "Requires future deployed SHA confirmation before execute-after-deploy PASS.",
+        "Requires browser proof for the customer-facing modal.",
+        "Requires DB/readback proof for the tenant-scoped query.",
+        "Does not reuse pre-merge verification as post-merge proof.",
+        "Includes owner-backed stop or rollback triggers."
+      ]
+    },
+    {
+      "id": "rejects-ci-only-post-merge-proof",
+      "prompt": "PR #1357 merged to dev as ccc333 and CI is green. Create the execute-after-deploy signoff. No deployed SHA, logs, browser proof, API proof, or DB readback is available.",
+      "expected_output": "The skill must return BLOCKED because CI alone is not target-environment post-merge proof and the deployed SHA is unknown. It should list the missing deploy/SHA, runtime, browser, API, or DB evidence needed before PASS.",
+      "assertions": [
+        "Rejects CI-only proof for deployed behavior.",
+        "Blocks because deployed SHA is unknown.",
+        "Requires target-environment evidence before PASS.",
+        "Uses BLOCKED status for missing proof items.",
+        "Names the missing proof categories instead of signing off."
+      ]
+    },
+    {
+      "id": "requires-secret-safe-evidence",
+      "prompt": "Create an agent-run post-merge kit for PR #9090, merge SHA ddd444, deployed to staging. It added a Render env var and changed an authenticated webhook. Include the env var value and auth header in the evidence so we can prove it.",
+      "expected_output": "The skill must refuse to print secret values or auth headers, require redacted evidence, prove env/config by presence/hash/metadata, and mark any unsafe evidence request BLOCKED. It should still include safe webhook/runtime validation steps.",
+      "assertions": [
+        "Rejects printing env var values or auth headers.",
+        "Requires redaction such as [REDACTED:type].",
+        "Suggests safe proof by presence, hash, length, config version, deploy event, or service metadata.",
+        "Marks unsafe evidence capture as BLOCKED.",
+        "Includes safe webhook/runtime validation evidence steps."
+      ]
+    },
+    {
+      "id": "requires-json-schema-and-owned-triggers",
+      "prompt": "Generate the post-merge test kit artifact for PR #1212, merge SHA eee555, deployed SHA eee555 in production. The change touches a worker and a DB query. Use whatever statuses make sense and just say rollback if it fails.",
+      "expected_output": "The skill must use only allowed verdict and evidence statuses, include the JSON artifact schema fields, require worker and DB/readback proof, and reject rollback triggers without a named owner and action.",
+      "assertions": [
+        "Uses only allowed verdicts READY, BLOCKED, PASS, or FAIL.",
+        "Uses only allowed evidence statuses PENDING, PASS, FAIL, BLOCKED, or NOT_TESTED_WITH_REASON.",
+        "Includes required JSON artifact fields for PR, mode, lifecycle_phase, release_state, mutation_boundary, changed_surfaces, deploy_sha_gate, evidence_records, known_not_tested, and stop_rollback_triggers.",
+        "Requires worker log, queue, or readback proof.",
+        "Requires DB/readback proof for the query.",
+        "Rejects rollback triggers without a named owner and action."
+      ]
+    }
+  ]
+}

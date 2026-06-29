@@ -89,10 +89,10 @@ Save to `docs/handovers/YYYY-MM-DD-<task-slug>.md`:
 3. [Exact first command or action to take]
 4. [Second action]
 
-## Related Knowledge Graph Memories
+## Related Vault Memories
 
-- Recall from knowledge graph if configured for related context
-- Key decisions stored via knowledge graph if configured
+- Recall: `search_vault(query="[topic]")` for related context
+- Key decisions stored via `/vault-capture`
 ```
 
 ### Step 3: Update MEMORY.md
@@ -104,18 +104,17 @@ Update the "Resume Point" section in MEMORY.md with:
 - Reference to this handover doc
 - Brief remaining work summary
 
-### Step 4: Save to Knowledge Graph
+### Step 4: Save to Obsidian Vault
 
 If the work involves important decisions, gotchas, or patterns worth preserving:
-- Save to knowledge graph if configured (type="issue" for gotchas, type="decision" for decisions)
-- Link related memories in the knowledge graph if the backend supports it
+- `/vault-capture` with key findings (type="issue" for gotchas, type="decision" for decisions)
+- Vault handles relations via tags/links automatically
 
 ### Step 5: Commit the Handover
 
 ```bash
 git add docs/handovers/YYYY-MM-DD-<task-slug>.md
 git commit -m "docs: add handover for [task name]"
-git push origin "$(git branch --show-current)"
 ```
 
 ## Quality Criteria

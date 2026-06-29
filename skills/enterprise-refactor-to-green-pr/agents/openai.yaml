@@ -1,0 +1,4 @@
+interface:
+  display_name: "Enterprise Refactor to Green PR"
+  short_description: "Run refactor lanes through green PRs"
+  default_prompt: "Use $enterprise-refactor-to-green-pr to identify refactor lanes, execute them serially, close code reviews, and deliver green PRs."

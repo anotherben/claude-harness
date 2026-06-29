@@ -13,7 +13,9 @@ Use this skill for audit-only review of variable and member usage. It is designe
 - Do not claim semantic correctness from syntax alone. Treat the script as a coverage and suspicion generator, then review findings against source truth.
 - Scan every changed JavaScript, TypeScript, JSX, TSX, MJS, CJS, MTS, and CTS file. Record skipped files in the coverage ledger.
 - Fail closed on unreadable changed files and parser failures. For PR and publication modes, also fail closed on unresolved GitHub state.
-- Use the same canonical skill from Claude through the `~/.claude/skills/code-variable-audit` symlink. Do not copy the skill.
+- Use the full skill body and bundled scripts from the invoked skill directory.
+  Keep the Codex and Claude copies in sync; do not replace either copy with a
+  redirect-only wrapper.
 - Default to dry-run. Add `--publish` only when the user explicitly authorizes GitHub publication. Publication may create the missing `needs-investigation` repo label so the issue can be tagged correctly.
 
 ## Workflow

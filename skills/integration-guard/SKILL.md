@@ -48,7 +48,7 @@ Run through ALL of these before writing integration code:
   JOIN suppliers ON suppliers.id::text = products.supplier_id::text
   ```
 
-- [ ] **REX SKU field mapping** (recall: `muninn_recall(context=["REX SKU field mapping"])`):
+- [ ] **REX SKU field mapping** (recall: `search_vault(query="REX SKU field mapping")`):
   - `supplier_sku` → maps to our `sku`
   - `supplier_sku2` → maps to our `sku2`
   - Top-level `sku` in REX response is usually NULL — don't use it
@@ -88,7 +88,7 @@ Run through ALL of these before writing integration code:
 
 ### 7. PO (Purchase Order) Specifics
 
-- [ ] **REX PO finalization** (recall: `muninn_recall(context=["REX PO finalization"])`) — Cannot un-finalize a PO in REX
+- [ ] **REX PO finalization** (recall: `search_vault(query="REX PO finalization")`) — Cannot un-finalize a PO in REX
 - [ ] **Draft status** — Check if PO is draft before attempting operations
 - [ ] **Email fallback** — If REX submission fails, fall back to email with `forceSend` option
 

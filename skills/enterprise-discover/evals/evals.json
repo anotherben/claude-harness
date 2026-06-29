@@ -1,0 +1,32 @@
+{
+  "skill_name": "enterprise-discover",
+  "definition_of_100_percent": [
+    "repo_profile_refreshed_from_current_source",
+    "repo_overlays_generated",
+    "overlay_manifest_contains_hashes",
+    "portable_state_committed_or_ready",
+    "machine_state_kept_gitignored"
+  ],
+  "evals": [
+    {
+      "id": "discover-generates-hashed-overlay-manifest",
+      "prompt": "Run enterprise discover after the repo profile changes.",
+      "expected_output": "Discover must regenerate repo-local overlays, write an overlay manifest with generated_at, generator version, source hashes, and profile/trap/best-practice hashes, then keep portable and machine-local state separated.",
+      "assertions": [
+        "Requires overlay generation from the current profile.",
+        "Requires manifest hash freshness proof.",
+        "Keeps machine-local facts out of committed portable state."
+      ]
+    },
+    {
+      "id": "discover-fails-on-stale-profile",
+      "prompt": "A repo profile exists but commands and source-of-truth docs are contradicted by the current repository.",
+      "expected_output": "Discover must treat the profile as stale, refresh it from current source, regenerate overlays, and block warm delivery until the profile and overlays are trustworthy.",
+      "assertions": [
+        "Detects stale profile contradictions.",
+        "Regenerates overlays after profile updates.",
+        "Blocks delivery when source-of-truth docs or commands are unknown."
+      ]
+    }
+  ]
+}

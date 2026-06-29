@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nested Agent Control"
+  short_description: "Control nested subagents without overrunning thread capacity."
+  default_prompt: "Use $nested-agent-control to coordinate nested single-job subagents for review, build, or proof work."

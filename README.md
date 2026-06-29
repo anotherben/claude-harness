@@ -15,7 +15,7 @@ This is the main entrypoint for the platform and the fastest way to get a projec
 
 > **v2.2.2 — welcome page refreshed and startup guidance clarified.** The main README now includes clearer entrypoint onboarding, including the recommended global install path for getting projects into enterprise mode.
 
-Four built-in MCP servers. An Obsidian vault as the shared brain. 71 MCP tools across code, memory, vault, and skill retrieval. 63 enterprise skills. 47 quality gate hooks. 11 slash commands. Zero escape hatches.
+Four built-in MCP servers. An Obsidian vault as the shared brain. 71 MCP tools across code, memory, vault, and skill retrieval. 96 current skills. 47 quality gate hooks. 11 slash commands. Zero escape hatches.
 
 ---
 
@@ -197,7 +197,7 @@ Hook chain:
 ```
 ~/.claude/                              # GLOBAL — single source of truth
 ├── hooks/          47 shell scripts    # Quality gates (HMAC-signed markers)
-├── skills/         63 skill dirs       # Enterprise workflows
+├── skills/         96 skill dirs       # Enterprise workflows
 ├── commands/       11 slash commands   # Quick actions
 └── settings.json                       # Hook wiring → $HOME/.claude/hooks/
 

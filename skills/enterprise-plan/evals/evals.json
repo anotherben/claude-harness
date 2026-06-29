@@ -1,0 +1,152 @@
+{
+  "skill_name": "enterprise-plan",
+  "definition_of_100_percent": [
+    "current_code_read_before_tasks",
+    "senior_architecture_file_boundaries",
+    "schema_and_query_live_proof_planned",
+    "e2e_edge_case_trace",
+    "headless_ui_pdf_file_plan",
+    "plan_360_audit_required",
+    "architecture_contract_packet_seed",
+    "repo_gate_matrix_known_before_build",
+    "pr_review_prevention_matrix_frontloaded",
+    "applicable_review_classes_have_proof_commands",
+    "scope_lock_and_stop_rules",
+    "architecture_ratchet_matrix_frontloaded",
+    "local_full_schema_proof_planned",
+    "async_field_contract_matrix_required",
+    "known_review_trap_matrix_required",
+    "intent_continuity_ledger_required",
+    "touched_file_srp_assessment_required",
+    "db_query_ownership_packet_required_for_reads",
+    "github_issue_claim_verification_required",
+    "last150_pr_trap_replay_planned"
+  ],
+  "evals": [
+    {
+      "id": "schema-sensitive-plan",
+      "prompt": "Plan a fix for an invoice lookup bug where migrations say the column exists but production throws a typed SQL error.",
+      "expected_output": "The plan must require reading the current route/service/query path, checking real DB shape before build, naming file and module boundaries, seeding exact Module Boundary, Folder Placement, Public Seam, Owner Layer, Allowed Dependency Direction, Forbidden Imports, and Architecture Tests in the Mechanical Build Packet, mapping every PC to live/integration DB proof, and stopping if repo gates or merge blockers are unknown.",
+      "assertions": [
+        "Requires current implementation and consumer reads.",
+        "Rejects migration-only, diff-only, and mock-only schema confidence.",
+        "Includes file/module architecture, SRP, directory rationale, public seam, owner layer, dependency direction, forbidden imports, architecture tests, and consumers.",
+        "Includes exact live DB/integration commands and expected outcomes.",
+        "Includes repo gate matrix and hard stop for unknown merge blockers."
+      ]
+    },
+    {
+      "id": "ui-pdf-headless-plan",
+      "prompt": "Plan a UI change for invoice PDF upload, preview, replace, and download.",
+      "expected_output": "The plan must include UI-to-API-to-storage E2E trace, edge cases for upload/preview/replace/download, exact headless browser commands, runtime file proof targets, and no manual browser proof as completion evidence.",
+      "assertions": [
+        "Names headless browser proof for PDF upload and preview/download.",
+        "Maps source-to-consumer E2E path and edge cases.",
+        "Maps changed runtime files to execution proof.",
+        "Defines scope lock and follow-up refactor boundaries."
+      ]
+    },
+    {
+      "id": "plan-frontloads-pr-review-prevention",
+      "prompt": "Plan a PR-producing fix that touches a worker retry query, a live-proof registry lane, a verification artifact, and an admin custom picker. The draft plan says review/forge will check edge cases later.",
+      "expected_output": "The plan must refuse to proceed until a PR Review Prevention Matrix is written before task breakdown. It must classify branch/reason coverage, async state-machine behavior, SQL cast/index safety, proof-lane collision and missing-resource tests, artifact portability/coherence, UI keyboard/focus behavior, performance bounds, and test integrity as applies/not-applicable with source evidence, and every applicable cell must name a proof command or blocking question.",
+      "assertions": [
+        "Requires PR Review Prevention Matrix before task breakdown.",
+        "Maps applicable recent-review classes to planned proof commands or blocking questions.",
+        "Includes proof-lane collision and missing-resource fail-closed tests for registry changes.",
+        "Includes cast/index and bounded-live-proof checks for worker SQL.",
+        "Includes artifact hygiene and custom-control accessibility checks before contract."
+      ]
+    },
+    {
+      "id": "plan-rejects-horizontal-slices",
+      "prompt": "Plan a supplier request feature where the draft tasks are 'create all tables', 'build all API routes', and 'wire UI later'.",
+      "expected_output": "The plan must reject horizontal layer batches and rewrite the work into vertical tracer-bullet tasks, each tagged AFK or HITL with blockers, acceptance criteria, and proof commands.",
+      "assertions": [
+        "Rejects horizontal task batches as not ready for build.",
+        "Requires each task to deliver one observable tracer-bullet behavior through required layers.",
+        "Tags every task as AFK or HITL.",
+        "Names exact HITL blockers such as product decision, design approval, access, or architecture decision."
+      ]
+    },
+    {
+      "id": "plan-requires-360-audit",
+      "prompt": "Finish an enterprise plan for a purchasing workflow and move straight to contract/build because the plan looks complete.",
+      "expected_output": "The plan output must require running plan 360 audit after the written plan, recording the artifact as plan_360_audit, recycling blocking findings into the plan, and blocking contract or build until the audit passes.",
+      "assertions": [
+        "Runs plan 360 audit after every enterprise plan.",
+        "Records the audit artifact as plan_360_audit.",
+        "Blocks contract and build when Plan 360 has missing or blocking findings."
+      ]
+    },
+    {
+      "id": "plan-frontloads-architecture-ratchets-and-local-schema-proof",
+      "prompt": "Plan a PR-producing refactor that extracts invoice receive logic into deeper modules and changes SQL queries. The draft plan says build will decide folder placement and CI will catch schema issues.",
+      "expected_output": "The plan must refuse task breakdown until it includes an Architecture Ratchet Matrix and a Local Full-Schema Proof Plan. It must lock public seams, owner layers, allowed dependency direction, forbidden imports, architecture tests, thin vertical tracer slices, local Postgres restore/proof commands, safety controls, cleanup, and blockers or narrowed claims when local full-schema proof is unavailable.",
+      "assertions": [
+        "Requires Architecture Ratchet Matrix before implementation tasks.",
+        "Rejects deep modules or helper extraction without public seam and architecture proof.",
+        "Requires thin vertical tracer slices or explicit foundation-task proof.",
+        "Requires Local Full-Schema Proof Plan for schema/query work.",
+        "Blocks contract when local schema proof, safety controls, or cleanup are missing."
+      ]
+    },
+    {
+      "id": "plan-requires-async-field-contract-matrix",
+      "prompt": "Plan an async invoice receive workflow that crosses UI, API, DB, worker, read model, label printing, and notification behavior. The draft has tasks and tests but no Async And Field Contract Matrix.",
+      "expected_output": "The plan must refuse contract handoff until an Async And Field Contract Matrix maps exact producer field names, aliases, lifecycle states, consumers, duplicate submit, concurrent worker, stale running, preserved synchronous errors, post-commit failure, retry, unavailable dependency, and rehydration proof commands.",
+      "assertions": [
+        "Requires an explicit Async And Field Contract Matrix section.",
+        "Requires exact producer-to-consumer field spelling and aliases.",
+        "Requires lifecycle counterexamples and proof commands before contract.",
+        "Blocks contract when async field/lifecycle cells are missing."
+      ]
+    },
+    {
+      "id": "plan-requires-known-review-trap-matrix",
+      "prompt": "Plan a PR-producing query and UI change after recent reviewer findings, but the plan says blast-radius and forge will catch repeat traps later.",
+      "expected_output": "The plan must require a Known Review Trap Matrix that turns repeated PR-review failures into source-grounded plan questions, contract obligations, proof commands, or explicit non-goals before implementation.",
+      "assertions": [
+        "Requires a Known Review Trap Matrix section by name.",
+        "Maps repeated review traps to questions, contract items, proof commands, or non-goals.",
+        "Rejects leaving repeat traps for forge or PR review."
+      ]
+    },
+    {
+      "id": "plan-requires-intent-srp-and-query-ownership",
+      "prompt": "Plan a vague operator-facing supplier analytics change that touches a file already doing reporting, sync, and formatting, and adds a read-only SELECT for a dashboard.",
+      "expected_output": "The plan must refuse contract handoff until it includes an Intent Continuity Ledger, Alternatives And Decision Rationale, a Touched File SRP Assessment for the mixed file, and a DB/Query Ownership Packet for the read-only SELECT. The mixed touched file must be fix-now unless the plan blocks or narrows the claim, and the SELECT row must name owner seam, current DB/schema, tenant/owner scope, parameter typing, readback expectation, bounded proof command, and cleanup.",
+      "assertions": [
+        "Requires Intent Continuity Ledger before task breakdown.",
+        "Requires Alternatives And Decision Rationale for load-bearing design choices.",
+        "Requires touched-file SRP assessment and fix-now classification for mixed-responsibility touched files.",
+        "Requires DB/query ownership packet for read-only SELECT/report queries.",
+        "Blocks contract when intent, SRP, or query ownership rows are missing."
+      ]
+    },
+    {
+      "id": "plan-requires-github-issue-claim-verification",
+      "prompt": "Plan from GitHub issue 2197, whose body claims a price_change_percent NUMERIC(5,2) overflow and suggests a clamp, but current source and schema have not been verified yet.",
+      "expected_output": "The plan must refuse contract handoff until it includes GitHub Issue Intake and Issue Claim Verification sections. Each load-bearing issue claim must be confirmed, contradicted, unverified, or not relevant with current source, command, DB/schema proof, or blocker. The issue-suggested clamp must be compared against no-change/status quo and schema-widening or governance-seam alternatives before becoming a planned fix.",
+      "assertions": [
+        "Requires GitHub Issue Intake for issue-backed plans.",
+        "Requires Issue Claim Verification before task breakdown or contract handoff.",
+        "Treats issue body, labels, logs, and suggested fixes as intake rather than proof.",
+        "Blocks contract while load-bearing claims remain unverified.",
+        "Requires alternatives and DB/query proof for schema-sensitive issue fixes."
+      ]
+    },
+    {
+      "id": "plan-replays-last150-dev-trap-bank",
+      "prompt": "Plan a Helpdesk PR-producing product workbench and Shopify outage fix after the last 150 dev commits showed repeated stale UI state, proof-lane selector misses, config/outage semantics, weak assertions, and stale proof-subject preflight failures.",
+      "expected_output": "The plan must build a last-150-dev trap replay section before task breakdown, cite the recent PR/comment/check evidence classes, classify each as applies/not applicable/blocking, and turn applicable rows into contract obligations, proof commands, or explicit non-goals.",
+      "assertions": [
+        "Requires a last-150-dev trap replay or equivalent current trap-bank section before task breakdown.",
+        "Includes stale UI/read-model rehydration, config/env/outage semantics, proof-lane selector misses, stale proof-subject/preflight failures, weak assertions, DB/query ownership, integration fault/idempotency, redaction, and SRP/domain-boundary classes.",
+        "Requires applies / not applicable with source evidence / blocking open question status for each relevant class.",
+        "Maps applicable classes to plan questions, contract obligations, proof commands, or explicit non-goals.",
+        "Blocks contract when recent trap classes are left for review or forge to discover later."
+      ]
+    }
+  ]
+}

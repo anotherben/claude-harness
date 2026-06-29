@@ -1,6 +1,6 @@
 ---
 name: deploy-checklist
-description: Use when preparing to deploy code to production, merging to main, running migrations on production databases, or setting environment variables on hosting platforms. Use when the user mentions "deploy", "push to production", "merge to main", "run migrations", or asks about pending deploy items. Also use when reviewing what needs to happen before a feature goes live.
+description: Use when preparing to deploy code to production, merging to main, running migrations on production databases, or setting environment variables on Render. Use when the user mentions "deploy", "push to production", "merge to main", "run migrations", or asks about pending deploy items. Also use when reviewing what needs to happen before a feature goes live.
 ---
 
 # Deploy Checklist
@@ -13,7 +13,7 @@ A structured pre-deployment validation process that ensures nothing is missed wh
 
 - Before merging dev to main
 - Before running migrations on production DB
-- Before setting/changing env vars on hosting platform
+- Before setting/changing env vars on Render
 - When user asks "what needs to be deployed" or "is this ready for prod"
 
 ## When NOT to Use
@@ -27,7 +27,7 @@ A structured pre-deployment validation process that ensures nothing is missed wh
 ### 1. Code Readiness
 
 - [ ] All changes committed to dev branch
-- [ ] All tests passing (run full test suite)
+- [ ] All tests passing (`npm test`)
 - [ ] No debug code (console.log, debugger statements)
 - [ ] No hardcoded URLs or credentials
 - [ ] `git diff dev..main` reviewed — understand what's changing
@@ -37,7 +37,7 @@ A structured pre-deployment validation process that ensures nothing is missed wh
 Check pending migrations:
 ```bash
 # List migration files
-ls <migration-directory>/
+ls prisma/migrations/
 
 # Compare against what's been run (check production DB)
 # Migrations are sequential — run in order, never skip
@@ -50,6 +50,8 @@ For each pending migration:
 - [ ] Backward compatible (old code works with new schema during rollout)
 - [ ] Has rollback plan (what to run if migration fails)
 
+**Migration ordering matters**: Check for number collisions. Both files in each collision pair must run.
+
 ### 3. Environment Variables
 
 Before deploying, check if new env vars are needed:
@@ -59,16 +61,16 @@ diff <(grep -oP '^[A-Z_]+=' .env | sort) <(grep -oP '^[A-Z_]+=' .env.example | s
 ```
 
 For each new env var:
-- [ ] Value set on hosting platform (use safe update methods — never overwrite all vars)
+- [ ] Value set on Render (use PATCH/append, NEVER PUT which wipes all vars)
 - [ ] Default/fallback in code if var is optional
 - [ ] Documented in .env.example
 
-**CRITICAL**: When updating env vars on hosting platforms, use PATCH/append operations. Some platforms (like Render) will WIPE ALL existing variables if you use PUT.
+**CRITICAL**: Never use PUT on Render env vars API — it WIPES ALL existing variables. Always use APPEND/PATCH.
 
 ### 4. Dependency Check
 
-- [ ] No new packages that need installation on production
-- [ ] If new packages exist, verify they're in package.json/requirements.txt (not just locally installed)
+- [ ] No new npm packages that need `npm install` on production
+- [ ] If new packages exist, verify they're in package.json (not just locally installed)
 - [ ] Check for breaking version changes in updated packages
 
 ### 5. Feature Flags
@@ -87,11 +89,11 @@ Check if new extensions are needed:
 ### 7. Deploy Sequence
 
 Execute in this exact order:
-1. Set env vars on hosting platform
+1. Set env vars on Render (PATCH endpoint)
 2. Install DB extensions if needed
-3. Run migrations in batch order
-4. Push code to main
-5. Verify service restarts successfully
+3. Run migrations in batch order (see migration plan)
+4. Push code to main (`git push origin main`)
+5. Verify service restarts successfully on Render
 6. Run smoke test (hit key API endpoints)
 7. Monitor logs for 15 minutes
 
@@ -107,7 +109,7 @@ Before deploying, document:
 
 - [ ] API responds on production URL
 - [ ] Key endpoints return expected data
-- [ ] No new errors in logs
+- [ ] No new errors in Render logs
 - [ ] Cron jobs running on schedule
 - [ ] Background workers processing queue
 
@@ -115,7 +117,7 @@ Before deploying, document:
 
 | Mistake | Impact | Prevention |
 |---------|--------|------------|
-| Overwriting all env vars (PUT instead of PATCH) | Wipes ALL vars, full outage | Always PATCH/append |
+| PUT on Render env vars | Wipes ALL vars, full outage | Always PATCH/append |
 | Skip migration order | Foreign key violations, data loss | Run in sequence |
 | Deploy without env vars | Features crash on missing config | Set vars BEFORE push |
 | No rollback plan | Extended downtime | Document rollback for each migration |

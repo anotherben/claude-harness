@@ -471,6 +471,11 @@ Then produce:
 2. **Checklist** — risk-ordered, one line per touchpoint, with the verification command/test to run.
 3. **Inline annotations** — for review mode, emit a `blast-radius-inline.md` keyed to diff hunks the
    user can paste into the PR or read alongside the diff.
+4. **Diagnostic Gate Summary** — a normalized block inside the report with the
+   gate verdict, consensus status, diagnose status recommendation, blocking
+   finding IDs, disagreement ledger, and exact next handoff. This does not make
+   blast-radius a fixer; it makes its findings consumable by `$diagnose`,
+   `$diagnostic-cohort`, and `/goal` handoffs.
 
 For PR mode or reruns, the report must also include:
 - `## PR Review State` — head SHA, check status summary, unresolved-thread count, and the final

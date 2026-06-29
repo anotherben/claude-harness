@@ -1,7 +1,6 @@
 ---
 name: run-verification
 description: Run the full verification pipeline (lint, unit tests, E2E if UI changed) — invoke after code changes
-user-invocable: false
 ---
 
 # Run Verification Pipeline
