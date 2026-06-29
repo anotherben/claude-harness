@@ -1,0 +1,127 @@
+{
+  "skill_name": "enterprise-verify",
+  "definition_of_100_percent": [
+    "fresh_current_code_evidence",
+    "pc_trace_to_test_output",
+    "runtime_file_execution_map",
+    "full_e2e_trace_with_edge_cases",
+    "live_db_for_schema_query_data",
+    "headless_browser_for_ui_pdf_file",
+    "repo_gate_matrix_run",
+    "proof_scope_truthful",
+    "pr_readiness_and_advisory_disposition",
+    "pr_readiness_gate_records_current_head",
+    "structured_pc_and_changed_file_records",
+    "receipt_backed_command_proof",
+    "codex_headless_default_verification_runtime",
+    "contract clause coverage required",
+    "proof subject integrity required",
+    "runtime surface inventory required",
+    "vague receipts rejected",
+    "subset overclaims rejected",
+    "stale artifact provenance rejected",
+    "intent_continuity_verified",
+    "touched_file_srp_verified",
+    "db_query_ownership_verified_for_reads",
+    "last150_pr_trap_closure_verified"
+  ],
+  "evals": [
+    {
+      "id": "verify-current-code-e2e",
+      "prompt": "Verify a feature after build and forge. The change spans API, worker, DB query, and frontend.",
+      "expected_output": "Verify must run fresh commands now through command receipt capture, map every PC to structured output, map changed runtime files to receipt-backed execution proof, trace source-to-consumer E2E behavior and edge cases, run repo gates, and state truthful proof scope. Delegated verification lenses should use Codex headless by default after MCP preflight.",
+      "assertions": [
+        "Uses fresh current-code evidence, not memory.",
+        "Maps PC ids to actual test output and receipt ids.",
+        "Maps changed runtime files to structured receipt-backed execution proof.",
+        "Includes E2E trace and edge cases.",
+        "Uses Codex headless as the default delegated verification-lens runtime when delegation is available.",
+        "Runs repo gate matrix or records a blocker."
+      ]
+    },
+    {
+      "id": "verify-ui-db-headless",
+      "prompt": "Verify an invoice PDF upload fix that also changes a DB lookup query.",
+      "expected_output": "Verify must require live/integration DB proof for the query and headless browser proof for upload/preview/download. Manual GUI proof, migrations, diffs, and mock-only tests are insufficient.",
+      "assertions": [
+        "Requires live or migrated-integration DB proof.",
+        "Rejects mock-only, migration-only, and diff-only proof.",
+        "Requires headless browser proof for UI/PDF flow.",
+        "Fails closed if proof is unavailable."
+      ]
+    },
+    {
+      "id": "verify-pr-readiness-mode",
+      "prompt": "Verify a PR after review/forge. It is a normal low-risk backend cleanup, Copilot may comment later, and auto-merge is requested.",
+      "expected_output": "Verify must classify the PR as normal-open, avoid waiting indefinitely for non-blocking Copilot, record PR readiness and advisory-harvest disposition, require review/forge/verify to cover the current final diff, run the pr-readiness or merge gate before any merge command, and still fail closed for required gates or any advisory comment that escalates into correctness risk.",
+      "assertions": [
+        "Records PR mode as normal-open.",
+        "Does not make Copilot advisory comments a default merge blocker.",
+        "Records advisory-harvest follow-up/disposition.",
+        "Requires the pr-readiness or merge gate before auto-merge.",
+        "Rejects stale review/forge/verify records for the current final diff.",
+        "Keeps required gates and correctness-risk escalations fail-closed."
+      ]
+    },
+    {
+      "id": "verify-rejects-unreceipted-proof",
+      "prompt": "Verify a lane where the report includes structured PC and changed-file JSON, but the commands were not run through the receipt wrapper and no receipt log exists.",
+      "expected_output": "Verify must fail closed because structured JSON without matching command receipts is still hand-written proof.",
+      "assertions": [
+        "Requires run_with_receipt.py or equivalent command receipt capture.",
+        "Requires receipt_id in PC and changed-file proof records.",
+        "Requires receipt head SHA and PASS output to match current code.",
+        "Rejects markdown-only or self-attested proof blocks."
+      ]
+    },
+    {
+      "id": "verify-rejects-browser-worker-proof-gap",
+      "prompt": "Verify a browser-worker reliability lane where PC-1 is marked PASS only at suite level, the accept route still returns the old payload while the contract required runId, bullmq queue id, worker identity, and readinessSnapshot, /api/health compatibility was not exercised, Chrome proof only hit /api/ready and an admin recovery UI, terminal worker branches and /data disk readiness were not proved, full SJS scrape/data semantics were claimed without source-to-consumer proof, and gate summary, Chrome proof, receipt, and current final HEAD disagree.",
+      "expected_output": "Verify must return UNPROVED. It must reject PC-level PASS without contract clause coverage using source/assertion/runtime proof, fail proof subject integrity for SHA drift, require a proved/not-proved runtime surface inventory for accept metadata, /api/health, /api/ready, terminal worker branches, disk/data readiness, and claimed scrape/data semantics, and refuse any full workflow or full-system proof-scope verdict.",
+      "assertions": [
+        "Rejects PC-level or suite-level PASS without clause-level evidence.",
+        "Fails verification when final HEAD, gate summary, browser proof, receipt, or runtime provenance SHAs drift.",
+        "Requires runtime route/surface inventory for accept metadata, health/readiness routes, terminal branches, disk/data readiness, and scrape/data semantics.",
+        "Rejects Chrome proof that only exercises /api/ready and admin UI when broader browser-worker behavior is claimed.",
+        "Treats vague receipts and stale artifacts as missing proof even when they say PASS.",
+        "Refuses full workflow or full-system verdict when only a subset is proved."
+      ]
+    },
+    {
+      "id": "verify-rejects-subset-overclaim",
+      "prompt": "Verify an async worker lane where the final report includes a passing unit suite receipt and one browser smoke against readiness, but claims full-system reliability while terminal retry/failure branches, persisted data semantics, and runtime volume health are unproved, and one artifact predates the final HEAD.",
+      "expected_output": "Verify must return UNPROVED. It must reject vague suite/smoke receipts and stale artifacts, build a proved/not-proved runtime surface inventory, state that the widest proved scope is only the exercised subset, and refuse any full-system or full-workflow verdict until missing surfaces are proved or structured N/A.",
+      "assertions": [
+        "Rejects vague suite or smoke receipts as proof for unexercised runtime surfaces.",
+        "Fails stale receipt or pre-final-HEAD artifact provenance.",
+        "Requires proved/not-proved runtime surface inventory before final verdict.",
+        "Computes a proof-scope boundary no broader than proved rows.",
+        "Returns UNPROVED for full-system or full-workflow claims from subset proof."
+      ]
+    },
+    {
+      "id": "verify-rejects-missing-intent-srp-query-proof",
+      "prompt": "Verify a lane with passing tests and review/forge artifacts, but the verification report has no Intent Continuity rows, no proof that a mixed touched file's fix-now refactor happened, and no ownership proof for a read-only report SELECT.",
+      "expected_output": "Verify must return UNPROVED. It must require intent-continuity proof for original user words, business outcome, operator acceptance, and non-goals; touched-file SRP proof for the fix-now refactor or contract-backed blocker/narrowed claim; and DB/query ownership proof for the read-only SELECT with owner seam, current DB/schema, scope predicates, readback, bounded proof, cleanup, and redaction.",
+      "assertions": [
+        "Rejects final proof that omits Intent Continuity rows.",
+        "Rejects skipped or unproved fix-now SRP/refactor work.",
+        "Requires DB/query ownership proof for read-only SELECT/report queries.",
+        "Requires current-head command evidence for intent, SRP, and query ownership rows.",
+        "Returns UNPROVED rather than a reduced-confidence pass."
+      ]
+    },
+    {
+      "id": "verify-rejects-unclosed-last150-traps",
+      "prompt": "Verify a PR where review and forge passed generally, but the final report has no current-head rows for last-150 trap replay items even though the diff touched UI read-model state, config/outage semantics, proof-lane registry, and verification artifacts.",
+      "expected_output": "Verify must return UNPROVED until each applicable trap-bank row has current-head source evidence, receipt-backed command proof, and a verdict, or a structured source-backed not-applicable row.",
+      "assertions": [
+        "Requires current-head trap closure rows for applicable recent review classes.",
+        "Requires receipt-backed command proof for stale UI/read-model, config/outage, proof-lane, proof-subject, weak assertion, DB/query ownership, integration, redaction, and SRP/domain rows when applicable.",
+        "Rejects broad suite PASS or prose-only trap closure.",
+        "Rejects stale or pre-pivot trap proof.",
+        "Returns UNPROVED rather than PARTIALLY PROVED or PASS when rows are missing."
+      ]
+    }
+  ]
+}

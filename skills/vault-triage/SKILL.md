@@ -1,6 +1,6 @@
 ---
 name: vault-triage
-description: Walk through inbox items one by one and route them to the right queue. Use when the user says "triage the inbox", "process inbox", "clear the inbox", or invokes /vault-triage. Also suggested when the vault-gates hook blocks /enterprise due to inbox items >48h old. Presents each item and asks where to route it.
+description: Walk through inbox items one by one and route them to the right queue. Use when the user says "triage the inbox", "process inbox", "clear the inbox", or invokes /vault-triage. Also suggested when the vault-gates hook blocks /enterprise due to inbox items older than 48 hours. Presents each item and asks where to route it.
 ---
 
 # vault-triage
@@ -9,7 +9,7 @@ Walk through all inbox items one by one, presenting each to the user and routing
 
 Vault path: `{{VAULT_PATH}}`
 Vault folders: 00-Inbox, 01-Bugs, 02-Tasks, 03-Ideas, 04-In-Progress, 05-Archive
-Frontmatter schema: type, priority, project, module, agent, status, branch, complexity, blocked-by, related, tags, created, updated
+Frontmatter schema: id, type, priority, project, module, agent, status, branch, worktree_path, complexity, next_action, proof_state, blocked_by, related, tags, created, updated
 
 ## Steps
 

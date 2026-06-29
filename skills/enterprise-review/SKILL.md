@@ -1,360 +1,108 @@
 ---
 name: enterprise-review
-description: "Two-stage code review: spec compliance THEN code quality. Separate concerns prevent spec bugs hiding behind quality observations. Medium+ tier requires a separate agent — builder never reviews own work. Use after enterprise-build."
+description: Use when enterprise implementation is complete enough for a structured review that separates spec compliance from code quality and classifies drift explicitly
 ---
-
-
-### LEARNED BEHAVIORS (auto-loaded)
-
-Before starting, load domain-specific lessons:
-1. Call `cortex_lessons(tag='feedback:REVIEW')` to retrieve corrections specific to this skill
-2. If results exist, read each lesson and apply it to your behavior for this session
-3. During execution, if the user corrects your approach, write a domain-tagged annotation:
-   ```json
-   {"target":"skill:enterprise-review","note":"<correction>","author":"enterprise-review","tags":["feedback","feedback:REVIEW","lesson"],"timestamp":"<ISO>"}
-   ```
-   Append to `.cortex/knowledge.jsonl`
 
 # Enterprise Review
 
-You are reviewing code that was built from a contract. Your job is adversarial verification — find what's wrong, not confirm what's right. Two stages, two separate concerns: spec compliance FIRST, code quality SECOND. They never mix.
-
----
-
-## THE SEPARATION PRINCIPLE
-
-```
-Spec bugs hide behind quality observations.
-"Clean code" that violates the contract is WORSE than messy code that fulfills it.
-Review spec compliance FIRST. Only then review code quality.
-```
-
-Quality findings during Stage 1? Write them down, but DO NOT report them until Stage 2. Spec findings during Stage 2? STOP — you missed something. Go back to Stage 1.
-
----
-
-## STACK RESOLUTION
-
-Read `.claude/enterprise-state/stack-profile.json` at skill start. Extract:
-- `$TEST_CMD` = `commands.test_all`
-- `$SOURCE_DIR` = `structure.source_dirs.backend`
-- `$FRONTEND_DIR` = `structure.source_dirs.frontend`
-- `$TENANT_FIELD` = `multi_tenancy.field`
-- `$TENANT_ENABLED` = `multi_tenancy.enabled`
-- `$AUTH_MIDDLEWARE` = `auth.middleware_name`
-- `$FILE_EXTENSIONS` = `conventions.file_extensions`
-
-If no profile exists: BLOCKED — run /enterprise-discover first.
-
----
-
-## PREREQUISITES
-
-Before starting review:
-
-1. **Verify upstream artifacts exist**:
-   ```bash
-   # Contract must exist
-   ls docs/contracts/*contract* 2>/dev/null || echo "BLOCKED: No contract found"
-   # Build must have produced changes
-   git diff --stat HEAD 2>/dev/null | tail -1 || echo "BLOCKED: No changes to review"
-   # Tests must be passing
-   $TEST_CMD 2>&1 | tail -5
-   ```
-   **If any check fails: STOP.** Report what's missing.
-
-2. **Identify the contract** — find the contract document in `docs/contracts/` or `.claude/designs/`
-3. **Identify the plan** — find the plan in `docs/plans/`
-4. **Identify all changed files** — run `git diff --name-only <base-branch>...HEAD`
-5. **Identify the tier** — Micro/Small/Medium/Large/XL from the contract
-6. **Check builder identity** — Medium+ tier: you MUST be a different agent than the builder
-
-```
-Medium+ Tier Gate:
-- Ask: "Who built this?"
-- If YOU built it → STOP. Tell the user a separate agent must review.
-- Builder reviews own work = review is INVALID.
-```
-
----
-
-## SCOPE CLASSIFICATION
-
-Before reviewing any code, classify EVERY changed file:
-
-| Category | Definition | Review Action |
-|----------|-----------|---------------|
-| **REQUIRED** | Directly implements a postcondition | Full Stage 1 + Stage 2 |
-| **ENABLING** | Infrastructure needed by REQUIRED files (utils, types, migrations) | Stage 2 only |
-| **DRIFT** | Not traceable to any postcondition | Flag for removal |
-
-```bash
-# List all changed files
-git diff --name-only <base-branch>...HEAD
-
-# For each file, answer: which postcondition does this serve?
-# If no postcondition → DRIFT
-```
-
-**DRIFT files are a red flag.** They indicate scope creep. Report them prominently. The builder must justify each one or revert it.
-
----
-
-## STAGE 1: SPEC COMPLIANCE
-
-### 1A — Postcondition Verification
-
-For EACH postcondition in the contract (PC-1, PC-2, etc.):
-
-```
-PC-X: [postcondition text]
-├── Implemented? YES/NO
-│   └── Where? [file:line]
-├── Test exists? YES/NO
-│   └── Where? [test file:line]
-├── Test verifies the RIGHT thing? YES/NO
-│   └── Does the assertion match the postcondition exactly?
-│   └── Does the test exercise the actual code path (not a mock)?
-│   └── Does the test fail if the postcondition is violated?
-└── Verdict: PASS / FAIL [reason]
-```
-
-**Common spec failures:**
-- Test passes but doesn't actually verify the postcondition (assertion too weak)
-- Implementation handles happy path but not the error case stated in the PC
-- Test mocks the exact thing the postcondition is about
-- Postcondition says "returns X" but implementation returns X wrapped in something else
-
-### 1B — Consumer Map Verification
-
-For each consumer listed in the contract's consumer map:
-
-```
-Consumer: [consumer name]
-├── Still receives correct data shape? YES/NO
-├── Breaking changes introduced? YES/NO
-├── Integration tested? YES/NO
-└── Verdict: PASS / FAIL [reason]
-```
-
-```bash
-# Find all consumers of the changed module
-cd $PROJECT_ROOT
-grep -rn "require.*<module>" $SOURCE_DIR/ --include="*.js" | grep -v node_modules | grep -v __tests__
-grep -rn "import.*from.*<module>" $SOURCE_DIR/ --include="*.js" | grep -v node_modules | grep -v __tests__
-```
-
-### 1C — Invariant Verification
-
-For each invariant in the contract:
-
-```
-Invariant: [invariant text]
-├── Maintained in all code paths? YES/NO
-├── Test guards the invariant? YES/NO
-└── Verdict: PASS / FAIL [reason]
-```
-
-### 1D — Stage 1 Verdict
-
-```
-═══════════════════════════════════════════
-STAGE 1 VERDICT: SPEC [PASS/FAIL]
-═══════════════════════════════════════════
-
-Postconditions: X/Y passed
-Consumers: X/Y verified
-Invariants: X/Y maintained
-
-[If FAIL:]
-FAILURES:
-- PC-X: [specific failure]
-- Consumer Y: [specific failure]
-- Invariant Z: [specific failure]
-
-ACTION: Fix failures and re-submit for review.
-Stage 2 will NOT run until Stage 1 passes.
-═══════════════════════════════════════════
-```
-
-**If Stage 1 FAILS: STOP. Do not proceed to Stage 2.** Report failures and return to builder.
-
----
-
-## STAGE 2: CODE QUALITY (Lens Dispatch)
-
-Only runs after Stage 1 passes. Stage 2 dispatches stack-specific review lenses generated by `/harness-init`.
-
-### 2.0 — Load Lens Registry
-
-```bash
-cat .claude/enterprise-state/review-lenses.json
-```
-
-If `review-lenses.json` exists → use **Lens Dispatch** (2.1–2.3 below).
-If it does NOT exist → use **Legacy Checks** (2A–2H fallback at the end of this section).
-
-### 2.1 — Filter Relevant Lenses
-
-For each lens in the registry, check if any changed files match the lens's `applies_to` pattern. Skip lenses that match zero changed files.
-
-```bash
-# Get changed files
-CHANGED=$(git diff --name-only <base-branch>...HEAD)
-```
-
-`security` and `architecture` lenses always run (they apply to all files).
-
-### 2.2 — Dispatch Each Lens
-
-For each relevant lens, invoke it as a subagent (or inline for Solo mode):
-
-```
-REVIEW LENS: {lens_id}
-CHANGED FILES: {files matching this lens}
-BASE BRANCH: {base_branch}
-
-Run the checklist in .claude/skills/review-lens-{id}/SKILL.md
-Return the VERDICT FORMAT exactly as specified in the skill.
-```
-
-Each lens returns:
-```
-LENS: {id}
-FILES CHECKED: [count]
-FINDINGS:
-  - [file:line] [FAIL|WARN] description
-VERDICT: PASS | FAIL | WARN
-BLOCKING: [FAIL items]
-ADVISORY: [WARN items]
-```
-
-### 2.3 — Aggregate Verdicts
-
-Collect all lens verdicts into the Stage 2 table:
-
-```
-═══════════════════════════════════════════
-STAGE 2 VERDICT: QUALITY [PASS/FAIL]
-═══════════════════════════════════════════
-
-| Lens | Files | Verdict | Blocking | Advisory |
-|------|-------|---------|----------|----------|
-| api-node | 3 | PASS | 0 | 1 |
-| sql-pg | 2 | FAIL | 2 | 0 |
-| test-js | 4 | WARN | 0 | 3 |
-| security | 5 | PASS | 0 | 0 |
-| architecture | 5 | PASS | 0 | 1 |
-
-OVERALL: PASS if all lenses PASS/WARN, FAIL if any lens FAIL
-
-[If FAIL:]
-BLOCKING FINDINGS:
-- [lens:file:line] description
-
-ACTION: Fix blocking findings and re-submit for review.
-═══════════════════════════════════════════
-```
-
-### Legacy Checks (fallback if no review-lenses.json)
-
-If the lens registry does not exist, run these hardcoded checks instead. These are the original Stage 2 checks for backwards compatibility with projects installed before lens generation.
-
-**2A — File Size**: Flag files over 400 lines (soft), FAIL over 800 (hard). Test files exempt.
-**2B — Tenant Isolation**: Every new SQL query must have `$TENANT_FIELD` in WHERE/INSERT.
-**2C — Query Safety**: All queries parameterized, no string concatenation in SQL.
-**2D — Import Verification**: Every require/import resolves to an existing file.
-**2E — Debug Code**: No console.log/debugger in production code.
-**2F — Security**: Auth middleware on non-public routes, input validation present.
-**2G — Pattern Compliance**: Code follows existing codebase patterns, no reinvented utilities.
-**2H — Migration Safety**: IF NOT EXISTS guards, TIMESTAMPTZ, indexes on foreign keys.
-
----
-
-## FINAL REVIEW REPORT
-
-Save to: `docs/reviews/YYYY-MM-DD-<slug>-review.md`
-
-```markdown
-# Review: <Feature Slug>
-
-**Date:** YYYY-MM-DD
-**Contract:** <path to contract>
-**Builder:** <who built it>
-**Reviewer:** <who reviewed it>
-**Tier:** <Micro/Small/Medium/Large/XL>
-
-## Scope Classification
-
-| File | Category | Postcondition |
-|------|----------|---------------|
-| ... | REQUIRED | PC-X |
-| ... | ENABLING | supports PC-Y |
-| ... | DRIFT | none — flagged |
-
-## Stage 1: Spec Compliance — [PASS/FAIL]
-
-### Postconditions
-| PC | Status | Implementation | Test | Notes |
-|----|--------|---------------|------|-------|
-| PC-1 | PASS/FAIL | file:line | test:line | ... |
-
-### Consumers
-| Consumer | Status | Notes |
-|----------|--------|-------|
-| ... | PASS/FAIL | ... |
-
-### Invariants
-| Invariant | Status | Notes |
-|-----------|--------|-------|
-| ... | PASS/FAIL | ... |
-
-## Stage 2: Code Quality — [PASS/FAIL]
-
-| Check | Status | Notes |
-|-------|--------|-------|
-| File Size | PASS/FAIL | ... |
-| Tenant Isolation | PASS/FAIL | ... |
-| Query Safety | PASS/FAIL | ... |
-| Import Resolution | PASS/FAIL | ... |
-| Debug Code | PASS/FAIL | ... |
-| Security | PASS/FAIL | ... |
-| Pattern Compliance | PASS/FAIL | ... |
-| Migration Safety | PASS/FAIL | ... |
-
-## Overall Verdict: [PASS/FAIL]
-
-[Summary of findings, required fixes, or approval statement]
-```
-
----
-
-## REVIEW WORKFLOW
-
-```
-1. Receive review request
-2. Locate contract + plan + changed files
-3. Check tier → enforce builder != reviewer for Medium+
-4. Classify scope: REQUIRED / ENABLING / DRIFT
-5. Stage 1: Spec Compliance
-   └── FAIL? → STOP. Return to builder with failures.
-6. Stage 2: Code Quality
-   └── FAIL? → Return to builder with failures.
-7. Both PASS → Write review report → Approve
-```
-
----
-
-## RE-REVIEW PROTOCOL
-
-When code comes back after fixes:
-
-1. **Only re-check the failures** — don't re-review passing checks
-2. **Verify the fix didn't break a previously passing check** — run all tests
-3. **Update the review report** with new verdicts
-4. **If new issues found during re-review** — full stage re-run for that stage
-
-```bash
-# Verify tests still pass after fixes
-cd $PROJECT_ROOT && $TEST_CMD 2>&1 | tail -20
-```
+Review the work in two stages. Never mix them.
+
+## Required Background
+
+- `code-reviewer`
+- `requesting-code-review`
+
+## Stage Order
+
+Use [review-separation.md](references/review-separation.md).
+
+1. Stage 1: spec compliance
+2. Stage 2: code quality
+
+If Stage 1 fails, Stage 2 does not start.
+
+Before review starts, run the agent-bound review gate in [agent-stage-gates.md](../enterprise/references/agent-stage-gates.md).
+
+For non-trivial, schema-sensitive, tenant-sensitive, money/order/inventory/invoice, or UI workflow changes, review should be multi-agent when available: split spec/contract, schema/data, code execution, E2E/workflow, security/tenant, and headless UI lenses. If delegation is unavailable, run the same lenses sequentially and label the limitation.
+
+## Current-Head Adversarial Gate
+
+Review must pull apart the current final diff, not summarize build intent.
+
+- State the exact head SHA and tree/diff being reviewed.
+- Inspect current implementation code and consumers before accepting migration, docs, evidence, or mock claims.
+- Include a `breakdown attempt` section that actively probes races, null/falsy values, wrong branch/base, wrong route method, stale evidence, duplicate helper/writer, ownership leaks, unsafe environment matching, and affected-row omissions.
+- Compare implementation behavior against the locked contract, current PR thread history when present, and repo trap matrix.
+- Build or refresh the review feedback trap bank from two sources before verdict: `Current PR Trap Rows` from the current PR/final diff/thread history, and `Recent PR / Last-150 Trap Rows` from recent merged PR/review/check evidence when available. Name both sources in the review output; if either source applies but is not inspected, block `PASS` and recycle the review. The verdict must explicitly name any `missing` or `unclosed` trap rows, or state that each row is proved or source-evidenced not applicable. For Helpdesk-like repos, replay last-150-dev classes explicitly: stale UI/read-model rehydration, config/env/outage semantics, proof-lane selector misses, stale proof-subject/preflight failures, weak assertions, DB/query ownership gaps, integration side-effect/idempotency faults, redaction/diagnostic leaks, and SRP/domain-boundary drift. Do not collapse the redaction/diagnostic class into generic "sanitized errors"; name redaction or diagnostic leakage explicitly when integration, logging, proof, or error surfaces are touched.
+- Block `PASS` when any hard-stopper review lane is skipped, unverifiable, stale after a pivot, or based on migration/diff/mock evidence instead of current code.
+
+## Required Checks
+
+- every contract item has a matching implementation target
+- every contract item has a real test
+- the recorded `build_packet` exists, passes the mechanical packet gate, and names every changed source/test/artifact path
+- the recorded `build_packet` passes the architecture contract gate: exact module boundary, folder placement, public seam, owner layer, allowed dependency direction, forbidden imports, and architecture tests
+- the Intent Continuity Ledger still maps original user words, business outcome,
+  operator acceptance, non-goals, and proof commands to the implemented diff
+- the Architecture Ratchet Matrix is honored: changed boundaries keep their public seam, owner layer, dependency direction, forbidden imports, architecture proof, and future regression trap
+- every changed file has a source-backed Touched File SRP Assessment; `fix-now`
+  rows are implemented and proven, and mixed-responsibility touched files are not
+  left as vague follow-up cleanup
+- every DB/query path, including SELECT/report/verifier/live-proof reads, has a
+  DB/Query Ownership Packet and uses the approved owner seam, current DB/schema
+  target, scope predicates, bounded proof, and readback/affected-row expectation
+- changed files are classified as `required`, `enabling`, or `drift`
+- every build change is inside the packet's allowed paths; any unlisted path is a review failure unless the contract was recycled before the edit
+- build receipts show the packet's expected RED/GREEN loops; missing, wrong-reason, or post-hoc RED/GREEN evidence fails spec compliance
+- proof scope in the contract still matches the implementation reality
+- contract traceability statuses are updated from `pending` to their real state before handoff
+- schema/query claims have current-code reads plus real DB proof, not migrations/diffs/mocks
+- schema/query/data-sensitive claims have local full-schema Postgres proof or a contract-backed blocker/narrowed claim; production proof targets, secret output, and repo dumps are review failures
+- read-only query changes are schema/query claims for ownership purposes; review
+  fails SELECT/report/proof queries that bypass the owning seam or omit tenant,
+  owner, current-DB, bounded-work, or readback semantics
+- every changed runtime file has code-level execution proof
+- every cross-layer behavior has source-to-consumer E2E trace and edge-case coverage
+- async/worker/order/invoice/inventory/pricing/label-printing/notification/staff workflow changes have explicit proof for exact field spelling through real producers, near-miss field spelling collisions, duplicate submit, concurrent worker/scheduler, stale running recovery, old synchronous confirmation/error preservation before enqueue, post-commit bookkeeping failure, helper return variant success semantics, unavailable/cancelled downstream dependencies, retry behavior, and close/reopen/refresh rehydration where applicable
+- runtime shape proof is still true: mocks, fixtures, route catalogs, helper inputs, query aliases, and service return examples match current source/live proof
+- UI/PDF/file/upload/rendered workflows have headless browser proof
+- repo gate matrix commands are present and credible: PR body/delivery gate, no-new-mock guard, DB ownership gate, live-proof registry, and required CI mirrors
+- proof-lane integrity is proven: live-proof registry and command selectors choose domain-specific lanes for mixed generic/domain diffs, and proof commands fail non-zero when expected tables, columns, routes, workers, browser states, or artifacts are absent
+- SQL/parser casts from JSON, text, external payloads, or numeric-looking IDs guard empty, malformed, and out-of-range values before casting; changed predicates on indexed columns preserve indexability or carry explicit query-plan proof
+- every new mode flag, reason string, status/code branch, SQL `CASE` branch, or structured error path has positive, negative, sibling-reason, idempotent repeat, and placeholder-ordering proof where applicable
+- live DB proof queries are bounded for focused proof lanes; unbounded historical scans on hot or growing tables are review findings unless the contract records a concrete performance budget and runtime evidence
+- evidence and verification artifacts are portable and current: no committed machine-local `/Users/...` command prefixes, `PATH=...`, `NODE_PATH=...`, stale `Pending`/`Remaining` sections, stale `Create PR` tasks inside an open PR, contradictory gate status, or wrong-head/base proof
+- runtime-to-proof parity is proven for verifier, replay, backtest, report, readiness, and live-proof code; proxy metrics or retyped predicates that can drift from production helpers are review failures
+- external integration fault matrices are proven for fallback criteria, timeout/cancellation, idempotent retry boundaries, sanitized errors, and duplicate side effects
+- tenant/supplier/owner/identifier/omitted-field/affected-row invariants are locked and tested for every changed read, update, upsert, and governed write path
+- security/observability/logging changes prove adversarial redaction corpus coverage, stable log shape, useful diagnostics, and no live operational identifier leakage
+- public seam and UI consumer proof covers exports, startup seams, API client/server key matching, UI lock/rehydration, nested-route specificity, custom-control keyboard/focus behavior, and downstream consumers
+- test integrity is proven: no new schema-coupled DB mocks, no source-string-only runtime proof, env mutations restored, module-load tests isolated, and no brittle count-only assertions as primary proof
+- the review is against the current final diff. If CI or a gate forced a code pivot, earlier review output for affected files is stale and must be rerun.
+- build did not invent requirements, paths, tests, helpers, writers, ownership, architecture, or proof commands outside the packet
+- no claim is only `PARTIALLY PROVED`; partial proof, mock-only proof, stale proof, wrong-head proof, or untested important matrix cells fail spec compliance
+- every applicable current trap-bank row is either implemented and receipt-proved, explicitly not applicable with source evidence, or recycled to contract/build. A row being "probably covered" by broad tests is not enough when recent reviewers found the same class after green checks.
+- SRP/folder-layout claims are proven by public-seam architecture tests or explicitly recycled; private-helper-only proof is a review failure
+- SRP/refactor-as-you-touch is a review gate, not taste. If a touched file is
+  doing multiple jobs and the changed responsibility is one of them, review fails
+  unless the contracted `fix-now` refactor happened or the contract narrowed the
+  claim with a recorded blocker.
+- apply the deletion test to new or moved modules: if deleting it only removes a
+  pass-through and does not force complexity back into callers, treat it as a
+  shallow seam or unnecessary abstraction
+- reject source-string, fixture-only, or hard-coded-response tests as primary proof for runtime behavior that has a real source, DB, worker, browser, or integration boundary
+
+## Reviewer Independence
+
+If an independent reviewer is available for medium or large work, use one. If not, perform the review yourself but label the limitation explicitly. Do not pretend self-review is the same as independent review.
+
+If the prompt explicitly states that the committed repo profile and repo-local overlay are already current, review should proceed without reopening discover work unless the diff reveals profile drift.
+
+When the review artifact is written, record it in the current agent session before moving to forge or verify.
+
+## Completion Handoff
+
+- Writing the review artifact is not the finish line.
+- If the current prompt asks for completion, verification, PR readiness, merge, or an end-to-end cycle, review must hand off directly to `enterprise-forge` in the same lane.
+- Do not hand off from review directly to verify, harness, PR creation, or merge unless the user explicitly asked for review-only output and no completion/merge claim is being made.
+- Do not stop after review waiting for another prompt unless the user explicitly asked for review-only output.

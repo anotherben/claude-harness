@@ -1,0 +1,7 @@
+interface:
+  display_name: "Helpdesk PR Queue Closeout"
+  short_description: "Oldest-first Helpdesk dev PR closeout"
+  default_prompt: "Use $helpdesk-pr-queue-closeout to drain eligible Helpdesk dev PRs oldest-first with evidence-backed review replies and merge gates."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,273 @@
+{
+  "schema_version": "helpdesk.quality_gates.quality_artifact.v1",
+  "artifact_type": "quality_artifact",
+  "workflow": "consensus",
+  "generated_at": "2026-06-24T00:00:00Z",
+  "goal_contract": {
+    "schema_version": "helpdesk.quality_gates.goal_contract.v1",
+    "artifact_type": "goal_contract",
+    "workflow": "consensus",
+    "goal": {
+      "id": "sample-goal",
+      "summary": "Add a bounded current-head proof ledger for a Helpdesk PR",
+      "source": "manual-sample",
+      "target_branch": "dev",
+      "risk_tier": "high",
+      "success_criteria": [
+        "The PR proof ledger is generated from the goal risk tier and records current-head evidence."
+      ],
+      "non_goals": [
+        "No runtime code or skill scripts are changed by this sample."
+      ]
+    },
+    "terminal_state": "PR is ready for explicit merge authorization",
+    "acceptance_condition": "All required checks pass on current head and review threads are resolved.",
+    "rollback_or_block_trigger": "Block if head changes, proof goes stale, a required check fails, or review threads reopen.",
+    "scope": {
+      "allowed_paths": [
+        "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/"
+      ],
+      "forbidden_paths": [
+        "/Users/ben/.codex/skills/helpdesk-quality-gates/SKILL.md",
+        "/Users/ben/.codex/skills/helpdesk-quality-gates/scripts/"
+      ],
+      "expected_changed_files": [
+        "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/goal-contract.json",
+        "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/ownership-ledger.json",
+        "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/pr-proof-ledger.json",
+        "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/quality-artifact.sample.json"
+      ]
+    },
+    "required_proof_profiles": {
+      "low": [
+        "source_truth",
+        "focused_tests"
+      ],
+      "medium": [
+        "source_truth",
+        "ownership",
+        "blast_radius",
+        "focused_tests"
+      ],
+      "high": [
+        "source_truth",
+        "ownership",
+        "blast_radius",
+        "current_head_tests",
+        "pr_review_threads",
+        "ci_checks"
+      ],
+      "xhigh": [
+        "source_truth",
+        "ownership",
+        "blast_radius",
+        "current_head_tests",
+        "live_or_integration_proof",
+        "pr_review_threads",
+        "ci_checks",
+        "operator_or_rollback_plan"
+      ]
+    },
+    "consensus": {
+      "required_reviewers": [
+        "implementer",
+        "adversarial_reviewer",
+        "proof_reviewer"
+      ],
+      "decision": "pending",
+      "blocking_questions": []
+    }
+  },
+  "ownership_ledger": {
+    "schema_version": "helpdesk.quality_gates.ownership_ledger.v1",
+    "artifact_type": "ownership_ledger",
+    "goal_id": "sample-goal",
+    "scope_owner": {
+      "domain": "helpdesk-quality-gates",
+      "primary_boundary": "templates",
+      "reason_to_change": "Reusable consensus workflow artifact shapes"
+    },
+    "authoritative_source": "Local template files and the quality artifact validator",
+    "write_owner": "helpdesk-quality-gates templates",
+    "route_or_service_seam": "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/",
+    "downstream_consumers": [
+      "quality artifact validator",
+      "consensus workflow generator"
+    ],
+    "sibling_flows": [
+      "goal contract generation",
+      "ownership ledger generation",
+      "current-head PR proof ledger generation"
+    ],
+    "worktree_or_route_card_state": "Template-only skill slice; no Helpdesk repo route card required.",
+    "files": [
+      {
+        "path": "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/pr-proof-ledger.json",
+        "single_responsibility": "Describe current-head PR proof requirements generated from the goal contract risk tier.",
+        "owner": "helpdesk-quality-gates",
+        "allowed_action": "create",
+        "status": "verified"
+      }
+    ],
+    "boundary_checks": [
+      {
+        "id": "template-only-scope",
+        "claim": "This sample changes only template artifacts.",
+        "evidence": "Expected changed files are all under templates.",
+        "result": "proven"
+      }
+    ],
+    "handoffs": [
+      {
+        "from": "goal_contract",
+        "to": "pr_proof_ledger",
+        "contract": "risk_tier selects required_proof_profiles[risk_tier]",
+        "status": "updated"
+      }
+    ]
+  },
+  "proof_ledger": {
+    "schema_version": "helpdesk.quality_gates.pr_proof_ledger.v1",
+    "artifact_type": "pr_proof_ledger",
+    "goal_id": "sample-goal",
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "base_ref": "origin/dev",
+    "changed_files": [
+      "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/goal-contract.json",
+      "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/ownership-ledger.json",
+      "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/pr-proof-ledger.json",
+      "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/quality-artifact.sample.json"
+    ],
+    "proof_commands": [
+      "jq . /Users/ben/.codex/skills/helpdesk-quality-gates/templates/*.json",
+      "python3 /Users/ben/.codex/skills/helpdesk-quality-gates/scripts/validate_quality_artifact.py /Users/ben/.codex/skills/helpdesk-quality-gates/templates/quality-artifact.sample.json"
+    ],
+    "required_checks": [
+      "json syntax: pass",
+      "quality artifact validator: pass"
+    ],
+    "review_threads": [
+      "No PR review threads exist for this sample artifact."
+    ],
+    "waiters": [
+      "No asynchronous reviewer waiter applies to this local template sample."
+    ],
+    "pre_merge_sweep": [
+      "Template-only scope check confirms all expected files are under templates."
+    ],
+    "rerun_after_last_push": [
+      "Rerun JSON syntax and quality artifact validator after the latest template change."
+    ],
+    "older_than_head": false,
+    "pr": {
+      "number": "1234",
+      "base_branch": "dev",
+      "head_branch": "codex/sample-quality-gates",
+      "current_head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "risk_tier": "high",
+    "required_proofs_source": "goal_contract.required_proof_profiles[goal_contract.goal.risk_tier]",
+    "required_proofs": [
+      "source_truth",
+      "ownership",
+      "blast_radius",
+      "current_head_tests",
+      "pr_review_threads",
+      "ci_checks"
+    ],
+    "proofs": [
+      {
+        "id": "source-truth-read",
+        "required_by": "source_truth",
+        "command_or_source": "rg --files /Users/ben/.codex/skills/helpdesk-quality-gates/templates",
+        "environment": "local",
+        "status": "pass",
+        "evidence": "Template files are present under the requested directory."
+      },
+      {
+        "id": "current-head-tests",
+        "required_by": "current_head_tests",
+        "command_or_source": "jq . /Users/ben/.codex/skills/helpdesk-quality-gates/templates/*.json",
+        "environment": "local",
+        "status": "pass",
+        "evidence": "JSON syntax validation passed after generating templates."
+      },
+      {
+        "id": "ownership-ledger",
+        "required_by": "ownership",
+        "command_or_source": "ownership_ledger section in this artifact",
+        "environment": "local",
+        "status": "pass",
+        "evidence": "Ownership ledger names the template boundary, consumers, sibling flows, and handoff."
+      },
+      {
+        "id": "blast-radius-lite",
+        "required_by": "blast_radius",
+        "command_or_source": "template-only scope review",
+        "environment": "local",
+        "status": "pass",
+        "evidence": "Blast radius is limited to local skill templates and the validator sample path."
+      },
+      {
+        "id": "review-threads",
+        "required_by": "pr_review_threads",
+        "command_or_source": "local sample artifact; no PR exists",
+        "environment": "local",
+        "status": "not_applicable",
+        "evidence": "No PR review thread surface exists for this local sample artifact."
+      },
+      {
+        "id": "ci-checks",
+        "required_by": "ci_checks",
+        "command_or_source": "local validation commands",
+        "environment": "local",
+        "status": "pass",
+        "evidence": "JSON syntax and quality artifact validator checks passed locally."
+      }
+    ],
+    "current_head_guard": {
+      "proof_subject_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "current_head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "allowed_post_proof_drift": [
+        "/Users/ben/.codex/skills/helpdesk-quality-gates/templates/quality-artifact.sample.json"
+      ],
+      "status": "pass"
+    },
+    "review_thread_details": {
+      "unresolved_count": 0,
+      "checked_at": "2026-06-24T00:00:00Z",
+      "status": "not_applicable"
+    },
+    "ci_details": {
+      "required_checks_status": "pass",
+      "checked_at": "2026-06-24T00:00:00Z"
+    }
+  },
+  "risk_tier": {
+    "tier": "high",
+    "required_proofs": [
+      "source_truth",
+      "ownership",
+      "blast_radius",
+      "current_head_tests",
+      "pr_review_threads",
+      "ci_checks"
+    ]
+  },
+  "hard_gates": [
+    "goal_contract.goal.risk_tier equals risk_tier.tier",
+    "proof_ledger.required_proofs equals goal_contract.required_proof_profiles[risk_tier.tier]",
+    "proof_ledger.older_than_head is false",
+    "proof ledger is rerun after the latest push"
+  ],
+  "cross_references": [
+    {
+      "id": "risk-tier-drives-pr-required-proofs",
+      "from": "goal_contract.goal.risk_tier",
+      "value": "high",
+      "through": "goal_contract.required_proof_profiles.high",
+      "to": "proof_ledger.required_proofs and risk_tier.required_proofs",
+      "validator_expectation": "proof_ledger.required_proofs and risk_tier.required_proofs equal goal_contract.required_proof_profiles[goal_contract.goal.risk_tier]"
+    }
+  ]
+}

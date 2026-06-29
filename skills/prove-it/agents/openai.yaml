@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prove It"
+  short_description: "Full-proof gate for claimed fixes"
+  default_prompt: "Use $prove-it to prove this fix works at the real runtime boundary and replay applicable review-feedback traps. Treat partial proof as a failed gate."

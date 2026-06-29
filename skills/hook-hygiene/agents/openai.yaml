@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hook Hygiene"
+  short_description: "Review and change hooks safely"
+  default_prompt: "Review hook usage or propose hook changes without adding context noise; keep hooks mechanical, narrow, and low cost."

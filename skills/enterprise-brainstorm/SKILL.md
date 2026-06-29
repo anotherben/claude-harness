@@ -1,647 +1,207 @@
 ---
 name: enterprise-brainstorm
-description: "Deep enterprise brainstorming that turns vibe-coded ideas into Technical Design Documents. Four phases: EXTRACT (pull intent), DISCOVER (research codebase), PRODUCT DESIGN (user journeys, UI/UX, workflows, platform context), ENGINEER (full TDD). Thinks beyond technical solutions — designs the product, not just the code. Context-aware: auto-detects project type (Shopify app, SaaS, mobile, API, CLI) and applies platform-specific design thinking."
+description: "Turn a vague or product-shaped enterprise request into a Technical Design Document. Extract intent, read source, design the product/workflow, then write a source-grounded TDD for plan/contract."
 ---
-
-
-### LEARNED BEHAVIORS (auto-loaded)
-
-Before starting, load domain-specific lessons:
-1. Call `cortex_lessons(tag='feedback:BRAINSTORM')` to retrieve corrections specific to this skill
-2. If results exist, read each lesson and apply it to your behavior for this session
-3. During execution, if the user corrects your approach, write a domain-tagged annotation:
-   ```json
-   {"target":"skill:enterprise-brainstorm","note":"<correction>","author":"enterprise-brainstorm","tags":["feedback","feedback:BRAINSTORM","lesson"],"timestamp":"<ISO>"}
-   ```
-   Append to `.cortex/knowledge.jsonl`
 
 # Enterprise Brainstorm
 
-You are an enterprise architect working with an ideas person. They describe what they want in plain language. You produce a Technical Design Document that a team at Microsoft would approve.
+## Global Precheck
 
-**Your job:** Pull the idea out of their head, research everything it touches, design the PRODUCT (who uses it, what they see, how it works), surface what they haven't thought of, then engineer the technical solution. You think like a product owner AND an architect.
+Before reading further, writing artifacts, delegating, or changing files, run:
 
-**Their job:** Describe what they want, answer questions until intent is concrete, review your "have you considered?" findings, approve the final TDD.
-
----
-
-## THREE PHASES
-
-```
-EXTRACT        (with user)     — completeness-driven, pull intent to bedrock
-DISCOVER       (you research)  — deep dive, surface implications back to user
-PRODUCT DESIGN (you research)  — user journeys, UI/UX, workflows, platform context
-ENGINEER       (you alone)     — produce full Technical Design Document
+```bash
+enterprise-precheck --skill enterprise-brainstorm
 ```
 
-Two touchpoints with the user. First: "what do you want?" Second: "here's what I found." Everything else is your job.
+If it exits non-zero, stop and report stderr verbatim. Do not hand-craft packet
+files or evidence markers to bypass it.
 
----
+## Learned Behavior
 
-## PHASE 1: EXTRACT (With User)
+Load domain-specific lessons before starting:
 
-Goal: Understand WHAT they want and WHY. Not HOW — that's your job. Keep asking until every dimension has a concrete answer, not a vague one.
+1. Call `cortex_lessons(tag='feedback:BRAINSTORM')` when available.
+2. Apply any returned corrections for this session.
+3. If the user corrects this skill, append a domain-tagged lesson to
+   `.cortex/knowledge.jsonl`.
 
-### Step 0: Clarity Check
+## Purpose
 
-Read the task description. Assess:
-- Is this clear enough to research? → proceed to Step 1
-- Is this a Micro task (typo, config)? → skip brainstorm, go to `/enterprise-plan`
-- Is this ambiguous? → ask ONE clarifying question first
+You are the enterprise architect for an ideas person. The user can describe the
+goal in plain language; your job is to make it concrete enough that a senior
+team could plan and contract it without guessing.
 
-### Step 1: Completeness-Driven Extraction
+If input arrives through `/goal`, treat it as a Goal Intake Packet rather than
+source proof. Accept its outcome, constraints, success criteria, and stop rules
+as intake, then validate that it includes source-read targets, a Mechanical
+Build Packet seed, and refusal conditions. If any are empty, skeletal, or vague,
+fill them during `EXTRACT` and `DISCOVER` before producing the TDD.
 
-Ask questions **one at a time**, building on each answer. Keep asking until every dimension reaches bedrock — a concrete, specific answer that can't be drilled further.
+Brainstorm is not implementation. It produces a Technical Design Document that:
 
-#### COMPLETENESS CRITERIA (all must be met before leaving EXTRACT)
+- states the real problem, users, success criteria, and boundaries
+- reads the relevant source before making design claims
+- records a proof ledger for every load-bearing claim, with assumptions and
+  blockers made explicit
+- maps product workflow, UI, API, data, permissions, integrations, and failure modes
+- identifies reuse, risks, and open questions
+- defines enough edge cases for plan and contract to become testable
+- seeds the Mechanical Build Packet so plan/contract can make build mechanical
+- preserves the user's original intent in an `Intent Continuity Ledger` that later
+  artifacts can trace from user words to operator acceptance and proof
+- compares the incumbent/no-change option and at least one credible alternative
+  before choosing a design for any load-bearing architecture or product decision
+- seeds touched-file SRP/refactor decisions and DB/query ownership decisions before
+  plan or build can hide them inside broad scope
 
-| Dimension | Bedrock looks like | Not bedrock |
-|-----------|-------------------|-------------|
-| **Problem** | Specific pain point with example | "it's not great" / "needs improvement" |
-| **User** | Named persona with concrete workflow | "users" / "people" |
-| **Experience** | Walkthrough of what they see/do, screen by screen | "it should be easy" / "make it nice" |
-| **Success** | Measurable outcome or observable behavior | "it works well" / "users are happy" |
-| **Boundaries** | Explicit exclusions or constraints | No answer (ask once, accept silence) |
-| **Tech context** | Known integrations, APIs, platforms | "whatever works" (probe: mobile? desktop? API? webhook?) |
+Detailed phase mechanics live in
+[brainstorm-workflow.md](references/brainstorm-workflow.md). Load that reference
+when executing the skill; keep this active prompt lean.
 
-#### The Loop
+## Workflow
 
-```
-While any dimension is NOT at bedrock:
-  1. Pick the shallowest dimension
-  2. Ask ONE question targeting that dimension
-  3. Evaluate the answer against bedrock criteria
-  4. If answer is vague, drill deeper ("you said X — why specifically?")
-  5. If answer hits bedrock, mark dimension complete
-  6. If user says "that's enough" / "just go" → respect it, mark remaining as ASSUMED
-```
+Run four phases in order:
 
-#### Questioning Techniques
+1. `EXTRACT`: ask one question at a time until the problem, user, experience,
+   success criteria, boundaries, tech context, `/goal` intake fields, and stop
+   rules are concrete or explicitly marked assumed.
+2. `DISCOVER`: read the codebase and existing tests in the blast radius. Use
+   source, schema, routes, UI, contracts, repo profile, memory/vault context, and
+   similar implementations. Do not infer behavior from migration names, diffs, or
+   stale memory.
+3. `PRODUCT DESIGN`: design the user journey, UI states, workflow rules,
+   permission model, platform constraints, and operational behavior.
+4. `ENGINEER`: write the TDD with data model, API contracts, architecture,
+   security, failure modes, observability, reuse, risks, edge cases, a proof
+   ledger, alternatives rationale, touched-file SRP seed, DB/query ownership
+   seed, and a Mechanical Build Packet Seed.
 
-- **One question per turn** — never batch questions
-- **Build on the answer** — go deeper, not sideways
-- **Don't accept vague** — "better how? faster? easier to find?"
-- **Contradiction detection** — "earlier you said X, now Y — which is it?"
-- **Magic wand question** — for solution-first requests: "if you could magically fix the pain, would you still want this exact feature?"
+## Required Source Read
 
-#### Starter Questions (adapt to context, don't ask robotically)
+Before writing the TDD, capture the actual source read:
 
-- **Problem:** "What problem does this solve? What's frustrating you or your users right now?"
-- **User:** "Who specifically runs into this? What are they doing when it hits?"
-- **Experience:** "When this is done, walk me through what a user does — screen by screen."
-- **Success:** "How will you know this is working? What's the 'yes, that's it' moment?"
-- **Boundaries:** "Anything this should NOT do? Any constraints I should know about?"
-- **Tech context:** "What systems does this need to talk to? Any platform constraints?"
+- runtime entry points and consumers
+- database tables, constraints, query code, read/write owners, table ownership
+  docs/registries, and tenant/owner/current-DB scoping for data-sensitive work
+- UI components, hooks, routes, and browser/PDF/upload flows for UI work
+- existing tests and proof gaps
+- prior traps or best practices from committed enterprise state
+- proof evidence for every claim that plan/contract would rely on later
 
-If an answer is vague, drill: don't move to the next dimension. "You said 'make it better' — better how? Faster? Easier to find? More information shown?"
+If source has not been read, the design is not ready. For helpdesk governed
+entity or owned-table work, do not begin implementation later unless the
+repo-local preflight and merge-readiness artifacts exist.
 
-**When EXTRACT is complete** (all dimensions at bedrock or marked ASSUMED): Thank the user. Tell them you're going to research the codebase and come back with findings. They can go have a coffee.
+## Proof Ledger
 
----
+Before handoff, include a table of load-bearing claims:
 
-## PHASE 2: DISCOVER (You Research, Then Surface Back)
+| Claim | Source / Live Evidence | Status | Follow-up |
+| --- | --- | --- | --- |
+| `<behavior/schema/path/risk>` | `<file:line, command, DB query, browser proof, or user answer>` | `proven` / `assumed` / `blocked` | `<what plan/contract must do next>` |
 
-Goal: Research everything this idea touches. Find what the user doesn't know they don't know. Come back with implications.
+Rules:
 
-### Step 5: Codebase Deep Dive
+- `proven` requires current source, live/dev DB, real integration, browser, or
+  explicit user evidence appropriate to the claim.
+- `assumed` can continue only when the assumption is non-load-bearing and is
+  restated in Plan/Contract Recommendations.
+- `blocked` prevents a ready-for-plan handoff unless the TDD explicitly routes
+  back to discovery or asks the user for the missing decision.
+- Migration names, stale docs, diffs, and mocked tests are not proof for current
+  runtime or schema-sensitive claims.
 
-Spawn an Explore agent (or do it yourself for Small tier):
+## Mechanical Build Packet Seed
 
-**Research checklist:**
-- [ ] Read EVERY file in the feature's blast radius (not just the obvious ones)
-- [ ] Map the current data model — schema, relationships, indexes, constraints
-- [ ] Map the current API surface — routes, middleware, request/response shapes
-- [ ] Map the current UI — components, state management, hooks, event flow
-- [ ] Read existing tests — what's tested, what's not, test patterns used
-- [ ] Check memory (Memora/Muninn if available, else MEMORY.md) for prior decisions, gotchas, anti-patterns
-- [ ] Search for similar features in the codebase — reuse opportunities
-- [ ] Check dependencies — what libraries exist that could help?
+Brainstorm does not lock implementation, but it must seed the packet that plan
+and contract will make exact. Include:
 
-### Step 6: Connection Mapping
+- Intent Continuity Ledger: original user words, business outcome, operator
+  acceptance, non-goals, source/proof evidence, and downstream artifact owner
+- Probable Allowed Runtime Paths and why each path is owned by this work
+- Probable Allowed Test Paths and the behavior each test must prove
+- Probable Allowed Artifact Paths for plan, contract, review, proof, and solution docs
+- Probable Module Boundary, Folder Placement, Public Seam, Owner Layer, Allowed Dependency Direction, Forbidden Imports, and Architecture Tests
+- Probable Touched File SRP Assessment for every likely touched file: current
+  responsibility evidence, one reason to change, mixed-responsibility risk, and
+  `fix-now` / `follow-up` / `note-only` recommendation
+- Probable DB/Query Ownership Packet for every likely query/read/write/report/
+  migration/proof path: table/source owner, operation type, owner seam, scope
+  predicates, affected-row or readback expectation, bounded proof, and cleanup
+- Candidate Postcondition Execution Order
+- Expected RED proof surface for each high-risk behavior
+- Expected GREEN proof surface for each high-risk behavior
+- Forbidden Changes and out-of-scope seams
+- Refusal Conditions that should stop plan/contract/build instead of guessing
 
-For every system the feature touches, document:
+If any seed field is unknown, say `UNKNOWN` with the exact source read or user
+decision needed to resolve it. Do not let `UNKNOWN` disappear silently.
 
-```
-SYSTEM: [name]
-  Current state: [what it does now]
-  Impact: [how the new feature affects it]
-  Risk: [what could break]
-  Dependency: [does the feature need this, or does this need the feature?]
-```
+## Quality Gate
 
-**Think broadly.** A "kanban board" touches:
-- The sticky notes data model (obviously)
-- The email notification system (column moves = status changes?)
-- The staff permission system (who can move cards?)
-- The mobile/responsive layout (drag-drop on mobile?)
-- The audit log (track who moved what when?)
-- The supplier portal (do external users see the board?)
-- The search system (can you search by kanban column?)
-- The reporting system (time-in-column metrics?)
+The TDD must answer:
 
-**The goal is to find connections the user hasn't considered.**
+- What root problem are we solving?
+- Who uses it and what do they do screen by screen or API step by API step?
+- How do the original user words, business outcome, operator acceptance, and
+  proof commands stay linked through the Intent Continuity Ledger?
+- What is the authoritative source of truth for each behavior?
+- Which credible alternatives were considered, and why does the selected design
+  beat the incumbent/no-change option for this repo and operator workflow?
+- What load-bearing domain terms, avoided synonyms, naming conflicts, or
+  ADR-worthy decisions must be captured before plan?
+- What files/directories are likely owned by the work, and what stays out of scope?
+- Which likely touched files need `fix-now` SRP/refactor work because the touched
+  responsibility is mixed with unrelated responsibilities?
+- Which DB/query paths need ownership for reads, writes, repairs, projections,
+  reports, migrations, or proof queries, and what owner seam must plan/contract lock?
+- What database tests, live/integration DB proof, E2E proof, and headless browser
+  proof will be needed later?
+- What edge cases and failure modes must become plan/contract postconditions?
+- What would a senior reviewer object to before code exists?
+- Which claims are proven, assumed, or blocked in the Proof Ledger?
+- What must the Mechanical Build Packet eventually allow, forbid, prove RED,
+  prove GREEN, or refuse?
 
-### Step 7: Implication Surfacing
+Use `fix-now`, `follow-up`, and `note-only` labels for SRP/refactor ideas.
+Do not smuggle broad refactors into the TDD unless they are required for the
+root problem.
 
-Compile your findings into a structured presentation for the user:
+## Output
 
-```
-DISCOVERY REPORT
-════════════════
+Write:
 
-WHAT I FOUND IN THE CODEBASE:
-- [Key finding 1 — current state of the system]
-- [Key finding 2 — existing patterns/code to reuse]
-- [Key finding 3 — technical constraints discovered]
-
-CONNECTIONS DISCOVERED:
-- [System X] — [how it's affected, what needs to change]
-- [System Y] — [how it's affected, what needs to change]
-
-HAVE YOU CONSIDERED:
-- [Implication 1 — something they definitely haven't thought of]
-- [Implication 2 — edge case or user scenario]
-- [Implication 3 — integration point or side effect]
-
-REUSE OPPORTUNITIES:
-- [Existing code/pattern 1 — what we can build on]
-- [Existing library 1 — already in dependencies]
-
-RISKS I SEE:
-- [Risk 1 — what could go wrong, how to mitigate]
-- [Risk 2 — what could go wrong, how to mitigate]
-```
-
-**Present this to the user.** Ask:
-> "Here's what I found. Anything here change your thinking? Any of the 'have you considered' items you want to include or explicitly exclude?"
-
-**Wait for their response.** Their answers shape the technical design.
-
-### Step 8: Existing Assets Inventory
-
-List everything in the codebase that can be reused:
-- Existing components that do similar things
-- Existing services with patterns to follow
-- Existing database tables with joinable relationships
-- Libraries already installed
-- Test utilities and patterns already established
-
-**The best code is code you don't write.** Reuse aggressively.
-
----
-
-## PHASE 2.5: PRODUCT DESIGN (Before Engineering)
-
-Goal: Design the PRODUCT, not just the code. Technical architecture serves the user experience, not the other way around. This phase produces the product sections of the TDD.
-
-**This phase is non-negotiable.** Skip it and you'll build something technically correct that nobody wants to use.
-
-### Step 8b: User Personas & Journeys
-
-Who uses this? What do they do? Map every user type:
-
-```
-PERSONA: [role — e.g., store owner, admin, end customer, API consumer]
-  Goal: [what they're trying to accomplish]
-  Context: [where they are when they use this — mobile? desktop? in a rush?]
-  Journey:
-    1. [trigger — what makes them start]
-    2. [action — what they do first]
-    3. [decision — what choices do they face]
-    4. [result — what they see when done]
-    5. [next — what they do after]
-  Pain points: [what's frustrating about the current way]
-  Success: [what "done" looks like for them]
+```text
+docs/designs/YYYY-MM-DD-<slug>-tdd.md
 ```
 
-If the product has multiple user types (merchant + customer, admin + staff, API + UI), map ALL of them. A feature that's great for admins but invisible to customers is half-designed.
-
-### Step 8c: UI/UX Design
-
-For every screen/view/page the feature touches:
-
-```
-SCREEN: [name]
-  Purpose: [what the user accomplishes here]
-  Entry points: [how they get here — nav link? notification? deep link?]
-  Layout:
-    - [region 1]: [what's shown — list, form, chart, card]
-    - [region 2]: [what's shown]
-    - [actions]: [buttons, links, toggles — what the user can DO]
-  States:
-    - Empty: [what shows when there's no data]
-    - Loading: [skeleton? spinner? progressive?]
-    - Error: [what shows when something fails]
-    - Success: [confirmation, redirect, toast?]
-    - Edge: [too much data? missing permissions? expired?]
-  Mobile: [how it adapts — responsive? different layout? hidden features?]
-  Accessibility: [keyboard nav? screen reader? color contrast?]
-```
-
-**Rules:**
-- Never design a feature that's desktop-only without asking
-- Never assume users will read instructions — design for scanning
-- Loading and error states are not optional — design them
-- Empty states are landing pages — make them useful
-
-### Step 8d: Workflow & Business Logic
-
-Map the business rules — these drive the data model, not the other way around:
-
-```
-WORKFLOW: [name — e.g., "order refund", "product approval", "subscription renewal"]
-  Trigger: [what starts it]
-  States: [lifecycle — draft → pending → approved → active → archived]
-  Transitions:
-    draft → pending: [who can do this? what validation runs?]
-    pending → approved: [who approves? auto or manual? timeout?]
-    approved → active: [what side effects? notifications? integrations?]
-  Business rules:
-    - [rule 1 — e.g., "refunds over $500 require manager approval"]
-    - [rule 2 — e.g., "products can't be archived while they have open orders"]
-    - [rule 3 — e.g., "subscription billing retries 3 times then pauses"]
-  Notifications:
-    - [who gets notified at each transition? email? in-app? webhook?]
-  Audit:
-    - [what's logged? who changed what when?]
-```
-
-### Step 8e: Platform Context
-
-Detect the project type and apply platform-specific design thinking:
-
-| If project is... | Consider... |
-|---|---|
-| **Shopify app** | App extensions, theme blocks, admin UI, OAuth, App Bridge, Polaris components, webhook subscriptions, billing API, app proxy |
-| **Mobile app** | Navigation patterns, offline support, push notifications, app store guidelines, deep links, gestures, battery/data usage |
-| **SaaS platform** | Multi-tenancy, onboarding flow, subscription tiers, trial experience, settings pages, team/invite management |
-| **API/backend** | Developer docs, API versioning, rate limits, webhook delivery, SDK generation, sandbox environment |
-| **CLI tool** | Help text, flags vs interactive, output formats (JSON/table/plain), pipe-friendly, progress indicators |
-| **Browser extension** | Popup vs sidebar vs content script, permissions, cross-origin, storage limits |
-| **E-commerce** | Product catalog, cart, checkout, payment, fulfillment, returns, inventory, multi-currency |
-| **Internal tool** | Permissioning, audit trails, bulk operations, data export, integration with existing internal systems |
-
-**Use the codebase to detect project type.** Check package.json, config files, existing UI framework, dependencies. Don't ask the user — figure it out.
-
-### Step 8f: Integration & Ecosystem
-
-What external systems does this touch?
-
-```
-INTEGRATION: [system — e.g., Stripe, Shopify, SendGrid, S3]
-  Direction: [inbound? outbound? bidirectional?]
-  Data flow: [what data moves, in what format]
-  Auth: [API keys? OAuth? webhook signatures?]
-  Failure mode: [what happens when it's down?]
-  Rate limits: [what are they? how do we handle?]
-  Testing: [sandbox? mock? test mode?]
-```
-
-**Present all of Phase 2.5 to the user** alongside the Phase 2 discovery report. The combined output should paint a complete picture: here's who uses it, here's what they see, here's the business logic, here's what I found in the code.
-
----
-
-## PHASE 3: ENGINEER (You Alone — Produce Full TDD)
-
-Goal: Produce a complete Technical Design Document autonomously. The user doesn't need to understand or approve individual technical decisions — they approved the intent and reviewed the implications. Now you engineer it.
-
-### Step 9: Data Model Design
-
-```markdown
-## Data Model
-
-### New Tables
-| Table | Purpose | Key Columns | Relationships |
-|-------|---------|-------------|---------------|
-| [name] | [why] | [columns with types] | [FK relationships] |
-
-### Schema Changes to Existing Tables
-| Table | Change | Migration Strategy | Rollback |
-|-------|--------|-------------------|----------|
-| [name] | [add/modify column] | [IF NOT EXISTS, defaults] | [how to undo] |
-
-### Indexes
-| Table | Index | Purpose | Type |
-|-------|-------|---------|------|
-| [name] | [columns] | [what query it speeds up] | btree/gin/etc |
-```
-
-**Rules:**
-- Every table gets `tenant_id` (multi-tenant)
-- Every timestamp is `TIMESTAMPTZ` (timezone-aware)
-- Every migration uses `IF NOT EXISTS` guards
-- Every FK has `ON DELETE` behavior defined
-- Consider: soft delete vs hard delete, audit columns, versioning
-
-### Step 10: API Contract Design
-
-```markdown
-## API Contracts
-
-### [METHOD] /api/[path]
-**Purpose:** [what it does]
-**Auth:** [required | public | webhook]
-**Request:**
-```json
-{
-  "field": "type — description — required/optional — validation"
-}
-```
-**Response (200):**
-```json
-{
-  "field": "type — description"
-}
-```
-**Error Responses:**
-| Status | Code | When |
-|--------|------|------|
-| 400 | VALIDATION_ERROR | [condition] |
-| 404 | NOT_FOUND | [condition] |
-| 403 | FORBIDDEN | [condition] |
-```
-
-**Rules:**
-- Every write endpoint has auth + permission check
-- Every query scopes to tenant_id
-- Every input is validated and parameterized
-- Error responses include machine-readable codes
-- Rate limiting considered for public/webhook endpoints
-
-### Step 11: Architecture & Data Flow
-
-```markdown
-## Architecture
-
-### Data Flow
-[Trace the complete path for each major operation]
-
-User action → Component → Hook/State → API call → Route → Middleware →
-Service → Database → Response → State update → UI re-render
-
-### Component Design
-| Component | Purpose | Props | State | Events |
-|-----------|---------|-------|-------|--------|
-| [name] | [what it renders] | [inputs] | [local state] | [emitted events] |
-
-### State Management
-| State | Owner | Consumers | Update Pattern |
-|-------|-------|-----------|----------------|
-| [name] | [hook/store] | [components] | [how it updates] |
-```
-
-### Step 12: Threat Model
-
-```markdown
-## Security & Threat Model
-
-### Attack Surface
-| Vector | Risk | Mitigation |
-|--------|------|------------|
-| SQL injection | [risk level] | Parameterized queries, input validation |
-| XSS | [risk level] | Output encoding, CSP headers |
-| CSRF | [risk level] | Token validation |
-| Auth bypass | [risk level] | Middleware chain verification |
-| Data exposure | [risk level] | Tenant scoping, field filtering |
-| Privilege escalation | [risk level] | Role checks on every write |
-
-### Tenant Isolation
-- Every query: WHERE tenant_id = $X
-- Every insert: includes tenant_id
-- Every API response: filtered by tenant
-
-### Input Validation
-| Endpoint | Field | Validation | On Failure |
-|----------|-------|-----------|------------|
-| [path] | [field] | [rules] | [400 + message] |
-```
-
-### Step 13: Failure Mode Analysis
-
-```markdown
-## Failure Modes
-
-### What Can Break
-| Failure | Probability | Impact | Detection | Recovery |
-|---------|-------------|--------|-----------|----------|
-| DB connection lost | Low | High | Health check | Connection pool retry |
-| External API timeout | Medium | Medium | Timeout alarm | Queue + retry |
-| Invalid data state | Low | High | Constraint violation | Transaction rollback |
-| Concurrent edit conflict | Medium | Low | Version check | Last-write-wins / merge |
-
-### Rollback Plan
-- Migration rollback: [exact SQL to undo]
-- Feature rollback: [feature flag or revert commit]
-- Data rollback: [how to restore data if corrupted]
-
-### Partial State Handling
-- [What happens if the operation crashes mid-way?]
-- [Are there orphaned records?]
-- [Is there a cleanup/heal job needed?]
-```
-
-### Step 14: Observability Design
-
-```markdown
-## Observability
-
-### Logging Strategy
-| Event | Level | Context Included | Purpose |
-|-------|-------|-----------------|---------|
-| [action success] | info | user_id, entity_id, duration | Audit trail |
-| [action failure] | error | user_id, entity_id, error, stack | Debugging |
-| [performance threshold] | warn | query, duration, threshold | Performance monitoring |
-
-### Key Metrics (if applicable)
-| Metric | Type | What It Tells You |
-|--------|------|------------------|
-| [name] | counter/gauge/histogram | [insight] |
-
-### Debugging in Production
-- "If X breaks at 3AM, here's how on-call diagnoses it:"
-  1. [Check this log]
-  2. [Run this query]
-  3. [Look for this state]
-
-### Alerts (if applicable)
-| Condition | Severity | Action |
-|-----------|----------|--------|
-| [threshold breached] | [warn/critical] | [notification channel] |
-```
-
-### Step 15: Approach Selection
-
-Present 2-3 approaches with clear recommendation:
-
-```markdown
-## Approaches Considered
-
-### Approach A: [Name] (RECOMMENDED)
-[2-3 sentence description]
-**Pros:** [benefits]
-**Cons:** [drawbacks]
-**Best when:** [circumstances]
-**Estimated complexity:** [file count, migration count]
-
-### Approach B: [Name]
-[2-3 sentence description]
-**Pros:** [benefits]
-**Cons:** [drawbacks]
-**Best when:** [circumstances]
-
-### Why Approach A
-[Clear reasoning — reuse, simplicity, alignment with existing patterns]
-```
-
-### Step 16: TDD Capture
-
-Compile everything into the Technical Design Document:
-
-**Save to:** `docs/designs/YYYY-MM-DD-<slug>-tdd.md`
-
-```markdown
-# Technical Design Document: [Title]
-**Date:** YYYY-MM-DD | **Author:** Enterprise Architect Agent
-**Status:** DRAFT → APPROVED → IMPLEMENTED
-
-## 1. Problem Statement
-[From EXTRACT — the user's words, refined]
-
-## 2. Success Criteria
-[From EXTRACT — measurable outcomes]
-
-## 3. Discovery Summary
-[From DISCOVER — key findings, connections, implications]
-
-## 4. Approach
-[Selected approach with rationale]
-
-## 5. Data Model
-[From Step 9]
-
-## 6. API Contracts
-[From Step 10]
-
-## 7. Architecture
-[From Step 11]
-
-## 8. Security
-[From Step 12]
-
-## 9. Failure Modes
-[From Step 13]
-
-## 10. Observability
-[From Step 14]
-
-## 11. Reuse Inventory
-[From Step 8 — existing code being leveraged]
-
-## 12. Risks & Mitigations
-[From DISCOVER — risks with mitigation strategies]
-
-## 13. Open Questions
-[Anything unresolved — flagged for human decision]
-```
-
-### Step 17: Quality Gate (Objective Checks)
-
-Score the TDD using OBJECTIVE, countable checks — not subjective impressions.
-
-| Criterion | Objective Check | Pass If |
-|-----------|----------------|---------|
-| **Banned Words** | `grep -ciE 'probably\|consider\|try to\|might\|maybe\|could potentially\|as needed' tdd.md` | Count = 0 |
-| **Section Count** | Count sections present vs 13 required | All 13 present (N/A with reasoning counts) |
-| **Table Specificity** | For Data Model: every column has an explicit type. For API: every field has a type. | Zero typeless columns/fields |
-| **YAGNI** | `grep -ciE 'future\|later\|eventually\|phase 2\|v2\|extensible\|configurable' tdd.md` | Count = 0 (or each instance justified in Open Questions) |
-| **Threat Coverage** | Count relevant OWASP vectors. Count mitigations. | `mitigations >= vectors` |
-| **Reuse Ratio** | Count existing files referenced vs new files proposed. | `existing_reused / (existing_reused + new_files) >= 0.3` or justified |
-| **Testability** | For each proposed feature, write a 1-line `expect()` skeleton. | Every feature has a concrete test skeleton |
-| **Rollback Exists** | Rollback Plan section has exact SQL or exact revert steps | Not empty, not "TBD" |
-
-**If any criterion fails:** Fix it before presenting. Don't present a draft — present a finished TDD.
-
-**Why objective checks?** In auditing, subjective checks like "is this testable?" always passed because the reviewer assumed their own design was testable. Counting banned words and requiring concrete skeletons eliminates this self-serving bias.
-
-### Step 17b: Post-TDD Self-Validation (But-Why Gate)
-
-Before presenting the TDD, challenge your own design. Ask yourself these questions and answer from the TDD:
-
-```
-POST-TDD VALIDATION
-═══════════════════
-1. "Why does this design meet the user's stated problem?"
-   → Must cite specific TDD section that addresses the stated pain point
-
-2. "Why don't I need more clarification?"
-   → Must show every EXTRACT dimension is at bedrock or marked ASSUMED
-
-3. "Why is this the right approach over the alternatives?"
-   → Must have concrete reasoning, not "it's simpler"
-
-4. "What would the user say is wrong with this?"
-   → Must have considered at least one objection and addressed it
-
-5. "If this ships and the user says 'that's not what I meant' — what did I miss?"
-   → Must identify the highest-risk misunderstanding and how the design guards against it
-```
-
-If any answer is weak:
-- Go back and fix the TDD section
-- Or add to Open Questions (flagged for user review)
-
-This gate runs silently — fix issues before presenting. The user sees a polished TDD, not your internal review.
-
-### Step 18: Present to User
-
-```
-Your Technical Design Document is ready.
-
-[Brief summary — 3-4 sentences of what you're building and how]
-
-Approach: [selected approach name]
-New tables: [N] | New endpoints: [N] | Files affected: [N]
-Estimated tier: [tier]
-
-Full TDD: docs/designs/YYYY-MM-DD-<slug>-tdd.md
-
-Ready to proceed to implementation planning? (/enterprise-plan)
-Or do you want to review/change anything first?
-```
-
----
-
-## SCALING BY TIER
-
-| Phase | Micro | Small | Medium | Large |
-|-------|-------|-------|--------|-------|
-| EXTRACT | Skip (task is clear) | 1-3 questions (most dimensions obvious from context) | 3-8 questions (probe until all dimensions concrete) | 5-15+ questions (complex scope needs deep extraction) |
-| DISCOVER | Skip | Read key files, brief surface | Explore agent, full surface | Parallel explore agents, deep surface |
-| ENGINEER | Skip (go to plan) | Lightweight TDD (some sections N/A) | Full TDD | Full TDD + architecture diagrams |
-| Quality Gate | Skip | Quick check | Full scoring | Full scoring + peer review |
-
-**Any tier:** If user says "just go" → stop EXTRACT, mark gaps as ASSUMED, proceed.
-
----
-
-## ANTI-PATTERNS
-
-| Don't | Do Instead |
-|-------|-----------|
-| Ask the user about schemas | Design the schema yourself, present it |
-| Ask the user about API contracts | Design the API yourself, present it |
-| Ask the user about security | Do the threat model yourself, present findings |
-| Present multiple technical options to non-technical user | Pick the best one, explain why in plain language |
-| Use jargon in user-facing communication | Translate: "We need a database migration" → "I need to add some new columns to store kanban positions" |
-| Skip discovery because the task "seems simple" | Simple tasks in complex systems have hidden connections |
-| Design for hypothetical future requirements | Solve the stated problem. Note future possibilities in "Open Questions" |
-| Propose new patterns when existing ones work | Reuse aggressively. New patterns need strong justification. |
-
----
-
-## HANDOFF
-
-When the TDD is complete and approved, the next stage depends on the pipeline path:
-
-- **FULL path:** Proceed to `/enterprise-stack-review` — technology decisions are locked before planning begins. The stack review reads this TDD to determine which decision domains are needed.
-- **QUICK/STANDARD path:** Skip stack review, proceed directly to `/enterprise-plan`.
+Use this shape:
+
+1. Problem Statement
+2. Users And Success Criteria
+3. Source Read And Discovery Summary
+4. Product Workflow And UI/API Experience
+5. Data Model And Source Of Truth
+6. API/Interface Contracts
+7. Architecture And Ownership Boundaries
+8. Security, Permissions, And Tenant/Data Safety
+9. Failure Modes, Edge Cases, And Rollback
+10. Observability And Operations
+11. Reuse Inventory
+12. Alternatives And Decision Rationale
+13. Intent Continuity Ledger
+14. Touched File SRP/Refactor Seed
+15. DB/Query Ownership Seed
+16. Proof Ledger
+17. Mechanical Build Packet Seed
+18. Enterprise Solution Brief
+19. Risks, Tradeoffs, And Open Questions
+20. Plan/Contract Recommendations
+
+## Handoff
+
+- Full path: proceed to `enterprise-stack-review`.
+- Quick/standard path: proceed to `enterprise-plan` only when load-bearing
+  Proof Ledger rows are `proven` or have explicit plan actions.
+- If discovery reveals the request is actually a bug, route to `enterprise-debug`
+  or make the TDD explicitly bug-fix shaped before planning.

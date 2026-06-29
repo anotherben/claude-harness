@@ -1,0 +1,4 @@
+interface:
+  display_name: "Daily Domain Refactor Runner"
+  short_description: "Run domain refactors to green PR"
+  default_prompt: "Use $daily-domain-refactor-runner to inspect Helpdesk domains, produce a dry-run lane report, and run one approved refactor lane through green PR gates."

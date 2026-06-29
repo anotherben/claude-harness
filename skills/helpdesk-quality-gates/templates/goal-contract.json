@@ -1,0 +1,73 @@
+{
+  "schema_version": "helpdesk.quality_gates.goal_contract.v1",
+  "artifact_type": "goal_contract",
+  "workflow": "consensus",
+  "goal": {
+    "id": "{{goal_id}}",
+    "summary": "{{goal_summary}}",
+    "source": "{{source_issue_or_pr}}",
+    "target_branch": "{{target_branch}}",
+    "risk_tier": "{{low|medium|high|xhigh}}",
+    "success_criteria": [
+      "{{observable_success_criterion}}"
+    ],
+    "non_goals": [
+      "{{explicit_non_goal}}"
+    ]
+  },
+  "terminal_state": "{{terminal_state}}",
+  "acceptance_condition": "{{acceptance_condition}}",
+  "rollback_or_block_trigger": "{{rollback_or_block_trigger}}",
+  "scope": {
+    "allowed_paths": [
+      "{{allowed_path}}"
+    ],
+    "forbidden_paths": [
+      "{{forbidden_path}}"
+    ],
+    "expected_changed_files": [
+      "{{expected_changed_file}}"
+    ]
+  },
+  "required_proof_profiles": {
+    "low": [
+      "source_truth",
+      "focused_tests"
+    ],
+    "medium": [
+      "source_truth",
+      "ownership",
+      "blast_radius",
+      "focused_tests"
+    ],
+    "high": [
+      "source_truth",
+      "ownership",
+      "blast_radius",
+      "current_head_tests",
+      "pr_review_threads",
+      "ci_checks"
+    ],
+    "xhigh": [
+      "source_truth",
+      "ownership",
+      "blast_radius",
+      "current_head_tests",
+      "live_or_integration_proof",
+      "pr_review_threads",
+      "ci_checks",
+      "operator_or_rollback_plan"
+    ]
+  },
+  "consensus": {
+    "required_reviewers": [
+      "implementer",
+      "adversarial_reviewer",
+      "proof_reviewer"
+    ],
+    "decision": "{{pending|approved|blocked}}",
+    "blocking_questions": [
+      "{{blocking_question}}"
+    ]
+  }
+}

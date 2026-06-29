@@ -1,0 +1,80 @@
+{
+  "skill_name": "contract-manager",
+  "definition_of_100_percent": [
+    "live_facts_verified",
+    "change_contracts_exact",
+    "test_contracts_exact",
+    "mechanical_build_packet_fields_required",
+    "pr_review_prevention_matrix_required",
+    "vague_contracts_fail_before_build",
+    "architecture_ratchet_matrix_required",
+    "local_full_schema_proof_required",
+    "actionable_fail_findings_required",
+    "mechanical_build_packet_exact_field_review"
+  ],
+  "evals": [
+    {
+      "id": "contract-manager-fails-missing-build-packet",
+      "prompt": "Review a contract that has exact postconditions but no Mechanical Build Packet.",
+      "expected_output": "contract-manager must return FAIL and identify the missing build packet fields as blockers before implementation can begin.",
+      "assertions": [
+        "Fails the contract when the Mechanical Build Packet is missing.",
+        "Names the required fields including allowed paths, expected RED/GREEN, forbidden changes, and refusal conditions.",
+        "Blocks implementation instead of treating the missing packet as advisory."
+      ]
+    },
+    {
+      "id": "contract-manager-fails-vague-build-packet",
+      "prompt": "Review a contract whose Mechanical Build Packet says update affected services, add tests as needed, run usual checks, and avoid risky changes.",
+      "expected_output": "contract-manager must return FAIL because build would need to discover paths, invent tests, choose proof commands, and interpret forbidden changes.",
+      "assertions": [
+        "Rejects vague path, test, command, and forbidden-change language.",
+        "Explains that build must not choose architecture or proof during implementation.",
+        "Requires concrete paths, commands, PC order, RED/GREEN proof, and stop rules before PASS."
+      ]
+    },
+    {
+      "id": "contract-manager-fails-missing-review-prevention-matrix",
+      "prompt": "Review a PR-producing contract that has exact postconditions and a complete Mechanical Build Packet, but it has no PR Review Prevention Matrix for applicable SQL cast, proof-lane, async recovery, artifact hygiene, redaction, and UI accessibility risks.",
+      "expected_output": "contract-manager must return FAIL because recent-review classes are not front-loaded. It should identify the missing PR Review Prevention Matrix as a blocker and require every applicable class to map to a contract item and proof command before implementation.",
+      "assertions": [
+        "Fails the contract when the PR Review Prevention Matrix is missing for PR-producing work.",
+        "Requires applicable recent-review classes to map to contract items and proof commands.",
+        "Names SQL/cast, proof-lane, async, artifact, redaction, UI/accessibility, performance, and test-integrity cells as examples.",
+        "Blocks implementation instead of leaving those checks to PR review."
+      ]
+    },
+    {
+      "id": "contract-manager-fails-missing-ratchet-and-local-schema",
+      "prompt": "Review a contract for a deep module extraction and SQL change. It has a Mechanical Build Packet and PR Review Prevention Matrix, but no Architecture Ratchet Matrix and no Local Full-Schema Proof Plan.",
+      "expected_output": "contract-manager must return FAIL because structure and schema proof are not mechanical. It should require public seams, owner layers, dependency direction, forbidden imports, architecture tests, future regression traps, local Postgres restore/proof commands, safety controls, cleanup, or a blocker/narrowed claim before implementation.",
+      "assertions": [
+        "Fails contracts that omit Architecture Ratchet Matrix for multi-file or extraction work.",
+        "Fails schema/query contracts that omit Local Full-Schema Proof Plan.",
+        "Requires architecture tests to prove public seams, not private helpers only.",
+        "Rejects production proof targets, secret output, and repo dumps.",
+        "Blocks implementation until missing ratchet/proof cells are resolved."
+      ]
+    },
+    {
+      "id": "contract-manager-failures-cite-fields-and-sections",
+      "prompt": "Review a vague failing enterprise contract that is missing build packet fields, PR Review Prevention Matrix cells, architecture ratchets, and local full-schema proof. The response only says FAIL and mentions missing proof generally.",
+      "expected_output": "contract-manager must return FAIL with actionable blockers that cite the offending section or exact missing field names, distinguish hard blockers from advice, and tell the next agent which plan/contract sections must be revised before implementation.",
+      "assertions": [
+        "Requires exact missing section or field names in FAIL output.",
+        "Distinguishes hard blockers from follow-up advice.",
+        "Provides enough detail for another agent to repair the contract without guessing."
+      ]
+    },
+    {
+      "id": "contract-manager-checks-every-build-packet-field",
+      "prompt": "Review a contract whose Mechanical Build Packet includes allowed paths and RED/GREEN commands, but omits Module Boundary, Folder Placement, Public Seam, Owner Layer, Allowed Dependency Direction, Forbidden Imports, or Architecture Tests.",
+      "expected_output": "Contract Manager must FAIL and cite every missing Mechanical Build Packet field by exact name. It must not collapse these fields behind a generic Architecture Ratchet Matrix row.",
+      "assertions": [
+        "Fails missing Module Boundary, Folder Placement, Public Seam, Owner Layer, Allowed Dependency Direction, Forbidden Imports, and Architecture Tests.",
+        "Cites exact missing field names and locations.",
+        "Does not approve a packet because a generic architecture row exists."
+      ]
+    }
+  ]
+}

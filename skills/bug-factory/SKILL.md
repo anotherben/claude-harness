@@ -5,9 +5,9 @@ description: >-
   Engage when the user says "workflow this", "must be workflowed", "run the bug factory",
   "process the open bugs", "sweep and fix the bugs", or flags a build/bug task for the full
   pipeline. Sweeps open issues tagged `bug` (closes already-resolved ones), then runs each
-  surviving bug through: confirm -> plan/zoom-out/blast-radius convergence loop (fresh eyes) ->
-  build (one agent per file) -> test -> review (blast-radius + patch-or-fix + zoom-out) ->
-  verify (computer-use + Chrome on the local Cortex instance, explicit demonstrative proof) ->
+  surviving bug through: confirm to plan/zoom-out/blast-radius convergence loop (fresh eyes) to
+  build (one agent per file) to test to review (blast-radius + patch-or-fix + zoom-out) to
+  verify (computer-use + Chrome on the local Cortex instance, explicit demonstrative proof) to
   ship (PR to dev, babysit, test on dev, PR to main, babysit, confirm on main). One agent = one
   job. Proof-or-STFU. The main merge is the only human-gated step.
 metadata:
@@ -116,4 +116,4 @@ Proof must be explicit & demonstrative, e.g.:
 - **Forbidden auto-fix:** concurrency/locks (e.g. `withProductPriceLock` / 55P03) → escalate, never auto-fix.
 
 ## ORCHESTRATION
-Run the agent-heavy phases (confirm, plan-loop, build, test, review) via the companion Workflow `bug-factory/per-bug-pipeline.workflow.js` (pass the bug worklist as `args`). The orchestrator does Phase 0 sweep, worktree+symlink setup, the **verify (browser)** step, and **ship/babysit/main-escalation** between/after Workflow runs — these span time and human gates and cannot live inside a single Workflow run. Scale agent count to bug count; token cost is not the constraint, correctness and proof are.
+Run the agent-heavy phases (confirm, plan-loop, build, test, review) via the companion Workflow `bug-factory/per-bug-pipeline.workflow.js` (pass the bug worklist as `args`). The orchestrator does Phase 0 sweep, workspace setup, the **verify (browser)** step, and **ship/babysit/main-escalation** between/after Workflow runs — these span time and human gates and cannot live inside a single Workflow run. Scale agent count to bug count; token cost is not the constraint, correctness and proof are.

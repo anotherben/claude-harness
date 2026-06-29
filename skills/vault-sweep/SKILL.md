@@ -1,11 +1,17 @@
 ---
 name: vault-sweep
-description: Weekly accountability check for the Obsidian vault. Detects stale inbox, stale active work, ghost work, verification debt, dead branches, missing metadata, and cross-project sprawl. Use when the user says "sweep the vault", "what's stale", "clean up", or invokes /vault-sweep.
+description: Weekly accountability check for the Obsidian vault. Detects stale inbox, context-needed active work, ghost work, verification debt, dead branches, missing metadata, and portfolio load. Use when the user says "sweep the vault", "what's stale", "clean up", or invokes /vault-sweep.
 ---
 
 # Vault Sweep
 
 The sweep now follows the controller model. It is primarily a detection and triage routine, not an automatic mutation pass.
+
+Control-board policy:
+
+- Show at least 5 active slices per project before collapsing. This is a display floor, not a work-in-progress cap.
+- Do not cap active projects. Report portfolio load without treating breadth as failure by itself.
+- Quiet active work is resumable context debt first. Do not archive, close, or shame it just because Ben has been away for a week or two.
 
 ## Controller Rules
 
@@ -46,8 +52,10 @@ Flag:
 
 - `STALE-INBOX`
   - inbox item older than 48 hours
+- `CONTEXT-NEEDED`
+  - claimed or in-progress item quiet for 7-14 days; surface resume anchors
 - `STALE-ACTIVE`
-  - claimed or in-progress item untouched for 7+ days
+  - claimed or in-progress item quiet for 15+ days or missing branch/worktree/owner/next-action anchors; advisory risk, not failure
 - `GHOST`
   - completion evidence exists but status is not `done`
 - `MISSING-NEXT`
@@ -69,15 +77,18 @@ For items with `blocked_by`:
 - inspect blocker state through vault-index
 - flag blocks that are resolved in practice but still linked
 
-### 4. Compute project sprawl
+### 4. Compute portfolio load
 
 Report:
 
 - distinct open projects
 - distinct recently active projects
+- active-slice counts by project
 - highest-load projects
+- blocked counts
+- missing resume anchors
 
-If open projects are much higher than recently active projects, call that out as scatter-brain risk.
+Do not cap active projects or call many projects a failure. If the board is broad, recommend better resume anchors and project homes rather than reducing the number of projects.
 
 ### 5. Present the report
 
@@ -85,6 +96,7 @@ Render these sections:
 
 - `Immediate Cleanup`
 - `Ghost Work`
+- `Resume Context Needed`
 - `Stale Active Work`
 - `Inbox Debt`
 - `Verification Debt`
@@ -100,6 +112,7 @@ Offer guided operations, not automatic ones:
 
 - normalize statuses
 - add missing `next_action`
+- refresh resume anchors on context-needed active work
 - close or archive ghost work
 - remove resolved blockers
 - create missing project homes
@@ -119,4 +132,3 @@ mcp__vault-index__index_vault(incremental=true)
 ```bash
 date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/claude-vault-last-sweep
 ```
-

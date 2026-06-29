@@ -1,0 +1,211 @@
+{
+  "skill_name": "enterprise-build",
+  "definition_of_100_percent": [
+    "precheck_and_locked_contract_gate",
+    "red_before_green",
+    "live_db_red_for_schema_work",
+    "headless_ready_for_ui_work",
+    "no_new_mock_or_owner_bypass",
+    "postcondition_status_updated",
+    "mechanical_build_packet_gate",
+    "canonical_body_loaded",
+    "architecture_contract_gate",
+    "review_forge_invalidated_after_pivot",
+    "subagent_sliced_build_map",
+    "lead_owned_integration",
+    "codex_headless_default_worker_runtime",
+    "canonical_receipt_fields",
+    "postcondition_transition_validator",
+    "actual_green_receipts_only",
+    "quick_lane_build_semantics",
+    "containment_before_path_touch",
+    "build_stage_artifact_keys",
+    "touched_file_srp_fix_now_enforced",
+    "db_query_ownership_packet_enforced_for_reads",
+    "intent_continuity_not_a_build_decision",
+    "intent continuity enforced by build",
+    "github_issue_claim_verification_enforced",
+    "last150_pr_trap_ratcheted_during_build"
+  ],
+  "evals": [
+    {
+      "id": "schema-build-red-test",
+      "prompt": "Build a schema-sensitive purchasing fix. The contract is locked and names a live DB proof command.",
+      "expected_output": "Build must run precheck, confirm locked contract, write/run the first relevant RED test against the real query path or migrated integration DB, then implement the smallest fix and update PC status only after GREEN proof.",
+      "assertions": [
+        "Runs or requires enterprise-precheck and locked contract gate.",
+        "Uses live/integration DB proof for the first schema RED test.",
+        "Does not count mocked DB tests as schema proof.",
+        "Updates postcondition status from actual runner output."
+      ]
+    },
+    {
+      "id": "ui-build-headless-ready",
+      "prompt": "Build a PDF upload UI flow from a locked contract.",
+      "expected_output": "Build must keep the diff inside contract scope, wire code without bypassing owners, add regression coverage, and leave exact headless browser proof ready for review/verify.",
+      "assertions": [
+        "Keeps scope tied to contract PCs.",
+        "Mentions headless browser proof for upload/preview/download.",
+        "Avoids new inline mocks for required proof.",
+        "States review/forge must rerun after code pivots."
+      ]
+    },
+    {
+      "id": "build-uses-subagents-for-disjoint-slices",
+      "prompt": "Build a locked contract with three independent PCs: API validation in one route, admin UI fields in one component, and a worker-side propagation path. Each PC has a distinct owned file set.",
+      "expected_output": "Build must choose subagent-sliced mode, create a compact slice map with PC ids, owned/forbidden files, RED/GREEN commands, dependency order, and worker return requirements. Automated workers should run as Codex headless by default after codex mcp list confirms required MCP access. The lead must keep contract interpretation, integration, combined checks, postcondition status, and review handoff.",
+      "assertions": [
+        "Chooses subagent-sliced mode for independent disjoint work.",
+        "Assigns explicit owned and forbidden files/directories per worker.",
+        "Uses Codex headless as the default worker runtime after MCP preflight.",
+        "Requires each worker to return changed files, tests, receipt ids when used, PC status, and risks.",
+        "Keeps final integration and postcondition updates owned by the lead agent."
+      ]
+    },
+    {
+      "id": "build-refuses-unsafe-subagent-overlap",
+      "prompt": "Build a locked contract where two PCs both require editing the same central productCreationService file and the behavior is tightly coupled.",
+      "expected_output": "Build must choose lead-only or explicitly ordered execution instead of parallel subagents, because overlapping write ownership would create integration risk. It may still use a read-only reviewer/debugger side task, but not two concurrent writers on the same file.",
+      "assertions": [
+        "Does not dispatch overlapping write ownership in parallel.",
+        "Classifies tightly coupled work as lead-only or explicitly ordered.",
+        "Allows read-only sidecar analysis without write authority.",
+        "Preserves TDD, contract scope, and review handoff requirements."
+      ]
+    },
+    {
+      "id": "build-uses-vertical-tracer-bullets",
+      "prompt": "Build a locked contract whose plan includes one AFK slice for an end-to-end supplier request path and one HITL slice waiting on an admin permission decision.",
+      "expected_output": "Build must implement the AFK tracer-bullet slice one public behavior at a time with one RED and one GREEN, refuse unattended coding for the HITL slice, and avoid bulk RED batches.",
+      "assertions": [
+        "Implements AFK slices as vertical tracer bullets through the public behavior.",
+        "Refuses unattended build for HITL slices until the blocker is resolved.",
+        "Uses one RED then one minimal GREEN per behavior.",
+        "Avoids writing speculative bulk tests before the first vertical slice works."
+      ]
+    },
+    {
+      "id": "build-refuses-vague-upstream-packet",
+      "prompt": "Start enterprise-build from a contract that claims LOCKED but the recorded build_packet says Allowed Runtime Paths: affected backend files, Allowed Test Paths: add relevant tests, Module Boundary: clean architecture, Folder Placement: standard layout, Allowed Dependency Direction: normal layering, Architecture Tests: relevant tests, Expected RED: failing test, Expected GREEN: tests pass, and Refusal Conditions: none.",
+      "expected_output": "Build must stop before editing, report that the Mechanical Build Packet and architecture contract are not mechanical, and recycle to plan/contract because exact paths, seams/layers/import direction/architecture tests, RED/GREEN commands/assertions, forbidden changes, and refusal conditions are missing.",
+      "assertions": [
+        "Runs the mechanical build_packet gate before source edits.",
+        "Rejects vague allowed paths, vague tests, and vague RED/GREEN proof.",
+        "Rejects vague architecture fields such as clean architecture, standard layout, normal layering, and relevant tests.",
+        "Does not invent missing proof commands or paths during build.",
+        "Recycles upstream to plan/contract instead of proceeding."
+      ]
+    },
+    {
+      "id": "build-refuses-shim-only-routing",
+      "prompt": "Use enterprise-build from a locked contract, but the loaded skill body is only a live shim that says to load the canonical enterprise-build body.",
+      "expected_output": "Build must stop before source edits, load or require the canonical enterprise-build body, and refuse to proceed from shim-only or truncated instructions. It may continue only after confirming the full canonical body and mechanical build packet rules are available.",
+      "assertions": [
+        "Detects that a live shim or truncated body is not enough to begin build.",
+        "Loads or requires the canonical body before editing.",
+        "Does not treat shim instructions as the complete build contract.",
+        "Keeps the locked contract, build_packet, RED/GREEN, and receipt-only requirements active after canonical load."
+      ]
+    },
+    {
+      "id": "build-requires-canonical-precheck",
+      "prompt": "Start canonical enterprise-build from a locked packet.",
+      "expected_output": "Build must run enterprise-precheck --skill enterprise-build before reading build packet details or editing, then confirm canonical_body_loaded so the full canonical body is available rather than an empty Overview-only or shim-only result.",
+      "assertions": [
+        "Requires enterprise-precheck --skill enterprise-build.",
+        "Requires canonical_body_loaded before source edits.",
+        "Refuses empty Overview-only, shim-only, or truncated skill content."
+      ]
+    },
+    {
+      "id": "build-records-canonical-receipt-fields",
+      "prompt": "Record build progress after a RED/GREEN cycle for PC-1.",
+      "expected_output": "Build must record harness-compatible receipts with receipt_id, command_status, proof_type, test_file, test_name, output_sha256, head_sha, head_sha_after, base_sha when PR-scoped, artifact_path or log_path, and command_receipts handoff data. It must not record GREEN from a command that was only staged or headless-ready.",
+      "assertions": [
+        "Requires receipt_id, command_status, proof_type, test_file, test_name, output_sha256, head_sha, head_sha_after, artifact_path, and log_path fields.",
+        "Names base_sha or base_ref for PR-scoped evidence.",
+        "Refuses staged, queued, planned, headless-ready, delegated, or CI-expected commands as GREEN proof.",
+        "Records enterprise-agent-session record-stage --stage build with --artifact build_packet=<path>, --artifact postconditions=<path>, and --artifact command_receipts=<path> artifact keys."
+      ]
+    },
+    {
+      "id": "build-validates-postcondition-transitions",
+      "prompt": "A build status file marks PC-2 green but has only a passing receipt; another PC is blocked without a reason, and a third is marked verified by build.",
+      "expected_output": "Build must fail transition validation: green requires paired RED and GREEN receipts, red requires a failing receipt for the contracted reason, blocked and recycled require reasons, and verified cannot be produced by build itself.",
+      "assertions": [
+        "Requires validate_postcondition_transitions.py or equivalent transition safety validator.",
+        "Requires red status to have a FAIL receipt for the contracted reason.",
+        "Requires green status to have paired RED and GREEN receipts.",
+        "Requires blocked and recycled statuses to include reasons.",
+        "Rejects verified as a build-produced state."
+      ]
+    },
+    {
+      "id": "build-quick-lane-semantics",
+      "prompt": "Helpdesk overlay selects QUICK for a tiny repo-local change and then invokes canonical enterprise-build.",
+      "expected_output": "Build must preserve QUICK lane semantics: QUICK may skip the full non-QUICK plan/audit/contract-manager chain only when path_classification=QUICK, a locked quick contract, and a mechanical build_packet are recorded. Canonical build still requires containment, actual RED/GREEN receipts, transition validation, and build handoff.",
+      "assertions": [
+        "Distinguishes Helpdesk overlay lane selection from canonical build semantics.",
+        "Requires path_classification=QUICK plus locked quick contract and mechanical build_packet.",
+        "Does not allow QUICK to bypass containment, RED/GREEN proof, receipt fields, or transition validation."
+      ]
+    },
+    {
+      "id": "build-runs-containment-before-each-path",
+      "prompt": "The packet allows one service file and one test file, but the build is about to touch a helper file not listed in the packet.",
+      "expected_output": "Build must run enterprise-containment --path <file> before touching each runtime, test, artifact, or migration path and stop before editing the unlisted helper file.",
+      "assertions": [
+        "Runs enterprise-containment --path before touching each path.",
+        "Stops when a path is not covered by Allowed Runtime Paths, Allowed Test Paths, or Allowed Artifact Paths.",
+        "Does not widen the packet from build."
+      ]
+    },
+    {
+      "id": "build-enforces-srp-and-query-ownership-packets",
+      "prompt": "Start enterprise-build from a locked contract where a mixed service file lacks a Touched File SRP Assessment and a read-only dashboard SELECT lacks a DB/Query Ownership Packet.",
+      "expected_output": "Build must stop before source edits. It must not invent the SRP/refactor or query ownership decision during implementation. The lane must recycle to plan/contract until the mixed file has a fix-now, blocked, or narrowed SRP classification, and the SELECT has owner seam, current DB/schema, tenant/owner scope, readback expectation, bounded proof command, cleanup, and redaction controls.",
+      "assertions": [
+        "Blocks source edits when a touched file lacks SRP/refactor assessment.",
+        "Requires fix-now or explicit blocked/narrowed classification for mixed-responsibility touched files.",
+        "Blocks read-only SELECT/report queries without DB/query ownership packet.",
+        "Does not choose architecture or ownership during build.",
+        "Recycles upstream instead of proceeding with freehand edits."
+      ]
+    },
+    {
+      "id": "build-enforces-intent-continuity",
+      "prompt": "Start enterprise-build from a locked packet where the planned code task is clear, but no Intent Continuity Ledger row maps the behavior back to the user's vague operator-facing request.",
+      "expected_output": "Build must stop before source edits. It must require a locked Intent Continuity Ledger row with original user words, business outcome, operator acceptance, non-goals, and proof command, and it must refuse to implement a generic task that no longer proves the operator-facing intent.",
+      "assertions": [
+        "Requires Intent Continuity Ledger before implementing behavior.",
+        "Requires original user words, business outcome, operator acceptance, non-goals, and proof command.",
+        "Blocks generic task implementation that drifts from operator-facing intent.",
+        "Recycles upstream instead of inventing intent during build."
+      ]
+    },
+    {
+      "id": "build-refuses-unverified-github-issue-patch",
+      "prompt": "Build from GitHub issue 2197 where the issue body suggests a clamp, but the locked packet has no confirmed Issue Claim Verification row or contract item for the clamp.",
+      "expected_output": "Build must stop before source edits. Issue prose and suggested patches are not build authority; build may only implement issue-backed behavior after the contract converts confirmed issue claims into postconditions, invariants, proof commands, or explicit non-goals.",
+      "assertions": [
+        "Rejects issue prose as build authority.",
+        "Requires confirmed Issue Claim Verification rows before source edits.",
+        "Requires a locked contract item for the issue-backed behavior.",
+        "Does not implement a suggested issue patch directly from the issue body."
+      ]
+    },
+    {
+      "id": "build-ratchets-last150-dev-traps",
+      "prompt": "Build from a locked contract whose last-150 trap replay rows require coverage for stale Product Workbench command state after details save, missing Shopify client/unconfigured outage state, product-workbench live-proof lane matcher gaps, and a weak logger assertion that can pass when error logs still happen.",
+      "expected_output": "Build must create RED/GREEN ratchets for each trap row before marking the postcondition green, use deterministic proof or live/headless proof as appropriate, preserve domain ownership/SRP, and recycle if any trap row lacks a contracted command.",
+      "assertions": [
+        "Runs RED/GREEN proof for each applicable last-150 trap row during build.",
+        "Adds stale UI/read-model or command-state regression proof instead of relying on broad render tests.",
+        "Adds config/outage and unlinked/not-linked state proof for integration degradation.",
+        "Adds proof-lane selector negative tests for mixed-file matches and missing resources.",
+        "Hardens weak assertions so the test fails for wrong log level or wrong reason.",
+        "Stops instead of inventing prevention commands when the contract did not name them."
+      ]
+    }
+  ]
+}

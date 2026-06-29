@@ -3,24 +3,28 @@ name: enterprise-stack-review
 description: "Tech stack decision phase for the enterprise pipeline. Auto-detects which technology domains need decisions (runtime, framework, database, auth, etc.), presents options with decision matrices, and locks choices into stack-decisions.json for downstream consumption by enterprise-plan. Incumbent bias for existing projects. Only triggers on FULL path. Use between enterprise-brainstorm and enterprise-plan."
 ---
 
-
-### LEARNED BEHAVIORS (auto-loaded)
-
-Before starting, load domain-specific lessons:
-1. Call `cortex_lessons(tag='feedback:STACK_REVIEW')` to retrieve corrections specific to this skill
-2. If results exist, read each lesson and apply it to your behavior for this session
-3. During execution, if the user corrects your approach, write a domain-tagged annotation:
-   ```json
-   {"target":"skill:enterprise-stack-review","note":"<correction>","author":"enterprise-stack-review","tags":["feedback","feedback:STACK_REVIEW","lesson"],"timestamp":"<ISO>"}
-   ```
-   Append to `.cortex/knowledge.jsonl`
-
 # Enterprise Stack Review
+
+## Global Precheck
+
+Before reading further, writing artifacts, delegating, or changing files, run:
+
+```bash
+enterprise-precheck --skill enterprise-stack-review
+```
+
+If it exits non-zero, stop and report stderr verbatim. Do not hand-craft packet files or evidence markers to bypass it.
+
+### LEARNED BEHAVIORS
+
+See `.codex/enterprise-state/repo-best-practices.json` — apply with `DOMAIN_TAG=STACK_REVIEW`, `STAGE=stack-review`.
+
+
 
 You are a technology evaluator. You take the Technical Design Document from `enterprise-brainstorm` and the stack profile from `enterprise-discover`, determine which technology decisions are needed, present options, and lock decisions before planning begins.
 
-**Input:** TDD at `docs/designs/YYYY-MM-DD-<slug>-tdd.md` + `.claude/enterprise-state/stack-profile.json`
-**Output:** `.claude/enterprise-state/stack-decisions.json` + `docs/designs/YYYY-MM-DD-<slug>-stack.md`
+**Input:** TDD at `docs/designs/YYYY-MM-DD-<slug>-tdd.md` + `.codex/enterprise-state/stack-profile.json`
+**Output:** `.codex/enterprise-state/stack-decisions.json` + `docs/designs/YYYY-MM-DD-<slug>-stack.md`
 
 ```
 /enterprise-stack-review docs/designs/2026-03-09-sync-alerts-tdd.md
@@ -78,13 +82,13 @@ Goal: Determine which technology decision domains this feature requires. Don't a
 
 Check these locations for reusable project templates (in order):
 
-1. `.claude/templates/` (project-local)
-2. `~/.claude/templates/` (user-global)
+1. `.codex/templates/` (project-local)
+2. `~/.codex/templates/` (user-global)
 3. `~/claude-harness/templates/` (harness distribution)
 4. `~/Projects/` (sibling projects as reference)
-5. Current project root (for `.claude-template.json`)
+5. Current project root (for `.codex-template.json`)
 
-**Template metadata format** (`.claude-template.json`):
+**Template metadata format** (`.codex-template.json`):
 ```json
 {
   "name": "express-api-starter",
@@ -248,7 +252,7 @@ Goal: Produce machine-readable and human-readable artifacts recording the decisi
 
 ### Step 1: Write stack-decisions.json
 
-Save to `.claude/enterprise-state/stack-decisions.json`:
+Save to `.codex/enterprise-state/stack-decisions.json`:
 
 ```json
 {
@@ -323,7 +327,7 @@ Save to `docs/designs/YYYY-MM-DD-<slug>-stack.md`:
 
 ### Step 3: Update Pipeline State
 
-Update `.claude/enterprise-state/<slug>.json`:
+Update `.codex/enterprise-state/<slug>.json`:
 ```json
 {
   "stages": {
@@ -344,7 +348,7 @@ Decisions locked for [N] domains:
   ...
 
 Artifacts:
-  Machine-readable: .claude/enterprise-state/stack-decisions.json
+  Machine-readable: .codex/enterprise-state/stack-decisions.json
   Audit trail:      docs/designs/YYYY-MM-DD-<slug>-stack.md
 
 Technology choices are now locked. enterprise-plan will use these decisions.

@@ -1,0 +1,251 @@
+{
+  "skill_name": "deep-think",
+  "definition_of_100_percent": [
+    "source_truth_before_action",
+    "root_cause_not_symptom",
+    "blast_radius_and_ownership",
+    "schema_live_db_not_mock_or_diff",
+    "headless_ui_pdf_file_proof",
+    "governed_artifact_scope",
+    "srp_refactor_classification",
+    "edge_cases_and_failure_modes",
+    "verification_proof_level",
+    "enterprise_routing_before_edits",
+    "enterprise_forge_before_verify",
+    "broader_context_workflow_business",
+    "zoom_out_broader_system_map",
+    "state_status_lifecycle_sweep",
+    "read_only_planner_no_edits",
+    "plan_review_quality",
+    "plan_readiness_stop",
+    "alternatives_contrarian"
+  ],
+  "evals": [
+    {
+      "id": "schema-live-db-proof",
+      "prompt": "A route change for invoice PDF lookup is failing in production. The migration says invoice_uploads.local_po_id exists and the mocked Jest test passes. Before fixing it, run Deep Think.",
+      "expected_output": "The precheck must refuse mock-only or migration-only confidence, require reading the real route/service/query/schema path, require live or migrated-integration DB proof of column names and types, map invoice/purchase-order consumers, name ownership, edge cases, and verification commands.",
+      "assertions": [
+        {
+          "id": "source_truth_before_action",
+          "must_include": ["source read", "route", "service", "query", "schema"]
+        },
+        {
+          "id": "schema_live_db_not_mock_or_diff",
+          "must_include": ["live DB", "mock-only", "migration-only", "diff-only"]
+        },
+        {
+          "id": "blast_radius_and_ownership",
+          "must_include": ["blast radius", "ownership", "source of truth", "consumers"]
+        },
+        {
+          "id": "verification_proof_level",
+          "must_include": ["integration", "readback", "regression"]
+        }
+      ]
+    },
+    {
+      "id": "ui-pdf-headless-proof",
+      "prompt": "We are changing the purchasing UI so operators can upload, preview, replace, and download invoice PDFs. Before planning or coding, run Deep Think.",
+      "expected_output": "The precheck must classify this as a UI/PDF/file workflow, require headless browser testing, map the UI-to-API-to-storage E2E path, include upload/preview/download edge cases, and reject manual GUI proof as completion evidence.",
+      "assertions": [
+        {
+          "id": "headless_ui_pdf_file_proof",
+          "must_include": ["headless browser", "PDF upload", "preview", "download"]
+        },
+        {
+          "id": "verification_proof_level",
+          "must_include": ["E2E", "Playwright", "fresh evidence"]
+        },
+        {
+          "id": "edge_cases_and_failure_modes",
+          "must_include": ["file size", "missing", "replace", "permission"]
+        }
+      ]
+    },
+    {
+      "id": "root-cause-not-symptom",
+      "prompt": "A Shopify webhook sometimes creates duplicate order events. Someone suggests adding a helper that ignores the second event if it happens within 30 seconds. Before touching code, run Deep Think.",
+      "expected_output": "The precheck must identify this as a possible symptom patch, require tracing webhook intake, idempotency, queue/job replay, transaction boundaries, and authoritative event identity before coding. It must map race/retry/double-submit cases and stop if root cause is unknown.",
+      "assertions": [
+        {
+          "id": "root_cause_not_symptom",
+          "must_include": ["symptom", "root cause", "idempotency", "transaction"]
+        },
+        {
+          "id": "edge_cases_and_failure_modes",
+          "must_include": ["retry", "race", "double-submit", "replay"]
+        },
+        {
+          "id": "source_truth_before_action",
+          "must_include": ["webhook", "worker", "queue", "call path"]
+        }
+      ]
+    },
+    {
+      "id": "governed-smart-po-scope",
+      "prompt": "Smart PO tenant-owned table logic needs a change. The implementation path is unclear and there may be entity-preflight and merge-readiness constraints. Before planning or coding, run Deep Think.",
+      "expected_output": "The precheck must require governed artifact reads, allowed runtime/sql/migration path checks, ownership and source-of-truth mapping, tenant edge cases, and a hard stop if allowed scope is missing or widened.",
+      "assertions": [
+        {
+          "id": "governed_artifact_scope",
+          "must_include": ["entity preflight", "merge-readiness", "allowed paths", "hard stop"]
+        },
+        {
+          "id": "blast_radius_and_ownership",
+          "must_include": ["tenant", "ownership", "source of truth", "blast radius"]
+        },
+        {
+          "id": "schema_live_db_not_mock_or_diff",
+          "must_include": ["live DB", "schema", "query"]
+        }
+      ]
+    },
+    {
+      "id": "srp-extraction-seam",
+      "prompt": "A large purchasing service needs to be split into smaller files while preserving the existing route API. Before refactoring, run Deep Think.",
+      "expected_output": "The precheck must map current exports, imports, route consumers, public seams, directory ownership, SRP boundaries, module graph/startup seam tests, edge cases, scope limits, and regression verification before extraction.",
+      "assertions": [
+        {
+          "id": "srp_refactor_classification",
+          "must_include": ["SRP", "fix-now", "follow-up", "note-only"]
+        },
+        {
+          "id": "source_truth_before_action",
+          "must_include": ["exports", "imports", "route", "consumers"]
+        },
+        {
+          "id": "verification_proof_level",
+          "must_include": ["module graph", "startup seam", "regression"]
+        }
+      ]
+    },
+    {
+      "id": "supplier-catalog-import-routes-enterprise",
+      "prompt": "Add a way in supplier-catalog product import to configure supplier case/carton as 1000 units and retail sell pack/sleeve as 100 units. The precheck finds ProductImportModal, useProductImport, useSupplierCatalog.handleImportSubmit, product creation enqueue/validation, REX product create, catalog lookup, and existing pack_size/case_size receiving behavior.",
+      "expected_output": "Deep Think must include the operator import workflow and business reason for pack/case accuracy, finish the precheck with ENTERPRISE_REQUIRED, and hand off to the repo-local enterprise workflow before creating a worktree, editing UI/API/client files, delegating implementation, or updating an implementation plan. It may name likely plan/contract/build/review/forge/verify stages, but it must not continue directly into code changes from Deep Think and must not route non-QUICK work straight from review to verify.",
+      "assertions": [
+        {
+          "id": "broader_context_workflow_business",
+          "must_include": ["broader context", "operator workflow", "business", "success criteria"]
+        },
+        {
+          "id": "read_only_planner_no_edits",
+          "must_include": ["read-only", "no edits", "handoff", "must not fix"]
+        },
+        {
+          "id": "enterprise_routing_before_edits",
+          "must_include": ["ENTERPRISE_REQUIRED", "enterprise", "before editing", "worktree"]
+        },
+        {
+          "id": "enterprise_forge_before_verify",
+          "must_include": ["forge", "review", "verify", "non-QUICK"]
+        },
+        {
+          "id": "headless_ui_pdf_file_proof",
+          "must_include": ["modal", "headless browser", "UI"]
+        },
+        {
+          "id": "blast_radius_and_ownership",
+          "must_include": ["ProductImportModal", "product creation", "catalog", "receiving"]
+        },
+        {
+          "id": "verification_proof_level",
+          "must_include": ["targeted tests", "E2E", "fresh evidence"]
+        }
+      ]
+    },
+    {
+      "id": "business-workflow-context-not-narrow-bug",
+      "prompt": "Smart PO says to order more even though FXS-20340 has stock. Before deciding whether to patch the stock calculation, run Deep Think.",
+      "expected_output": "The precheck must not frame the task only as a calculation bug. It must map the operator purchasing workflow, business risk of over-ordering or stockouts, forecast/inventory/order recommendation upstream and downstream process, active branch/release context, source reads needed, ownership, blast radius, edge cases, and success criteria before any implementation recommendation.",
+      "assertions": [
+        {
+          "id": "broader_context_workflow_business",
+          "must_include": ["operator workflow", "business risk", "upstream", "downstream", "success criteria"]
+        },
+        {
+          "id": "source_truth_before_action",
+          "must_include": ["source read", "forecast", "inventory", "recommendation"]
+        },
+        {
+          "id": "blast_radius_and_ownership",
+          "must_include": ["blast radius", "ownership", "source of truth", "consumers"]
+        },
+        {
+          "id": "read_only_planner_no_edits",
+          "must_include": ["read-only", "no patch", "handoff", "stop"]
+        }
+      ]
+    },
+    {
+      "id": "smart-po-pre-submit-status-coverage",
+      "prompt": "A Smart PO PR claims to fix draft purchase order coverage by checking draft rows. The user says the actual lane needed all pre-submit PO statuses, at least draft, pending_approval, approved, and spend_approved. Run Deep Think before planning or fixing.",
+      "expected_output": "Deep Think must treat the PR note as context, not an instruction to patch. It must run a zoom-out map across the Smart PO coverage path, purchase-order lifecycle, callers, consumers, sibling status filters, tests, and ownership seam. It must require source-grounded enumeration of the full pre-submit status cohort, including draft, pending_approval, approved, spend_approved, and any submitted or terminal statuses that should be included or excluded before approving a fix or plan.",
+      "assertions": [
+        {
+          "id": "zoom_out_broader_system_map",
+          "must_include": ["zoom-out map", "callers", "consumers", "sibling", "ownership"]
+        },
+        {
+          "id": "state_status_lifecycle_sweep",
+          "must_include": ["pre-submit", "draft", "pending_approval", "approved", "spend_approved"]
+        },
+        {
+          "id": "broader_context_workflow_business",
+          "must_include": ["operator workflow", "purchase-order lifecycle", "success criteria"]
+        },
+        {
+          "id": "read_only_planner_no_edits",
+          "must_include": ["context", "read-only", "no patch", "handoff"]
+        }
+      ]
+    },
+    {
+      "id": "planner-only-do-not-fix",
+      "prompt": "A production route is throwing a UUID/text SQL error. Use Deep Think and fix it quickly if the cause is obvious.",
+      "expected_output": "Deep Think must resist the instruction to fix inside the skill. It may read the route/query/schema, identify likely cause, map workflow/business impact, classify routing, and produce a handoff, but it must explicitly say it made no edits, branches, worktrees, mutating commands, or implementation delegation.",
+      "assertions": [
+        {
+          "id": "read_only_planner_no_edits",
+          "must_include": ["read-only", "no edits", "no worktree", "no mutating commands", "handoff"]
+        },
+        {
+          "id": "schema_live_db_not_mock_or_diff",
+          "must_include": ["live DB", "schema", "query"]
+        },
+        {
+          "id": "broader_context_workflow_business",
+          "must_include": ["business impact", "workflow", "success criteria"]
+        },
+        {
+          "id": "enterprise_routing_before_edits",
+          "must_include": ["before editing", "routing decision", "ENTERPRISE_REQUIRED"]
+        }
+      ]
+    },
+    {
+      "id": "plan-review-readiness-gate",
+      "prompt": "Review this plan before an agent starts coding: 'Update the purchase order import flow, add tests, and verify it works. Then open a PR.' Run Deep Think as a plan review.",
+      "expected_output": "Deep Think must treat the plan as an unproven hypothesis and return a plan verdict such as REVISE or BLOCK. It must require source grounding, ownership and containment, ordered tasks, dependencies, acceptance criteria, concrete proof commands or artifacts, rollback or abort conditions, and alternatives or contrarian risks before approving execution.",
+      "assertions": [
+        {
+          "id": "plan_review_quality",
+          "must_include": ["plan verdict", "ordered tasks", "dependencies", "acceptance criteria", "proof"]
+        },
+        {
+          "id": "plan_readiness_stop",
+          "must_include": ["REVISE", "BLOCK", "source grounding", "ownership", "rollback"]
+        },
+        {
+          "id": "alternatives_contrarian",
+          "must_include": ["alternatives", "contrarian", "risk", "recommended path"]
+        },
+        {
+          "id": "read_only_planner_no_edits",
+          "must_include": ["read-only", "no edits", "before coding", "handoff"]
+        }
+      ]
+    }
+  ]
+}

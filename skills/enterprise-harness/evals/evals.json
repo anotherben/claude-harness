@@ -1,0 +1,364 @@
+{
+  "skill_name": "enterprise-harness",
+  "definition_of_100_percent": [
+    "precheck_and_required_artifacts",
+    "pc_trace_not_test_count",
+    "runtime_file_execution_proof",
+    "changed_file_proof_map",
+    "live_db_schema_query_proof",
+    "headless_ui_pdf_file_proof",
+    "repo_gate_matrix_local_pass",
+    "review_forge_current_diff",
+    "pr_timing_policy_enforced",
+    "pr_readiness_gate_enforced",
+    "receipt_backed_proof",
+    "codex_headless_worker_artifacts_checked",
+    "validate_worker_artifacts_gate",
+    "architecture_contract_gate",
+    "release_risk_classification_gate",
+    "post_merge_test_kit_required_gate",
+    "rollback_readiness_gate",
+    "observability_proof_gate",
+    "security_privacy_proof_gate",
+    "performance_regression_gate",
+    "branch_reason_coverage_gate",
+    "cast_index_safety_gate",
+    "runtime_proof_parity_gate",
+    "proof_lane_integrity_gate",
+    "integration_fault_matrix_gate",
+    "boundary_scope_invariants_gate",
+    "observability_redaction_contract_gate",
+    "public_seam_consumer_contract_gate",
+    "evidence_portability_gate",
+    "test_integrity_gate",
+    "validate_release_readiness_mechanical_gate",
+    "partial_proof_fails_final_gate",
+    "architecture_ratchet_gate",
+    "local_full_schema_proof_gate",
+    "warn_not_allowed_for_gate_gaps",
+    "structured_per_key_release_readiness_required",
+    "contradictory_release_records_fail",
+    "current_head_base_release_records",
+    "receipt_secret_scrub",
+    "weak_not_applicable_fails",
+    "async_field_matrix_release_trace",
+    "intent_continuity_gate",
+    "touched_file_srp_gate",
+    "db_query_ownership_gate_for_reads",
+    "last150_trap_closure_and_ab_proof_gate"
+  ],
+  "evals": [
+    {
+      "id": "harness-rejects-test-count",
+      "prompt": "Harness a PR where verification says 120 tests passed but does not map PC-1 through PC-8 to test files, test names, commands, or runtime paths.",
+      "expected_output": "Harness must FAIL because test counts are not PC trace proof. It should require receipt-backed PC trace checking before ship-ready.",
+      "assertions": [
+        "Fails test-count-only evidence.",
+        "Requires every PC id to map to current evidence.",
+        "Requires test file, test name, command output, and runtime path or documented non-runtime reason.",
+        "Mentions check_pc_trace.py and a command receipt log or equivalent mechanical PC trace."
+      ]
+    },
+    {
+      "id": "harness-live-headless-gates",
+      "prompt": "Harness a change with schema query behavior and PDF upload UI behavior.",
+      "expected_output": "Harness must FAIL unless live/integration DB proof, changed file proof mapping, headless browser proof, and matching command receipts are present, repo gates were run locally, and review/forge cover the current final diff.",
+      "assertions": [
+        "Requires live DB proof for schema/query/data-sensitive behavior.",
+        "Requires headless browser proof for PDF upload/preview/download.",
+        "Requires changed file proof map, receipt-backed command output, and repo gate matrix local evidence.",
+        "Rejects stale review/forge evidence."
+      ]
+    },
+    {
+      "id": "harness-fails-high-risk-open-without-disposition",
+      "prompt": "Harness a high-risk order/invoice PR that is open, has no draft/open exception recorded, and has non-blocking Copilot comments that were skipped.",
+      "expected_output": "Harness must FAIL until the PR readiness gate records the high-risk draft/open exception and every useful Copilot/advisory comment is fixed, tracked, converted to trap/gate/eval, or explicitly blocked with reason.",
+      "assertions": [
+        "Fails high-risk PR treated as normal without rationale.",
+        "Requires Copilot/advisory comments to be routed, not skipped.",
+        "Requires high-risk non-draft gate evidence to cite command receipts.",
+        "Does not require Copilot to block normal low-risk PRs.",
+        "Preserves PC trace, live DB, headless, and repo gate requirements."
+      ]
+    },
+    {
+      "id": "harness-rejects-handwritten-proof",
+      "prompt": "Harness a verification report that includes enterprise_pc_trace and enterprise_changed_file_proof JSON, but the records have no receipt_id and no command receipt log.",
+      "expected_output": "Harness must FAIL because structured markdown proof without a matching run_with_receipt command receipt is not mechanical evidence.",
+      "assertions": [
+        "Rejects proof records without receipt_id.",
+        "Requires a command receipt log produced by run_with_receipt.py or equivalent harness receipt capture.",
+        "Requires receipt head SHA, command status, command output hash, and changed runtime paths to match the proof record.",
+        "Explains that receipt-backed proof replaces hand-written markdown claims."
+      ]
+    },
+    {
+      "id": "harness-checks-codex-headless-worker-artifacts",
+      "prompt": "Harness a medium lane where build and forge claim delegated workers passed, but the verification report only names worker modes and does not link any worker output files.",
+      "expected_output": "Harness must FAIL until Codex headless worker result files exist under the dispatch directory and are referenced by structured proof or attack-lens records. Outputs from unproven cmux/OpenCode/Kimi paths are supporting context only, not ship-gate proof.",
+      "assertions": [
+        "Requires delegated worker result files to exist.",
+        "Requires structured proof or attack-lens records to reference the worker artifacts.",
+        "Mentions validate_worker_artifacts.py or equivalent mechanical worker artifact validation.",
+        "Names Codex headless worker artifacts as the default proof shape.",
+        "Rejects unproven cmux/OpenCode/Kimi output as ship-gate proof."
+      ]
+    },
+    {
+      "id": "harness-rejects-vague-build-packet",
+      "prompt": "Harness an enterprise lane whose recorded build_packet says Allowed Runtime Paths: affected services, Allowed Test Paths: relevant tests, Allowed Artifact Paths: evidence as needed, Module Boundary: clean architecture, Folder Placement: standard layout, Allowed Dependency Direction: normal layering, Architecture Tests: relevant tests, Expected RED: failing test, Expected GREEN: tests pass, Required Commands: usual checks, and Refusal Conditions: none.",
+      "expected_output": "Harness must FAIL before PR readiness because the recorded build_packet is not mechanical. It should require exact runtime/test/artifact paths, exact architecture fields for module boundary/folder placement/public seam/owner layer/dependency direction/forbidden imports/architecture tests, exact RED/GREEN/required commands, PC execution order, forbidden changes, and actionable refusal conditions.",
+      "assertions": [
+        "Fails vague build_packet entries even when the required headings exist.",
+        "Requires exact Allowed Runtime Paths, Allowed Test Paths, and Allowed Artifact Paths.",
+        "Requires exact architecture contract fields and runs validate_architecture_contract.py or equivalent through the required gate.",
+        "Requires command-shaped Expected RED, Expected GREEN, and Required Commands.",
+        "Rejects non-actionable Refusal Conditions such as none.",
+        "Runs the agent-session mechanical_build_packet gate before ship-ready or merge-ready claims."
+      ]
+    },
+    {
+      "id": "harness-requires-release-risk-classification",
+      "prompt": "Harness a PR that touches invoice state, tenant-scoped queries, and a production config flag, but the verification report only says risk is low because tests pass.",
+      "expected_output": "Harness must FAIL until release-risk-classification records low/medium/high/critical with evidence from changed surfaces, data sensitivity, tenant/security exposure, deploy/config impact, and rollback difficulty. Invoice and tenant/config impact should not be treated as low without explicit rationale.",
+      "assertions": [
+        "Requires release-risk-classification before ship-ready.",
+        "Requires risk evidence from changed surfaces and data sensitivity.",
+        "Requires tenant/security exposure and deploy/config impact to affect risk.",
+        "Requires rollback difficulty to be considered.",
+        "Rejects tests-pass as the only risk rationale."
+      ]
+    },
+    {
+      "id": "harness-requires-post-merge-test-kit-for-deployable-pr",
+      "prompt": "Harness a deployable PR where verify, forge, and CI passed, but there is no post-merge validation kit and no reason the PR is non-deployable.",
+      "expected_output": "Harness must FAIL PR readiness because post-merge-test-kit-required is missing. It should require a drafted post-merge-test-kit artifact before merge/pr-readiness, including owner, environment, deployed-SHA proof plan, and agent-run or human-run mode for high/critical deployable PRs.",
+      "assertions": [
+        "Requires post-merge-test-kit-required for deployable PRs.",
+        "Fails when no kit exists and no non-deployable reason is recorded.",
+        "Requires the kit before merge or pr-readiness, not after signoff.",
+        "Requires deployed-SHA proof plan for high/critical deployable PRs.",
+        "Requires owner, environment, and agent-run or human-run mode."
+      ]
+    },
+    {
+      "id": "harness-requires-rollback-readiness",
+      "prompt": "Harness a high-risk order release whose evidence says rollback is to revert if needed, but has no rollback owner, trigger, command, feature flag/disable path, migration posture, or communication owner.",
+      "expected_output": "Harness must FAIL rollback-readiness-gate because high/critical releases need owned rollback triggers, command/procedure, feature flag or disable path where applicable, migration/data rollback posture, and customer/operator communication owner.",
+      "assertions": [
+        "Requires rollback-readiness-gate for high/critical releases.",
+        "Requires rollback owner and concrete trigger.",
+        "Requires rollback command or procedure.",
+        "Requires feature-flag or disable path when applicable.",
+        "Requires migration/data rollback posture and communication owner.",
+        "Rejects vague revert-if-needed language."
+      ]
+    },
+    {
+      "id": "harness-requires-observability-proof",
+      "prompt": "Harness a worker and API release where the verification report says monitor logs for 15 minutes, but does not name log query, metrics, health checks, queue/readback signals, alerts, watch window, or owner.",
+      "expected_output": "Harness must FAIL observability-proof-gate until exact log source/query, metrics/dashboard, health check, queue/job/readback signal, alert or watch window, and post-deploy owner are recorded for affected runtime surfaces.",
+      "assertions": [
+        "Requires observability-proof-gate for runtime releases.",
+        "Requires exact log source and query.",
+        "Requires metrics/dashboard or health check evidence.",
+        "Requires queue/job/readback signal for worker surfaces.",
+        "Requires alert/watch window and post-deploy owner.",
+        "Rejects monitor logs as sufficient evidence."
+      ]
+    },
+    {
+      "id": "harness-requires-security-privacy-proof",
+      "prompt": "Harness a webhook upload PR that changes auth headers, tenant scoping, file upload handling, and logs raw request bodies as proof.",
+      "expected_output": "Harness must FAIL security-privacy-proof-gate unless auth, tenant, upload, secret, PII, and integration boundaries have explicit redacted proof. Secret-bearing or raw-PII evidence must fail the harness.",
+      "assertions": [
+        "Requires security-privacy-proof-gate for auth, tenant, upload, secret, PII, webhook, or integration boundaries.",
+        "Requires explicit proof for tenant and permission behavior.",
+        "Requires redacted evidence for secrets and PII.",
+        "Fails secret-bearing or raw production data evidence.",
+        "Requires upload and webhook boundary proof."
+      ]
+    },
+    {
+      "id": "harness-requires-performance-regression-proof",
+      "prompt": "Harness a change to a high-volume sync worker and SQL query where tests pass, but no latency budget, query plan/index evidence, queue backlog proof, timeout/retry proof, or load/regression rationale is present.",
+      "expected_output": "Harness must FAIL performance-regression-gate until hot path/query/worker performance risk is either proven with latency, query plan/index, queue backlog, timeout/retry, or load/regression evidence, or marked not-applicable with concrete rationale.",
+      "assertions": [
+        "Requires performance-regression-gate for hot paths, queries, workers, syncs, rendering, PDF/file flows, or high-volume loops.",
+        "Requires latency budget or equivalent regression threshold.",
+        "Requires query plan/index evidence for SQL query changes.",
+        "Requires queue backlog and timeout/retry proof for worker/sync changes.",
+        "Rejects tests-pass as sufficient performance evidence.",
+        "Allows not-applicable only with concrete rationale."
+      ]
+    },
+    {
+      "id": "harness-runs-validate-release-readiness",
+      "prompt": "Harness a verification report that has prose headings for release risk, post-merge testing, rollback, observability, security, performance, branch coverage, cast safety, runtime/proof parity, proof-lane integrity, integration fault behavior, boundary scope, redaction/log contract, public seam consumers, portability, and test integrity, but no structured enterprise_release_risk, enterprise_post_merge_test_kit, enterprise_rollback_readiness, enterprise_observability_proof, enterprise_security_privacy_proof, enterprise_performance_regression, enterprise_branch_reason_coverage, enterprise_cast_index_safety, enterprise_runtime_proof_parity, enterprise_proof_lane_integrity, enterprise_integration_fault_matrix, enterprise_boundary_scope_invariants, enterprise_observability_redaction_contract, enterprise_public_seam_consumer_contract, enterprise_architecture_ratchet, enterprise_local_full_schema_proof, enterprise_evidence_portability, or enterprise_test_integrity records.",
+      "expected_output": "Harness must FAIL because validate_release_readiness.py cannot mechanically prove the release gates from prose. It should require all structured records and reject vague not-applicable claims, secret-bearing evidence, stale artifacts, machine-local command prefixes, and false-green proof lanes.",
+      "assertions": [
+        "Runs validate_release_readiness.py before PASS.",
+        "Fails when any required enterprise_* release-readiness record is missing.",
+        "Requires concrete not-applicable reasons.",
+        "Fails secret-bearing evidence.",
+        "Treats the validator as the mechanical authority, not optional guidance."
+      ]
+    },
+    {
+      "id": "harness-rejects-proof-lane-and-artifact-drift",
+      "prompt": "Harness a PR where the live-proof registry has a generic route matcher that can steal a domain proof lane, the schema probe exits 0 for missing tables, and the verification artifact contains /Users/ben PATH/NODE_PATH prefixes plus a stale Create PR checklist item.",
+      "expected_output": "Harness must FAIL until proof-lane integrity and evidence portability records prove the domain lane wins, missing resources fail non-zero, and committed artifacts are current, portable, and internally consistent.",
+      "assertions": [
+        "Requires enterprise_proof_lane_integrity before PASS.",
+        "Requires negative tests for missing proof resources and matcher precedence.",
+        "Requires enterprise_evidence_portability before PASS.",
+        "Rejects machine-local /Users paths, PATH/NODE_PATH command prefixes, and stale PR-state checklist items.",
+        "Blocks PR-ready and done claims on false-green proof lanes."
+      ]
+    },
+    {
+      "id": "harness-requires-branch-cast-and-bounded-proof",
+      "prompt": "Harness a worker/query PR that adds a new recovery reason branch and casts JSON text IDs to bigint, while the proof only covers one happy reason and runs an unbounded historical aggregation in the live DB test.",
+      "expected_output": "Harness must FAIL until branch/reason-set coverage, cast/index safety, and bounded performance proof are present: sibling reasons, negative cases, idempotent repeats, malformed and out-of-range IDs, indexability/query-plan proof, and a bounded live DB proof query or explicit budget.",
+      "assertions": [
+        "Requires enterprise_branch_reason_coverage before PASS.",
+        "Requires enterprise_cast_index_safety before PASS.",
+        "Requires performance proof to bound live DB query scope or state a concrete budget.",
+        "Rejects one-literal happy-path proof for new recovery branches.",
+        "Rejects unguarded out-of-range numeric-text casts from external payloads."
+      ]
+    },
+    {
+      "id": "harness-rejects-last50-review-class-gaps",
+      "prompt": "Harness a PR that changes an external client retry path, verifier SQL, tenant-scoped update, log sanitizer, public service export, custom listbox, schema-coupled test, and verification docs, but evidence only says tests pass and review/forge looked at it.",
+      "expected_output": "Harness must FAIL until the last-50 PR review classes are proven with structured records: runtime/proof parity, integration fault matrix, boundary/scope invariants, observability/redaction contract, public seam/UI/accessibility consumer contract, architecture ratchet, local full-schema proof, evidence portability, performance/bounded work, and test integrity. Passing tests and prose review are not enough.",
+      "assertions": [
+        "Requires enterprise_runtime_proof_parity before PASS.",
+        "Requires enterprise_integration_fault_matrix before PASS.",
+        "Requires enterprise_boundary_scope_invariants before PASS.",
+        "Requires enterprise_observability_redaction_contract before PASS.",
+        "Requires enterprise_public_seam_consumer_contract and enterprise_test_integrity before PASS.",
+        "Blocks PR-ready and done claims when any relevant last-50 class is missing.",
+        "Requires enterprise_architecture_ratchet and enterprise_local_full_schema_proof before PASS when applicable."
+      ]
+    },
+    {
+      "id": "harness-rejects-partial-proof",
+      "prompt": "Harness a verification report for an async invoice inventory workflow where most tests pass, but the report verdict is PARTIALLY PROVED because duplicate worker, stale running recovery, print retry, or field-level payload proof is missing.",
+      "expected_output": "Harness must FAIL. PARTIALLY PROVED is not a reduced-confidence pass; it blocks PR-ready, merge-ready, ship-ready, and done claims until the missing proof cells are fully proven or explicitly narrowed out of scope before contract lock.",
+      "assertions": [
+        "Treats PARTIALLY PROVED as FAIL, not WARN.",
+        "Blocks PR-ready, merge-ready, ship-ready, and done claims on partial proof.",
+        "Requires missing async lifecycle and field-level proof before pass.",
+        "Mentions validate_release_readiness.py or structured proof validation as a mechanical guard."
+      ]
+    },
+    {
+      "id": "harness-rejects-missing-ratchet-and-local-schema-proof",
+      "prompt": "Harness a PR that extracts service logic into deep modules and changes SQL query behavior. Verification has passing unit tests but no enterprise_architecture_ratchet or enterprise_local_full_schema_proof records.",
+      "expected_output": "Harness must FAIL until architecture ratchets and local full-schema proof are mechanically present: public seam, owner layer, allowed dependency direction, forbidden imports, architecture tests, future regression trap, local Postgres restore/migration command, runtime query proof, safety controls, and cleanup or structured not-applicable proof with applicability predicate, source evidence, and non-DB scope.",
+      "assertions": [
+        "Requires enterprise_architecture_ratchet before PASS for boundary or extraction work.",
+        "Requires enterprise_local_full_schema_proof before PASS for schema/query work.",
+        "Rejects passing unit tests as sufficient schema/query proof.",
+        "Rejects deep modules without public seam consumer proof.",
+        "Blocks PR-ready and done claims when local Postgres proof is absent or unsafe."
+      ]
+    },
+    {
+      "id": "harness-rejects-warn-for-blocking-gaps",
+      "prompt": "Harness a verification artifact where enterprise_local_full_schema_proof is missing and the report proposes WARN because most tests pass.",
+      "expected_output": "Harness must return FAIL, not WARN. Missing gating records, partial proof, stale proof, unsafe DB targets, and unproven release-readiness cells are blocking failures.",
+      "assertions": [
+        "Rejects WARN for missing required release-readiness records.",
+        "Treats most-tests-pass as insufficient.",
+        "Requires FAIL until the missing gate is proven or structurally not applicable with source evidence and an applicability predicate."
+      ]
+    },
+    {
+      "id": "harness-rejects-key-name-only-release-proof",
+      "prompt": "Harness a JSON artifact that mentions every required enterprise_* key in prose and has one unrelated PASS token, but enterprise_architecture_ratchet and enterprise_local_full_schema_proof have no structured passing records.",
+      "expected_output": "Harness must FAIL because validate_release_readiness.py requires each required key to have its own structured PASS/PROVED or structured not-applicable record with required fields. Key-name mentions and unrelated PASS tokens are not proof.",
+      "assertions": [
+        "Rejects key-name-only evidence.",
+        "Requires per-key structured PASS/PROVED records.",
+        "Requires architecture ratchet and local full-schema fields when applicable."
+      ]
+    },
+    {
+      "id": "harness-rejects-contradictory-release-records",
+      "prompt": "Harness a verification artifact where enterprise_release_risk has one structured PASS record and one sibling FAIL/WARN record for the same current head.",
+      "expected_output": "Harness must FAIL. Any explicit FAIL, WARN, partial, or unproved record for a required release-readiness key blocks the key even if another sibling record says PASS.",
+      "assertions": [
+        "Rejects mixed PASS and FAIL/WARN records for the same required key.",
+        "Does not let one passing sibling mask contradictory evidence.",
+        "Treats partial proof as FAIL until every structured record is passing or strongly not applicable."
+      ]
+    },
+    {
+      "id": "harness-rejects-stale-or-wrong-scope-release-records",
+      "prompt": "Harness a PR-backed verification artifact whose enterprise_* release-readiness records have old timestamps, wrong head_sha, missing base_sha, or base_sha that does not match the current PR base.",
+      "expected_output": "Harness must FAIL until every required release-readiness record is current-head/current-base, has a valid fresh timestamp, and matches the PR head/base used by the gate.",
+      "assertions": [
+        "Requires head_sha on every release-readiness record.",
+        "Requires base_sha for PR-scoped readiness evidence.",
+        "Rejects stale timestamps and wrong-head proof."
+      ]
+    },
+    {
+      "id": "harness-rejects-secret-bearing-receipts",
+      "prompt": "Harness a high-risk non-draft PR whose evidence is clean but the receipt JSONL contains DATABASE_URL=mysql://user:pass@host/db, API_KEY=secret, .pgpass, or command output naming an ambiguous RDS snapshot.",
+      "expected_output": "Harness must FAIL because receipt logs are part of the proof surface. Secret-bearing argv/output, raw DB URLs, password-file references, production-like DB sources, and ambiguous remote snapshots are blocking evidence hygiene failures.",
+      "assertions": [
+        "Scrubs receipt JSONL, not only the final markdown evidence.",
+        "Rejects raw DB/service URLs and secret env assignments.",
+        "Rejects ambiguous RDS snapshot or production-like DB source evidence."
+      ]
+    },
+    {
+      "id": "harness-rejects-weak-not-applicable-local-schema",
+      "prompt": "Harness schema/query/data-sensitive work where enterprise_local_full_schema_proof is marked NOT_APPLICABLE with only reason: doc only, while changed_runtime_paths include a service, route, migration, SQL, invoice, inventory, tenant, Shopify, or REX path.",
+      "expected_output": "Harness must FAIL. Local full-schema proof cannot be self-waived for DB-sensitive paths; N/A needs applicability_predicate, source_evidence, changed paths proving doc-only/no-runtime/no-db scope, current head, and a non-DB scope classification.",
+      "assertions": [
+        "Rejects vague not-applicable reasons.",
+        "Requires applicability predicate, source evidence, changed paths, and non-DB scope classification.",
+        "Blocks N/A when schema/query/data-sensitive paths changed."
+      ]
+    },
+    {
+      "id": "harness-requires-async-field-matrix-release-trace",
+      "prompt": "Harness an async invoice/order/inventory workflow where the plan had an Async And Field Contract Matrix, but release evidence lacks structured proof tying producer fields, worker payload, DB/read-model state, UI lock/rehydration, and lifecycle counterexamples to commands.",
+      "expected_output": "Harness must FAIL until async/field matrix items are carried into structured release-readiness records and command evidence. Passing generic async tests is not enough when exact field spelling or lifecycle proof is absent.",
+      "assertions": [
+        "Requires async field matrix obligations to survive into harness evidence.",
+        "Requires exact producer/consumer field proof and lifecycle counterexamples.",
+        "Rejects generic async success proof for invoice/order/inventory workflows."
+      ]
+    },
+    {
+      "id": "harness-rejects-missing-intent-srp-query-gates",
+      "prompt": "Harness a PR-ready claim where review, forge, and verify passed generally, but the verification artifact has no intent-continuity record, no touched-file SRP proof for a mixed service that was changed, and no DB/query ownership proof for a read-only report query.",
+      "expected_output": "Harness must FAIL. Ship, PR-ready, merge-ready, and done claims require structured intent-continuity, touched-file SRP, and DB/query ownership gate records. The read-only report query must have owner seam, current DB/schema, tenant/owner scope, bounded proof, readback expectation, cleanup, and redaction evidence; the mixed service must show its contracted fix-now refactor or a blocked/narrowed non-goal.",
+      "assertions": [
+        "Requires intent_continuity_gate before PASS.",
+        "Requires touched_file_srp_gate before PASS.",
+        "Requires db_query_ownership_gate for read-only SELECT/report queries before PASS.",
+        "Treats missing intent, SRP, and DB ownership records as FAIL, not WARN.",
+        "Blocks PR-ready, merge-ready, ship-ready, and done claims."
+      ]
+    },
+    {
+      "id": "harness-requires-last150-trap-closure-and-ab-proof",
+      "prompt": "Harness an enterprise skill update based on the last 150 dev commits. The report says skills are updated, but only lists comment categories and does not show current-head skill evals, mirrored roots, or baseline-vs-updated proof.",
+      "expected_output": "Harness must FAIL until last-150 trap closure has structured proof, skill evals validate, mirrored roots are proven current, and A/B results show the updated skills catch accepted trap classes better than the baseline or explain a deterministic fallback.",
+      "assertions": [
+        "Requires structured last-150 trap closure evidence, not comment-category prose only.",
+        "Requires skill evals or validation to include the new trap classes.",
+        "Requires canonical and mirrored enterprise skill roots to be current or a blocker named.",
+        "Requires baseline-vs-updated A/B proof for accepted eval cases.",
+        "Labels deterministic A/B separately when model-run A/B is unavailable."
+      ]
+    }
+  ]
+}

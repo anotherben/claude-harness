@@ -1,0 +1,4 @@
+interface:
+  display_name: "GH Issues"
+  short_description: "Publish diagnosis packets to GitHub issues"
+  default_prompt: "Use $gh-issues to turn this diagnose.build_packet.v1 JSON packet into deduped GitHub ready-for-agent issues."

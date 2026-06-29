@@ -1,0 +1,72 @@
+{
+  "skill_name": "enterprise-brainstorm",
+  "definition_of_100_percent": [
+    "user_intent_extracted_before_design",
+    "source_and_existing_assets_researched",
+    "design_contains_quality_gate",
+    "proof_ledger_for_load_bearing_claims",
+    "mechanical_build_packet_seed_created",
+    "intent_continuity_ledger_seeded",
+    "alternatives_decision_rationale_required",
+    "touched_file_srp_seed_created",
+    "db_query_ownership_seed_created",
+    "risks_failure_modes_and_security_named",
+    "handoff_ready_for_stack_review_or_plan"
+  ],
+  "evals": [
+    {
+      "id": "brainstorm-requires-source-discovery",
+      "prompt": "Brainstorm a supplier portal workflow change where existing services and database ownership are unknown.",
+      "expected_output": "The brainstorm skill must research the current source, existing assets, data model, integrations, risks, and failure modes before producing a TDD, and must not invent architecture from the prompt alone.",
+      "assertions": [
+        "Requires source discovery before design claims.",
+        "Names existing assets and ownership seams.",
+        "Includes a quality gate before presenting the design."
+      ]
+    },
+    {
+      "id": "brainstorm-blocks-incomplete-design",
+      "prompt": "Create a TDD for a money/order workflow but skip failure modes and observability.",
+      "expected_output": "The brainstorm skill must fail the quality gate until success criteria, data model, API contract, threat model, failure modes, rollback, observability, and open questions are present.",
+      "assertions": [
+        "Does not present an incomplete design as ready.",
+        "Requires failure modes and observability for the design.",
+        "Locks handoff only when the quality gate passes."
+      ]
+    },
+    {
+      "id": "brainstorm-captures-domain-language",
+      "prompt": "Brainstorm a Smart PO change where the user says order, supplier order, purchase order, and draft PO interchangeably.",
+      "expected_output": "The brainstorm skill must challenge overloaded terms, propose canonical domain language, capture avoided synonyms, detect code/user-language conflicts, and identify ADR-worthy decisions only when the trade-off is durable.",
+      "assertions": [
+        "Challenges overloaded or conflicting domain terms.",
+        "Proposes canonical terms and avoided synonyms.",
+        "Surfaces contradictions between code and user language.",
+        "Limits ADR recommendations to hard-to-reverse, surprising, real trade-off decisions."
+      ]
+    },
+    {
+      "id": "brainstorm-seeds-proof-and-build-packet",
+      "prompt": "Brainstorm a supplier portal analytics feature where the prompt names vague affected services, unknown DB ownership, and no known test locations.",
+      "expected_output": "The brainstorm skill must produce a Proof Ledger with load-bearing claims marked proven, assumed, or blocked, and a Mechanical Build Packet Seed that names probable allowed runtime/test/artifact paths, expected RED/GREEN proof surfaces, forbidden changes, and refusal conditions. It must not mark the TDD ready for plan if load-bearing claims remain blocked without an explicit next proof action.",
+      "assertions": [
+        "Requires a Proof Ledger for load-bearing source, schema, path, and behavior claims.",
+        "Creates a Mechanical Build Packet Seed instead of leaving plan/build to discover paths or tests.",
+        "Marks unknown DB ownership or test locations as UNKNOWN or blocked with required next evidence.",
+        "Prevents ready handoff when blocked proof would force build to guess."
+      ]
+    },
+    {
+      "id": "brainstorm-preserves-intent-and-ownership",
+      "prompt": "Brainstorm a vibe-level request to make supplier analytics enterprise-ready. The likely work touches a service that already handles reporting, syncing, and formatting, plus a read-only DB report query.",
+      "expected_output": "The brainstorm skill must create an Intent Continuity Ledger linking original user words to business outcome, operator acceptance, non-goals, source evidence, and proof. It must compare incumbent/no-change and a credible alternative before selecting a design, seed a Touched File SRP/Refactor assessment that marks mixed-responsibility touched files fix-now unless blocked or narrowed, and seed a DB/Query Ownership packet for the read-only report query with owner seam, scope predicates, bounded proof, readback expectation, and cleanup.",
+      "assertions": [
+        "Creates an Intent Continuity Ledger for vague enterprise intake.",
+        "Includes Alternatives And Decision Rationale before choosing design.",
+        "Seeds touched-file SRP/refactor classification for likely touched files.",
+        "Requires DB/query ownership for read-only report queries.",
+        "Does not hand off as ready while load-bearing ownership or SRP rows are UNKNOWN without next proof action."
+      ]
+    }
+  ]
+}

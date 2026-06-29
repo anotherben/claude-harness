@@ -1,0 +1,4 @@
+interface:
+  display_name: "Daily Domain Migration Selector"
+  short_description: "Rank services for domain migration"
+  default_prompt: "Use $daily-domain-migration-selector read-only to pick today's 2-5 Helpdesk service-to-domain migration candidates, enforce hard stops, and return lane cards."

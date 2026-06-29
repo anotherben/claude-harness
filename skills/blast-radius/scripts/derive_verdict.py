@@ -51,6 +51,38 @@ def derive_verdict(args: argparse.Namespace) -> tuple[str, list[str]]:
     ]
 
 
+def recommend_diagnose_status(args: argparse.Namespace, verdict: str) -> tuple[str, list[str]]:
+    blockers: list[str] = []
+    if args.unresolved_threads > 0:
+        blockers.append(f"unresolved_threads={args.unresolved_threads}")
+    if args.live_schema == "blocked":
+        blockers.append("live_schema=blocked")
+    if args.untested_important != "none":
+        blockers.append(f"untested_important={args.untested_important}")
+    if args.mandatory_patterns == "failed":
+        blockers.append("mandatory_patterns=failed")
+    if args.prior_unclosed != "none":
+        blockers.append(f"prior_unclosed={args.prior_unclosed}")
+
+    if blockers:
+        return "blocked", blockers
+
+    if args.critical > 0 or args.high > 0 or args.medium > 0:
+        evidence = []
+        if args.critical > 0:
+            evidence.append(f"critical={args.critical}")
+        if args.high > 0:
+            evidence.append(f"high={args.high}")
+        if args.medium > 0:
+            evidence.append(f"medium={args.medium}")
+        return "root_cause_ready", evidence
+
+    if verdict == "SAFE TO PROCEED":
+        return "fixed_pending_verify", ["no blocking blast-radius findings"]
+
+    return "blocked", ["verdict did not map cleanly"]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Apply blast-radius verdict precedence mechanically.",
@@ -80,11 +112,20 @@ def main() -> None:
         choices=("passed", "failed"),
         default="passed",
     )
+    parser.add_argument(
+        "--emit-diagnose-status",
+        action="store_true",
+        help="Also print a diagnose.build_packet.v1 status recommendation for handoffs.",
+    )
     args = parser.parse_args()
 
     verdict, reasons = derive_verdict(args)
     print(f"Verdict: {verdict}")
     print("Rationale: " + "; ".join(reasons))
+    if args.emit_diagnose_status:
+        status, evidence = recommend_diagnose_status(args, verdict)
+        print(f"Diagnose status recommendation: {status}")
+        print("Blocking evidence: " + "; ".join(evidence))
 
 
 if __name__ == "__main__":

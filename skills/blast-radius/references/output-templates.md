@@ -36,6 +36,22 @@ Save to, when writes are allowed: `docs/blast-radius/<YYYY-MM-DD>-<change-slug>.
 **Verdict**: <SAFE TO PROCEED | NEEDS REVIEW | DO NOT MERGE | DO NOT MERGE / REVIEW THREADS OPEN>
 **Rationale**: <one sentence on why the verdict>
 
+## Diagnostic Gate Summary
+
+Use this block when another diagnostic skill, cohort contract, or `/goal` handoff
+needs to consume the trace mechanically.
+
+| Field | Value |
+|---|---|
+| Gate | `blast-radius` |
+| Verdict | `<SAFE TO PROCEED | NEEDS REVIEW | DO NOT MERGE | DO NOT MERGE / REVIEW THREADS OPEN>` |
+| Consensus status | `<AGREED | DISAGREED_RESOLVABLE | DISAGREED_BLOCKED>` |
+| Diagnose status recommendation | `<blocked | repro_ready | root_cause_ready | build_ready | fixed_pending_verify>` |
+| Issue class | `<sibling_bug | missed_caller | schema_drift | unresolved_review_thread | proof_gap | other>` |
+| Blocking finding IDs | `<BR-HIGH-001, BR-MED-002, or none>` |
+| Disagreement ledger | `<finding IDs, evidence IDs, or unresolved question>` |
+| Next step | `<exact diagnostic, build, eval, or /goal handoff>` |
+
 ## PR Review State
 
 (PR mode only. Omit for pure local diff/file/symbol traces.)

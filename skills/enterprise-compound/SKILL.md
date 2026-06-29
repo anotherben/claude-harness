@@ -1,461 +1,80 @@
 ---
 name: enterprise-compound
-description: "Captures institutional knowledge after solving problems. Documents what was solved, how, and how to prevent it. Searchable by tags and categories. Builds organizational memory that compounds over time. Use after fixes are verified or features are complete."
+description: Use when verified enterprise work or a resolved debugging session should be captured as searchable institutional knowledge with prevention guidance
 ---
 
+# Enterprise Compound
+## Global Precheck
 
-### LEARNED BEHAVIORS (auto-loaded)
+Before reading further, writing artifacts, delegating, or changing files, run:
 
-Before starting, load domain-specific lessons:
-1. Call `cortex_lessons(tag='feedback:COMPOUND')` to retrieve corrections specific to this skill
-2. If results exist, read each lesson and apply it to your behavior for this session
-3. During execution, if the user corrects your approach, write a domain-tagged annotation:
-   ```json
-   {"target":"skill:enterprise-compound","note":"<correction>","author":"enterprise-compound","tags":["feedback","feedback:COMPOUND","lesson"],"timestamp":"<ISO>"}
-   ```
-   Append to `.cortex/knowledge.jsonl`
-
-# Enterprise Compound — Institutional Knowledge Capture
-
-## Philosophy
-
-Every solved problem is an investment. If the solution lives only in git history, it is lost. If it lives in a searchable, tagged, cross-referenced knowledge base, it compounds. The next person (or agent) who hits the same class of problem finds the answer in seconds instead of hours.
-
-Three principles:
-1. **Capture at the moment of understanding.** The best time to document is right after solving — before context fades.
-2. **Structure for retrieval, not for reading.** Tags, categories, and YAML frontmatter make solutions findable.
-3. **Prevent, not just solve.** Every solution document includes a prevention section — how to stop this class of problem from recurring.
-
-```
-/enterprise-compound                          # capture the last fix/feature from the current session
-/enterprise-compound fix: PO double receipt    # capture a specific solution
-/enterprise-compound feature: kanban board     # capture a feature's key decisions
-```
-
----
-
-## Triggers
-
-Run this skill when:
-
-| Event | Trigger |
-|-------|---------|
-| Bug fix verified and committed | Capture the root cause, investigation path, and fix |
-| Feature verified and committed | Capture key design decisions, tradeoffs, and patterns |
-| Debugging session found a root cause | Capture even if the fix is not yet applied |
-| Architecture decision made | Capture the decision, alternatives considered, and rationale |
-| Gotcha discovered | Capture the trap and how to avoid it |
-| Performance issue resolved | Capture the bottleneck, measurement, and optimization |
-| Integration quirk found | Capture the external system behavior and workaround |
-
----
-
-## Step 1: Check for Duplicates
-
-Before creating a new solution document, search for existing ones.
-
-### Search existing solutions:
 ```bash
-ls docs/solutions/ 2>/dev/null | grep -i "<keywords>"
+enterprise-precheck --skill enterprise-compound
 ```
 
-### Search memory for prior knowledge:
-Query memory (knowledge graph if available) with the problem domain keywords to check if this was already captured.
+If it exits non-zero, stop and report stderr verbatim. Do not hand-craft packet files or evidence markers to bypass it.
 
-### Search git history:
-```bash
-git log --oneline --all --grep="<keywords>" | head -10
-```
 
-**If a duplicate exists**: update the existing document instead of creating a new one. Add the new findings, update the date, and note what changed.
+Capture the lesson while it is still fresh.
 
-**If a near-duplicate exists**: link to it. Cross-reference in both documents.
+## Required Workflow
 
----
+1. Run the agent-bound compound gate in [agent-stage-gates.md](../enterprise/references/agent-stage-gates.md).
+2. Search for an existing related solution note.
+3. If none exists, create one under `docs/solutions/YYYY-MM-DD-<slug>.md`.
+4. Use [solution-template.md](references/solution-template.md).
+5. Include structured `enterprise_prevention_records` whenever the lane involved a failed review, unresolved conversation, Copilot finding, or review-thread closeout.
+6. Validate the solution artifact with `tools/enterprise-skills/scripts/validate_structured_proof.py`.
+7. Focus on retrieval and prevention, not storytelling.
 
-## Step 2: Classify the Solution
+## Review Feedback Harvester
 
-Determine the solution type and severity to guide the document structure.
+When the lane includes PR review, Copilot review, Codex review, forge bugs, or verify defects, compound the learning before closing:
 
-| Type | When | Sections Required |
-|------|------|-------------------|
-| `bug-fix` | Fixed a defect | Problem, Investigation, Root Cause, Solution, Prevention |
-| `feature` | Built new functionality | Problem, Design Decision, Implementation, Key Patterns, Gotchas |
-| `architecture` | Made a structural decision | Context, Decision, Alternatives, Consequences |
-| `gotcha` | Found a non-obvious trap | Trap, Symptom, Cause, Avoidance |
-| `performance` | Resolved a performance issue | Symptom, Measurement, Bottleneck, Optimization, Verification |
-| `integration` | External system quirk | System, Behavior, Workaround, Documentation Gap |
+- Record each accepted P1/P2/P3 finding, root cause, missed prevention point, fix pattern, and regression proof.
+- Route each accepted finding to exactly one prevention target: plan question, contract postcondition, build authority scan, review check, forge lens, verify command, CI/gate recommendation, repo trap, or skill eval.
+- Classify whether the missed prevention point was intent continuity, touched-file
+  SRP/refactor, DB/query ownership, runtime proof, or another class. Intent/SRP/
+  DB ownership misses must update the corresponding ledger, packet, lens, gate,
+  trap, or eval before closeout or be recorded as blocked.
+- If a useful finding is advisory-only, record it as `advisory harvested` rather than silently dropping it.
+- If the same finding class appears twice, update the repo trap matrix or recommend a deterministic gate.
 
-| Severity | When |
-|----------|------|
-| `critical` | Data corruption, security, production outage |
-| `high` | Functional bug affecting users, performance degradation |
-| `medium` | Incorrect behavior in edge cases, developer experience |
-| `low` | Cosmetic, documentation, minor inconvenience |
+## Required Content
 
----
+- the problem or decision
+- the root cause or rationale
+- the actual change
+- the blast radius or related checks
+- the prevention pattern
+- durable domain language, avoided synonyms, or ADR rationale when the lane
+  resolved load-bearing terminology or decisions
+- intent-continuity, touched-file SRP/refactor, and DB/query ownership prevention
+  learning when those classes were relevant
+- machine-readable prevention records when review failure learning applies
+- tags that make the note searchable later
 
-## Step 3: Write the Solution Document
+This stage is post-verification knowledge capture.
 
-### File location: `docs/solutions/YYYY-MM-DD-<slug>.md`
+## Proof Boundary Rule
 
-Create the directory if it does not exist:
-```bash
-mkdir -p docs/solutions
-```
+- Carry forward the upstream proof boundary exactly as verified.
+- Do not upgrade a prior `function-level`, `slice-level`, or `domain-level` result into `full-system`.
+- If the verified work still had unproven legs, keep the fail-closed posture explicit in the compound note.
+- Do not use the solution note itself as evidence that unresolved enterprise scope is now closed.
 
-### Document Template
+## PR Review Failure Learning Rule
 
-````markdown
----
-title: "<descriptive title>"
-date: YYYY-MM-DD
-type: bug-fix | feature | architecture | gotcha | performance | integration
-severity: critical | high | medium | low
-module: <affected module — e.g., "orders", "sync", "kanban", "auth">
-files:
-  - <file path 1>
-  - <file path 2>
-tags:
-  - <tag1 — e.g., "sql", "race-condition", "null-guard", "rex-api">
-  - <tag2>
-  - <tag3>
-related:
-  - <path to related solution doc, if any>
-  - <related commit hash, if useful>
----
+When compound follows a failed PR review, unresolved conversation, Copilot finding, merge-blocking review thread, or `enterprise-pr-review` run, the solution note must include a `Review Failure Prevention` section.
 
-# <Title>
+That section must name, for every real finding:
 
-## Problem
+- reviewer finding and root cause
+- which upstream stage should have caught it first: `plan`, `contract`, `build`, `review`, `forge`, `harness`, or `verify`
+- the exact prevention upgrade: trap-matrix entry, repo gate, deterministic script, contract invariant/postcondition, plan rule, or skill eval
+- whether the upgrade targets the Intent Continuity Ledger, Touched File SRP
+  Assessment, DB/Query Ownership Packet, review/forge/verify lens, or harness gate
+- whether the upgrade was implemented now or recorded as a dated follow-up blocker
+- a matching structured `enterprise_prevention_records` entry with status `implemented`, `tracked-follow-up`, `gate-added`, `eval-added`, or `blocked-with-reason`
 
-[2-4 sentences describing what went wrong or what was needed. Include the user-visible symptom if applicable.]
-
-**Reported as**: [exact error message, user complaint, or test failure]
-**Affected area**: [module, endpoint, component]
-**Impact**: [who was affected and how]
-
-## Investigation
-
-[What was checked, in what order, and what was ruled out. This section is valuable because it saves the next person from repeating dead-end investigations.]
-
-1. **First checked**: [what and why] — Result: [what was found]
-2. **Then checked**: [what and why] — Result: [what was found]
-3. **Ruled out**: [what was NOT the cause and why]
-4. **Key insight**: [the moment of understanding — what led to the root cause]
-
-### Execution Trace
-```
-[entry point] → [layer] → [layer] → ROOT CAUSE at [file:line]
-```
-
-## Root Cause
-
-[For bug-fix type. 2-3 sentences explaining the actual defect — not the symptom.]
-
-**What**: [the specific defect]
-**Where**: [file:line]
-**Why**: [how it got there — design oversight, copy-paste without adaptation, missing requirement, etc.]
-
-## Design Decision
-
-[For feature and architecture types. What was decided and why.]
-
-**Decision**: [what was chosen]
-**Alternatives considered**:
-1. [Alternative A] — rejected because [reason]
-2. [Alternative B] — rejected because [reason]
-
-**Rationale**: [why this approach was chosen over alternatives]
-
-## Solution
-
-[What was done to fix/implement. Exact files, exact changes, exact reasoning.]
-
-### Changes
-| File | Change | Why |
-|------|--------|-----|
-| `path/to/file.js` | [what changed] | [why this specific change] |
-| `path/to/other.js` | [what changed] | [why this specific change] |
-
-### Key Code
-```javascript
-// Only include code if it illustrates a non-obvious pattern or technique
-// that someone would need to see to understand the solution
-```
-
-### Blast Radius
-[For bug-fix type. What else was checked and fixed as part of the blast radius scan.]
-
-- [Sibling 1]: [same bug / OK]
-- [Sibling 2]: [same bug / OK]
-
-## Prevention
-
-[How to prevent this CLASS of problem from recurring. Not "don't make this mistake" — concrete, actionable prevention.]
-
-### Checklist (add to relevant skill/process)
-- [ ] [specific check to add to a review checklist]
-- [ ] [specific pattern to follow in future code]
-
-### Pattern to Follow
-```javascript
-// If this solution established a pattern, show the pattern here
-// so future code can copy it
-```
-
-### Anti-Pattern to Avoid
-```javascript
-// If this bug came from a common anti-pattern, show what NOT to do
-// with a comment explaining why
-```
-
-### Automation Opportunity
-[Can this class of bug be caught automatically? Lint rule, test pattern, pre-commit hook?]
-
-## Tags Reference
-
-[Brief explanation of each tag for searchability]
-- `<tag1>`: [why this tag — what category it represents]
-- `<tag2>`: [why this tag]
-````
-
----
-
-## Step 4: Save to Memory
-
-After writing the solution document, save the key knowledge for cross-session retrieval. Use whichever memory backend is available (knowledge graph MCP, or filesystem fallback).
-
-### What to save:
-
-**Always save**:
-- The root cause (for bugs) or the key design decision (for features)
-- The prevention guidance
-- Any gotchas discovered during investigation
-
-**Save format**:
-```
-Topic: [module] — [problem/feature summary]
-Type: [solution | gotcha | decision | pattern]
-Key finding: [1-2 sentences — the essential knowledge]
-Prevention: [1 sentence — how to avoid this in future]
-Reference: docs/solutions/YYYY-MM-DD-<slug>.md
-Tags: [comma-separated tags]
-```
-
-### Memory save commands:
-
-For bug fixes and gotchas — save as issue type:
-```
-MEMORY: save — type "issue", tags matching the document tags.
-Content: the root cause, the fix, and the prevention pattern.
-```
-
-For features and architecture — save as decision type:
-```
-MEMORY: save — type "decision", tags matching the document tags.
-Content: the decision, the rationale, and the key patterns.
-```
-
-For patterns and anti-patterns — save as pattern type:
-```
-MEMORY: save — appropriate tags.
-Content: the pattern to follow or avoid, with code example.
-```
-
----
-
-## Step 4b: Write Learning to Shared Standards (Optional)
-
-If your project uses a shared knowledge base (Obsidian vault, wiki, standards directory), also append a summary there. This ensures compound learnings are visible to ALL agents, not just the agent that captured them.
-
-### Learnings file format
-
-Append a new entry to your project's standards/learnings file:
-
-```markdown
-### {date} — {title}
-**Type:** {type} | **Severity:** {severity} | **Module:** {module}
-**Root cause:** {1-sentence root cause or key decision}
-**Prevention:** {1-sentence prevention guidance}
-**Source:** `docs/solutions/{filename}`
-**Tags:** {tags}
-```
-
-### Also capture gotchas and critical patterns
-
-If the solution type is `gotcha`, `integration`, or severity is `critical`, also update the relevant standard file in your project's standards directory:
-- **SQL gotchas** → append to coding standards under Gotchas
-- **Security issues** → append to security standards under relevant section
-- **Integration quirks** → append to tech stack docs under relevant integration
-
-Keep updates minimal — 1-2 lines describing the trap and the fix. Link to the full solution doc.
-
----
-
-## Step 5: Cross-Reference
-
-### Link from MEMORY.md
-
-If the solution is significant (critical/high severity, or establishes a new pattern), add a reference to the relevant section of `MEMORY.md`.
-
-### Link from related solutions
-
-If the document references or is referenced by other solutions, update both documents with cross-references in the `related` frontmatter field.
-
-### Link from affected code
-
-For critical bugs, consider adding a brief comment in the code pointing to the solution document:
-
-```javascript
-// GOTCHA: External API returns success status even on failure.
-// See docs/solutions/YYYY-MM-DD-api-error-as-success.md
-```
-
-Use this sparingly — only for traps that are genuinely surprising and would catch future developers.
-
----
-
-## Examples
-
-### Example 1: Bug Fix Solution
-
-```yaml
----
-title: "getStaffUsers returns inactive and system accounts"
-date: 2026-03-08
-type: bug-fix
-severity: high
-module: users
-files:
-  - src/services/user/helpers.js
-  - src/services/user/queries.js
-tags:
-  - sql
-  - filter-gap
-  - blast-radius
-  - staff-visibility
-related:
-  - docs/contracts/2026-03-08-staff-visibility-contract.md
----
-```
-
-### Example 2: Architecture Decision
-
-```yaml
----
-title: "Placeholder product system design — dual-placeholder approach"
-date: 2026-03-05
-type: architecture
-severity: medium
-module: orders
-files:
-  - src/services/placeholderProductService.js
-  - src/jobs/placeholderHealJob.js
-tags:
-  - placeholder
-  - order-sync
-  - design-decision
-related:
-  - docs/plans/2026-03-05-placeholder-products-plan.md
----
-```
-
-### Example 3: Gotcha
-
-```yaml
----
-title: "External API rejects orders with total <= 0"
-date: 2026-03-06
-type: gotcha
-severity: medium
-module: external-api
-files:
-  - src/services/orderService.js
-tags:
-  - external-api
-  - platform-limitation
-  - order-sync
-  - zero-dollar
----
-```
-
----
-
-## Quick Capture Mode
-
-For low-severity gotchas or quick patterns, use a shortened format:
-
-```markdown
----
-title: "<title>"
-date: YYYY-MM-DD
-type: gotcha
-severity: low
-module: <module>
-tags: [<tag1>, <tag2>]
----
-
-# <Title>
-
-**Trap**: [what goes wrong]
-**Cause**: [why]
-**Fix**: [what to do instead]
-```
-
-Save to Memora and move on. Full investigation section is not needed for simple gotchas.
-
----
-
-## Metrics — How Knowledge Compounds
-
-Track these to see the value of captured knowledge:
-
-| Metric | How to Measure |
-|--------|---------------|
-| Solutions referenced | How often a solution doc is read by agents (memory recall hits) |
-| Time saved | When a solution doc prevents re-investigation of a known issue |
-| Duplicate bugs prevented | When a prevention checklist catches a bug before it ships |
-| Pattern adoption | When a documented pattern is reused in new code |
-
-The ROI of a solution document is: **(time to investigate originally) x (number of times referenced)**.
-
-A 2-hour investigation documented in 10 minutes saves 2 hours every time someone hits the same class of problem. After 3 references, the document has paid for itself 6x over.
-
----
-
-## Output — Compound Report
-
-Print this after saving the solution:
-
-```
-═══════════════════════════════════════════════════════════
-                   ENTERPRISE COMPOUND REPORT
-═══════════════════════════════════════════════════════════
-
-## Knowledge Captured
-Type:     [bug-fix / feature / architecture / gotcha / performance / integration]
-Severity: [critical / high / medium / low]
-Module:   [module name]
-
-## Document
-Path: docs/solutions/YYYY-MM-DD-<slug>.md
-Tags: [tag1, tag2, tag3]
-
-## Key Knowledge
-[1-2 sentences — the essential finding]
-
-## Prevention Added
-[1 sentence — what checklist item or pattern was established]
-
-## Memora
-Saved: [YES — type, tags, backend used]
-Cross-references: [list of related docs updated]
-
-## Knowledge Base Status
-Total solutions: [N] documents in docs/solutions/
-This module: [N] solutions for [module name]
-This tag: [N] solutions tagged [primary tag]
-
-═══════════════════════════════════════════════════════════
-```
+If no prevention upgrade is possible, mark the item `BLOCKED` and explain why. A compound note that only says "add more tests" or "be more careful" fails this stage.

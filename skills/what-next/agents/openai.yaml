@@ -1,0 +1,4 @@
+interface:
+  display_name: "What Next"
+  short_description: "Choose the next safe agent action"
+  default_prompt: "I am stuck or have a plan or issue list; choose the next safe action and give me the exact skill or agent prompt."

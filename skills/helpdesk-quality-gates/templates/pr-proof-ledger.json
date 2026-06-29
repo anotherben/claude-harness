@@ -1,0 +1,67 @@
+{
+  "schema_version": "helpdesk.quality_gates.pr_proof_ledger.v1",
+  "artifact_type": "pr_proof_ledger",
+  "goal_id": "{{goal_id}}",
+  "head_sha": "{{current_head_sha}}",
+  "base_ref": "{{base_ref}}",
+  "changed_files": [
+    "{{changed_file}}"
+  ],
+  "proof_commands": [
+    "{{proof_command}}"
+  ],
+  "required_checks": [
+    "{{required_check}}"
+  ],
+  "review_threads": [
+    "{{review_thread_status}}"
+  ],
+  "waiters": [
+    "{{waiter_status}}"
+  ],
+  "pre_merge_sweep": [
+    "{{pre_merge_sweep_status}}"
+  ],
+  "rerun_after_last_push": [
+    "{{rerun_after_last_push_status}}"
+  ],
+  "older_than_head": false,
+  "pr": {
+    "number": "{{pr_number}}",
+    "base_branch": "{{base_branch}}",
+    "head_branch": "{{head_branch}}",
+    "current_head_sha": "{{current_head_sha}}"
+  },
+  "risk_tier": "{{goal_contract.goal.risk_tier}}",
+  "required_proofs_source": "goal_contract.required_proof_profiles[goal_contract.goal.risk_tier]",
+  "required_proofs": [
+    "{{generated_required_proof_id}}"
+  ],
+  "proofs": [
+    {
+      "id": "{{proof_id}}",
+      "required_by": "{{generated_required_proof_id}}",
+      "command_or_source": "{{command_or_source}}",
+      "environment": "{{environment}}",
+      "status": "{{pending|pass|fail|blocked|not_applicable}}",
+      "evidence": "{{output_artifact_url_or_summary}}"
+    }
+  ],
+  "current_head_guard": {
+    "proof_subject_sha": "{{proof_subject_sha}}",
+    "current_head_sha": "{{current_head_sha}}",
+    "allowed_post_proof_drift": [
+      "{{allowed_evidence_artifact_path}}"
+    ],
+    "status": "{{pending|pass|fail|blocked}}"
+  },
+  "review_thread_details": {
+    "unresolved_count": "{{unresolved_count}}",
+    "checked_at": "{{iso_timestamp}}",
+    "status": "{{pending|pass|fail|blocked}}"
+  },
+  "ci_details": {
+    "required_checks_status": "{{pending|pass|fail|blocked}}",
+    "checked_at": "{{iso_timestamp}}"
+  }
+}

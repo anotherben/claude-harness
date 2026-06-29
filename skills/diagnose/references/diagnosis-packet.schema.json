@@ -1,0 +1,345 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "diagnosis-packet.schema.json",
+  "title": "Diagnose Build Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "packet_id",
+    "created_at",
+    "repo_root",
+    "head_sha",
+    "branch",
+    "source_issue_or_pr",
+    "original_prompt",
+    "diagnosis_status",
+    "root_cause_chain",
+    "ownership",
+    "srp_refactor",
+    "domain_refactor",
+    "seam",
+    "write_leak_impact",
+    "recent_trap_replay",
+    "evidence_freshness",
+    "sibling_search",
+    "ratchets",
+    "root_cause_confirmation",
+    "consensus_review",
+    "fix_evals",
+    "goal_prompt",
+    "build_plan",
+    "subagent_tasks",
+    "verification_plan",
+    "blockers",
+    "assumptions",
+    "open_questions",
+    "do_not_do"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "diagnose.build_packet.v1" },
+    "packet_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "minLength": 1 },
+    "repo_root": { "type": "string", "minLength": 1 },
+    "head_sha": { "type": ["string", "null"] },
+    "branch": { "type": ["string", "null"] },
+    "source_issue_or_pr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "url", "title"],
+      "properties": {
+        "type": { "type": "string", "enum": ["issue", "pr", "incident", "manual", "unknown"] },
+        "id": { "type": ["string", "number", "null"] },
+        "url": { "type": ["string", "null"] },
+        "title": { "type": ["string", "null"] }
+      }
+    },
+    "original_prompt": { "type": "string" },
+    "diagnosis_status": {
+      "type": "string",
+      "enum": ["blocked", "repro_ready", "root_cause_ready", "build_ready", "fixed_pending_verify"]
+    },
+    "root_cause_chain": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidenceNode" }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "source_of_truth", "consumers", "wrong_owners", "governed_paths"],
+      "properties": {
+        "owner": { "type": ["string", "null"] },
+        "source_of_truth": { "type": ["string", "null"] },
+        "consumers": { "type": "array", "items": { "type": "string" } },
+        "wrong_owners": { "type": "array", "items": { "type": "string" } },
+        "governed_paths": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "srp_refactor": { "$ref": "#/$defs/refactorClassification" },
+    "domain_refactor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "existing_domain", "new_domain_needed", "fix_now", "follow_up", "non_goals"],
+      "properties": {
+        "decision": { "type": "string" },
+        "existing_domain": { "type": ["string", "null"] },
+        "new_domain_needed": { "type": "boolean" },
+        "fix_now": { "type": "array", "items": { "$ref": "#/$defs/taskItem" } },
+        "follow_up": { "type": "array", "items": { "$ref": "#/$defs/taskItem" } },
+        "non_goals": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "seam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["correct_seam", "false_confidence_seams", "missing_seam_findings", "regression_test"],
+      "properties": {
+        "correct_seam": { "type": ["string", "null"] },
+        "false_confidence_seams": { "type": "array", "items": { "type": "string" } },
+        "missing_seam_findings": { "type": "array", "items": { "type": "string" } },
+        "regression_test": { "$ref": "#/$defs/verificationItem" }
+      }
+    },
+    "write_leak_impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "direct_writes",
+        "transitive_writes",
+        "external_side_effects",
+        "leak_paths",
+        "retries_jobs_events",
+        "affected_scope"
+      ],
+      "properties": {
+        "direct_writes": { "type": "array", "items": { "$ref": "#/$defs/evidenceNode" } },
+        "transitive_writes": { "type": "array", "items": { "$ref": "#/$defs/evidenceNode" } },
+        "external_side_effects": { "type": "array", "items": { "$ref": "#/$defs/evidenceNode" } },
+        "leak_paths": { "type": "array", "items": { "$ref": "#/$defs/evidenceNode" } },
+        "retries_jobs_events": { "type": "array", "items": { "$ref": "#/$defs/evidenceNode" } },
+        "affected_scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["records", "users", "tenants", "operators", "integrations"],
+          "properties": {
+            "records": { "type": "array", "items": { "type": "string" } },
+            "users": { "type": "array", "items": { "type": "string" } },
+            "tenants": { "type": "array", "items": { "type": "string" } },
+            "operators": { "type": "array", "items": { "type": "string" } },
+            "integrations": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "recent_trap_replay": { "type": "array", "items": { "$ref": "#/$defs/trapItem" } },
+    "evidence_freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["head_sha", "branch", "runtime", "schema_source", "artifact_subjects", "stale_rejected"],
+      "properties": {
+        "head_sha": { "type": ["string", "null"] },
+        "branch": { "type": ["string", "null"] },
+        "runtime": { "type": ["string", "null"] },
+        "schema_source": { "type": ["string", "null"] },
+        "artifact_subjects": { "type": "array", "items": { "type": "string" } },
+        "stale_rejected": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "sibling_search": { "type": "array", "items": { "$ref": "#/$defs/evidenceNode" } },
+    "ratchets": { "type": "array", "items": { "$ref": "#/$defs/taskItem" } },
+    "root_cause_confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confirmed",
+        "decisive_evidence",
+        "rejected_hypotheses",
+        "remaining_uncertainty",
+        "confirmed_before_build_plan"
+      ],
+      "properties": {
+        "confirmed": { "type": "boolean" },
+        "decisive_evidence": { "type": "array", "items": { "type": "string" } },
+        "rejected_hypotheses": { "type": "array", "items": { "type": "string" } },
+        "remaining_uncertainty": { "type": "array", "items": { "type": "string" } },
+        "confirmed_before_build_plan": { "type": "boolean" }
+      }
+    },
+    "consensus_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agreement_status",
+        "contract_path_or_id",
+        "rounds",
+        "participants",
+        "agreed_issue",
+        "agreed_root_cause",
+        "agreed_resolution",
+        "dissent",
+        "stop_reason"
+      ],
+      "properties": {
+        "agreement_status": {
+          "type": "string",
+          "enum": ["agreed", "blocked", "disputed", "solo_low_risk"]
+        },
+        "contract_path_or_id": { "type": ["string", "null"] },
+        "rounds": { "type": "array", "items": { "type": "string" } },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "agreed_issue": { "type": ["string", "null"] },
+        "agreed_root_cause": { "type": ["string", "null"] },
+        "agreed_resolution": { "type": ["string", "null"] },
+        "dissent": { "type": "array", "items": { "type": "string" } },
+        "stop_reason": { "type": "string" }
+      }
+    },
+    "fix_evals": { "type": "array", "items": { "$ref": "#/$defs/fixEval" } },
+    "goal_prompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pasteable_text", "must_pass_evals", "scope_limits", "do_not_do"],
+      "properties": {
+        "pasteable_text": { "type": "string" },
+        "must_pass_evals": { "type": "array", "items": { "type": "string" } },
+        "scope_limits": { "type": "array", "items": { "type": "string" } },
+        "do_not_do": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "build_plan": { "type": "array", "items": { "$ref": "#/$defs/buildTask" } },
+    "subagent_tasks": { "type": "array", "items": { "$ref": "#/$defs/subagentTask" } },
+    "verification_plan": { "type": "array", "items": { "$ref": "#/$defs/verificationItem" } },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "open_questions": { "type": "array", "items": { "type": "string" } },
+    "do_not_do": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "evidenceNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim", "evidence", "files", "commands", "confidence"],
+      "properties": {
+        "claim": { "type": "string" },
+        "evidence": { "type": "string" },
+        "files": { "type": "array", "items": { "type": "string" } },
+        "commands": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] }
+      }
+    },
+    "taskItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description", "reason", "files", "acceptance"],
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "reason": { "type": "string" },
+        "files": { "type": "array", "items": { "type": "string" } },
+        "acceptance": { "type": "string" }
+      }
+    },
+    "buildTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "owner_role",
+        "description",
+        "files",
+        "dependencies",
+        "acceptance_criteria",
+        "verification",
+        "stop_rule"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "owner_role": { "type": "string" },
+        "description": { "type": "string" },
+        "files": { "type": "array", "items": { "type": "string" } },
+        "dependencies": { "type": "array", "items": { "type": "string" } },
+        "acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+        "verification": { "type": "array", "items": { "$ref": "#/$defs/verificationItem" } },
+        "stop_rule": { "type": "string" }
+      }
+    },
+    "subagentTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "role", "one_job", "scope", "inputs", "outputs", "forbidden"],
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string" },
+        "one_job": { "type": "string" },
+        "scope": { "type": "array", "items": { "type": "string" } },
+        "inputs": { "type": "array", "items": { "type": "string" } },
+        "outputs": { "type": "array", "items": { "type": "string" } },
+        "forbidden": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "verificationItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "command", "proof_type", "expected_result", "required_before"],
+      "properties": {
+        "id": { "type": "string" },
+        "command": { "type": ["string", "null"] },
+        "proof_type": {
+          "type": "string",
+          "enum": ["unit", "integration", "live_db", "headless", "canary", "deploy", "manual_approval", "static", "none"]
+        },
+        "expected_result": { "type": "string" },
+        "required_before": { "type": "string" }
+      }
+    },
+    "fixEval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "purpose",
+        "command",
+        "proof_type",
+        "expected_failure_before_fix",
+        "expected_pass_after_fix",
+        "freshness_subject",
+        "required_before"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "purpose": { "type": "string" },
+        "command": { "type": ["string", "null"] },
+        "proof_type": {
+          "type": "string",
+          "enum": ["unit", "integration", "live_db", "headless", "canary", "deploy", "manual_approval", "static", "none"]
+        },
+        "expected_failure_before_fix": { "type": "string" },
+        "expected_pass_after_fix": { "type": "string" },
+        "freshness_subject": { "type": "string" },
+        "required_before": { "type": "string" }
+      }
+    },
+    "trapItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "trap_class", "applies", "evidence", "action"],
+      "properties": {
+        "source": { "type": "string" },
+        "trap_class": { "type": "string" },
+        "applies": { "type": "boolean" },
+        "evidence": { "type": "string" },
+        "action": { "type": "string" }
+      }
+    },
+    "refactorClassification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fix_now", "follow_up", "note_only"],
+      "properties": {
+        "fix_now": { "type": "array", "items": { "$ref": "#/$defs/taskItem" } },
+        "follow_up": { "type": "array", "items": { "$ref": "#/$defs/taskItem" } },
+        "note_only": { "type": "array", "items": { "$ref": "#/$defs/taskItem" } }
+      }
+    }
+  }
+}

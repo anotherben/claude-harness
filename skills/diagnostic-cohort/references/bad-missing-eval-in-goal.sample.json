@@ -1,0 +1,83 @@
+{
+  "schema_version": "diagnostic_cohort.consensus_contract.v1",
+  "artifact_type": "consensus_contract",
+  "contract_id": "sample-bad-missing-eval-in-goal",
+  "created_at": "2026-06-30T00:00:00Z",
+  "target": {
+    "kind": "diagnosis_packet",
+    "path_or_url": ".codex/diagnose/sample-diagnosis.json",
+    "repo_root": "/repo",
+    "branch": "dev",
+    "head_sha": "abc123",
+    "source": "manual sample"
+  },
+  "objective": {
+    "summary": "Agree on the issue, root cause, owning-boundary resolution, fix evals, and build goal prompt.",
+    "success_criteria": [
+      "Required reviewers approve the same issue, root cause, resolution, and eval set."
+    ],
+    "non_goals": [
+      "Implement the fix inside the consensus review."
+    ]
+  },
+  "root_cause_confirmation": {
+    "status": "confirmed",
+    "agreed_chain_refs": [
+      "diagnosis.root_cause_chain[0]"
+    ],
+    "rejected_hypotheses": [],
+    "remaining_uncertainty": []
+  },
+  "fix_evals": [
+    {
+      "id": "eval-regression-owner-seam",
+      "purpose": "Prove the old bad state is rejected at the owning boundary.",
+      "command": "npm test -- foo.test.js",
+      "proof_type": "unit",
+      "expected_failure_before_fix": "test fails because the owner permits the bad value",
+      "expected_pass_after_fix": "test passes and the bad value is rejected before persistence",
+      "freshness_subject": "current head abc123",
+      "required_before": "PR"
+    }
+  ],
+  "orchestration": {
+    "mode": "thread_cohort",
+    "pasteable_goal_prompt": "/goal Fix the diagnosed owner-seam bug using .codex/diagnose/sample-diagnosis.json.",
+    "lead_owner": "codex",
+    "active_limit": 3
+  },
+  "reviewers": [
+    {
+      "role": "issue-root-cause-reviewer",
+      "required": true,
+      "one_job": "Confirm the issue and root-cause chain from evidence.",
+      "status": "approved",
+      "evidence_refs": [
+        "diagnosis.root_cause_chain"
+      ],
+      "blocking_findings": []
+    }
+  ],
+  "loop_control": {
+    "current_round": 1,
+    "max_rounds": 2,
+    "stop_gate": "approved by all required reviewers or blocked on repeated evidence gap",
+    "block_on_repeated_blocker": true,
+    "material_revision_required": true
+  },
+  "consensus": {
+    "decision": "approved",
+    "agreed_issue": "Bad value reaches the writer.",
+    "agreed_root_cause": "Owning boundary lacks the invariant.",
+    "agreed_resolution": "Move the invariant into the owner seam and add a regression eval.",
+    "required_approvals": [
+      "issue-root-cause-reviewer"
+    ],
+    "unresolved_blockers": [],
+    "revision_required": []
+  },
+  "validator": {
+    "command": "python3 /Users/ben/.codex/skills/diagnostic-cohort/scripts/validate_consensus_contract.py <contract.json>",
+    "required": true
+  }
+}

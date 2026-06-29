@@ -11,6 +11,8 @@ A pre-edit checker for all SQL and database code. These rules have zero automate
 
 1. **Read `references/schema.md`** for the authoritative table-by-table tenant_id map, type traps, and REX SKU field mapping. That file is the source of truth for which tables need tenant_id and which don't. (Use Read — this is a reference doc, not code.)
 
+1. **Choose the safest real schema proof surface.** For pre-PR schema/query testing, prefer a local Postgres instance restored from a sanitized clone, approved snapshot, or schema-only dump plus representative fixtures. Do not run proof against production, print credentials, store dumps in the repo, or depend on machine-local paths in committed evidence. If local full-schema proof is unavailable, treat schema/query claims as blocked or explicitly narrowed.
+
 2. **Explore the actual service file** that already queries the tables you are about to use. Column names, join patterns, and scoping conventions vary across this codebase — do not guess from training data:
    - `search_symbols(query="[table-name]")` to find which service files query that table
    - `get_symbol([service-file], [function-name])` to pull the specific query function
@@ -112,6 +114,13 @@ This codebase has mixed column types that cause silent bugs. The full list is in
 
 Never rely on implicit PostgreSQL coercion. Always cast explicitly when types differ.
 
+Cast safety is not just type matching:
+
+- Cast untrusted JSON/text/external IDs only after a guard proves the value is non-empty, well-formed, and in range.
+- Numeric-looking text outside the destination range, such as `bigint` overflow, must be filtered before `::bigint`; one corrupt payload row must not abort the whole worker query.
+- Prefer casting the parameter side, not the indexed column side. `p.id = ANY($1::uuid[])` can use the primary-key index; `p.id::text = ANY($1::text[])` can force scans.
+- For every changed SQL cast on a hot path, worker, sync, proof lane, or high-cardinality table, capture query-plan/index evidence or classify the missing proof as a finding.
+
 **Established join patterns in this codebase** (verified from service files):
 
 | From → To | Correct Pattern | Notes |
@@ -152,12 +161,13 @@ After writing any SQL query or migration, run through these 8 items. This takes 
 
 1. **Tenant scoped?** Every tenant-scoped table in the query has `WHERE tenant_id = $N`
 2. **Parameterized?** Zero template literals inside SQL strings
-3. **Types match?** Every JOIN and WHERE comparison uses matching types (or explicit casts)
+3. **Types match safely?** Every JOIN and WHERE comparison uses matching types, casts untrusted values only after malformed/empty/out-of-range guards, and keeps indexed column predicates indexable
 4. **Timestamps correct?** `TIMESTAMPTZ` in DDL, `AT TIME ZONE` pattern in queries, no bare `CURRENT_DATE`
-5. **Bounded?** Query has `LIMIT`, date window, or pagination — no unbounded scans
+5. **Bounded?** Query has `LIMIT`, date window, pagination, or a proof-specific sample set — no unbounded scans in runtime paths or live-proof lanes
 6. **Idempotent?** Migration uses `IF NOT EXISTS` / `IF EXISTS` guards
 7. **Column names real?** Every column name was verified by reading the actual table's migration or service file
 8. **CONCURRENTLY safe?** If using `CREATE INDEX CONCURRENTLY`, it is NOT inside a transaction block
+9. **Local full-schema proof safe?** Schema/query changes ran against local restored Postgres or have a documented blocker/narrowed claim; evidence shows no production writes, no secrets, no repo dumps, and cleanup/reset.
 
 ## Common Mistakes from Evaluations
 

@@ -1,425 +1,89 @@
 ---
 name: enterprise-plan
-description: "Creates granular implementation plans from Technical Design Documents. Every step has exact file paths, exact code, and exact test commands. Plans are quality-gated before approval. Use after enterprise-brainstorm produces a TDD."
+description: Use when an approved enterprise design exists and the next step is to turn it into an exact implementation plan with file paths, task boundaries, and verification commands
 ---
-
-
-### LEARNED BEHAVIORS (auto-loaded)
-
-Before starting, load domain-specific lessons:
-1. Call `cortex_lessons(tag='feedback:PLAN')` to retrieve corrections specific to this skill
-2. If results exist, read each lesson and apply it to your behavior for this session
-3. During execution, if the user corrects your approach, write a domain-tagged annotation:
-   ```json
-   {"target":"skill:enterprise-plan","note":"<correction>","author":"enterprise-plan","tags":["feedback","feedback:PLAN","lesson"],"timestamp":"<ISO>"}
-   ```
-   Append to `.cortex/knowledge.jsonl`
 
 # Enterprise Plan
 
-You are a planning engineer. You take a Technical Design Document (TDD) from `enterprise-brainstorm` and produce a granular, mechanically executable implementation plan. Every step is 2-5 minutes of work. Every step has exact file paths, exact code, and exact commands with expected output.
-
-**Input:** A TDD at `docs/designs/YYYY-MM-DD-<slug>-tdd.md`
-**Output:** A plan at `docs/plans/YYYY-MM-DD-<slug>-plan.md`
-
-```
-/enterprise-plan docs/designs/2026-03-09-sync-alerts-tdd.md
-/enterprise-plan   (auto-detects most recent TDD)
-```
-
----
-
-## BEFORE YOU START
-
-1. **Read the TDD** — understand the full scope, data model, API contracts, architecture.
-2. **Read stack-decisions.json** — if `.claude/enterprise-state/stack-decisions.json` exists, load it. Use the decided technologies, packages, and versions in every step. Do not propose alternatives to locked decisions. If no stack-decisions.json exists (QUICK/STANDARD path), infer from stack-profile.json or codebase.
-3. **Read the codebase** — verify every file path in the TDD exists. Check current state of files that will be modified. Note line numbers.
-4. **Query memory** — recall context for [task keywords], coding gotchas, PRE-CODE checklist (use whichever memory backend is available)
-5. **Read MEMORY.md** — check for relevant active work, pending migrations, known issues.
-6. **Identify the tier** — Micro/Small/Medium/Large from the TDD or enterprise-dev triage.
-
----
-
-## PLAN STRUCTURE
-
-### Save to: `docs/plans/YYYY-MM-DD-<slug>-plan.md`
-
-````markdown
-# Plan: <task title>
-**Date**: YYYY-MM-DD | **Type**: feature/bug/refactor | **Tier**: micro/small/medium/large
-**TDD**: docs/designs/YYYY-MM-DD-<slug>-tdd.md
-**Contract**: docs/contracts/YYYY-MM-DD-<slug>-contract.md (created by enterprise-contract)
-
-## Problem Statement
-[2-3 sentences grounded in what the TDD describes. Reference the TDD section.]
-
-## Approach
-[Which approach from the TDD was selected, and why. 1-2 sentences.]
-
-## Dependencies
-- [ ] Migration [N] must run before service tests
-- [ ] Service must exist before route tests
-- [ ] Hook must exist before component tests
-[List all ordering constraints between tasks]
-
-## Task Overview
-| # | Task | Mode | Files | Est. Time | Dependencies |
-|---|------|------|-------|-----------|-------------|
-| 1 | Database migration | [SOLO] | 1 create | 5 min | none |
-| 2 | Service layer | [SOLO] | 1 create, 1 test | 15 min | Task 1 |
-| 3 | Route layer | [PARALLEL] | 1 modify, 1 test | 10 min | Task 2 |
-| 4 | Frontend hook | [PARALLEL] | 1 create, 1 test | 10 min | Task 3 |
-| 5 | Component | [PARALLEL] | 2 create, 1 test | 15 min | Task 4 |
-
----
-
-## Task 1: <Component/Layer Name> [SOLO]
-
-**Memory checkpoint:** `MEMORY: save — plan [slug] starting Task 1`
-
-**Files:**
-- Create: `exact/path/to/newfile.js`
-- Modify: `exact/path/to/existing.js` (lines 45-67)
-- Test: `exact/path/to/newfile.test.js`
-
-**Postconditions covered:** PC-1, PC-2
-
-### Step 1.1: Write the failing test (3 min)
-
-Create `apps/api/src/__tests__/services/syncAlert.test.js`:
-```javascript
-const { createAlertConfig } = require('../../services/syncAlertService');
-
-describe('syncAlertService', () => {
-  describe('createAlertConfig', () => {
-    test('PC-1: rejects empty category', async () => {
-      const result = await createAlertConfig({
-        category: '',
-        threshold_minutes: 30,
-        tenant_id: 'test-tenant'
-      });
-      expect(result).toEqual({
-        success: false,
-        error: 'Category is required'
-      });
-    });
-  });
-});
-```
-
-### Step 1.2: Run test — verify RED
-
-```bash
-cd apps/api && npx jest --testPathPattern="syncAlert" --no-coverage 2>&1 | tail -20
-```
-**Expected output:** `FAIL` — `Cannot find module '../../services/syncAlertService'`
-
-### Step 1.3: Write minimal implementation (3 min)
-
-Create `apps/api/src/services/syncAlertService.js`:
-```javascript
-async function createAlertConfig({ category, threshold_minutes, tenant_id }) {
-  if (!category?.trim()) {
-    return { success: false, error: 'Category is required' };
-  }
-  // Implementation continues in Step 1.5
-}
-
-module.exports = { createAlertConfig };
-```
-
-### Step 1.4: Run test — verify GREEN
-
-```bash
-cd apps/api && npx jest --testPathPattern="syncAlert" --no-coverage 2>&1 | tail -20
-```
-**Expected output:** `PASS` — `1 test passed`
-
-### Step 1.5: Commit
-
-```bash
-git add apps/api/src/services/syncAlertService.js apps/api/src/__tests__/services/syncAlert.test.js
-git commit -m "feat: add alert config validation — PC-1"
-```
-
-**Memory checkpoint:** `MEMORY: save — plan [slug] Task 1, Step 1.5 complete, PC-1 verified`
-
----
-
-[Continue for each step...]
-
----
-
-## Task 2: <Next Component/Layer> [PARALLEL]
-
-**Can run alongside:** Task 3 (no shared files)
-**Blocked by:** Task 1 (needs migration to exist)
-
-...
-
----
-
-## Verification Checkpoint
-
-After all tasks complete:
-
-```bash
-# Run full test suite
-cd apps/api && npx jest --no-coverage
-
-# Run frontend build (if UI changed)
-cd apps/admin && npx vite build 2>&1 | tail -20
-
-# Check diff
-git diff --stat
-```
-
-**Expected:** All tests pass. Build succeeds. Only planned files changed.
-
-## Memory Final Save
-
-```
-MEMORY: save — plan [slug] COMPLETE, all [N] tasks done, [N] postconditions covered
-```
-````
-
----
-
-## PLANNING RULES
-
-### Step Granularity
-
-Every step MUST be completable in 2-5 minutes. If a step takes longer, split it.
-
-| Too coarse | Correct granularity |
-|------------|-------------------|
-| "Add validation" | Step 1: Write test for empty input. Step 2: Run test (RED). Step 3: Add `if (!field)` guard. Step 4: Run test (GREEN). |
-| "Create the service" | Step 1: Write test for create. Step 2: RED. Step 3: Write create function. Step 4: GREEN. Step 5: Write test for read. Step 6: RED. Step 7: Write read function. Step 8: GREEN. |
-| "Set up the route" | Step 1: Write test for POST /api/alerts. Step 2: RED. Step 3: Add route handler. Step 4: GREEN. Step 5: Mount route in router. Step 6: Verify. |
-| "Build the UI" | Step 1: Write test for component render. Step 2: RED. Step 3: Create component skeleton. Step 4: GREEN. Step 5: Write test for click handler. Step 6: RED. Step 7: Add click handler. Step 8: GREEN. |
-
-### Exact Code, Not Descriptions
-
-| Wrong | Right |
-|-------|-------|
-| "Add validation for the category field" | `if (!category?.trim()) return { success: false, error: 'Category is required' };` |
-| "Import the service" | `const { createAlertConfig } = require('../../services/syncAlertService');` |
-| "Add the route" | `router.post('/alerts', authenticateStaff, async (req, res) => { ... });` |
-| "Handle errors appropriately" | `catch (err) { logger.error('Alert config creation failed', { err, tenant_id }); return res.status(500).json({ error: 'Internal error' }); }` |
-
-### Exact Commands With Expected Output
-
-Every "run" step MUST include:
-1. The exact command to run
-2. The exact expected output (PASS/FAIL, error message, line count)
-
-```
-Run: cd apps/api && npx jest --testPathPattern="syncAlert" --no-coverage 2>&1 | tail -20
-Expected: FAIL — "Cannot find module '../../services/syncAlertService'"
-```
-
-Not: "Run the tests and check they fail."
-
-### TDD Order Is Non-Negotiable
-
-Every piece of functionality follows this exact sequence within the plan:
-
-```
-1. Write test file (save it)
-2. Run test → RED (show expected failure)
-3. Write production code (save it)
-4. Run test → GREEN (show expected pass)
-5. Commit
-```
-
-Never plan production code before its test. Never plan "write all tests, then write all code." Interleave: one RED, one GREEN, one RED, one GREEN.
-
-### Task Parallelization
-
-Mark each task with its execution mode:
-
-- **[SOLO]** — Must run sequentially. Has dependencies on the previous task's output.
-- **[PARALLEL]** — Can run alongside other [PARALLEL] tasks. No shared files, no ordering dependency.
-
-**Rules for [PARALLEL]:**
-- No two parallel tasks can modify the same file
-- No parallel task can depend on another parallel task's output
-- All parallel tasks must share a common dependency that's already complete
-- Parallel tasks merge at an integration checkpoint
-
-**Example:**
-```
-Task 1: Migration [SOLO] — must run first
-Task 2: Service layer [SOLO] — needs migration
-Task 3: Route tests [PARALLEL] — needs service, doesn't touch frontend
-Task 4: Frontend hook [PARALLEL] — needs route, doesn't touch backend routes
-Task 5: Integration test [SOLO] — needs Tasks 3 + 4 complete
-```
-
-### Memora Checkpoints
-
-Insert Memora save points at:
-1. **Start of each task** — save which task is starting
-2. **After each commit** — save which PCs are verified
-3. **After all tasks** — save completion state
-
-Format:
-```
-MEMORY: save — plan [slug] Task [N] Step [M] complete, PC-[X] verified, [remaining] PCs left
-```
-
-This enables recovery after context loss. A new agent reads Memora, finds the last checkpoint, and resumes from there.
-
----
-
-## QUALITY GATE
-
-Before presenting the plan, score it against these criteria:
-
-| Criterion | Check | Pass If |
-|-----------|-------|---------|
-| **Clarity** | Can an agent execute each step without asking questions? | Every step has exact file path, exact code, exact command |
-| **Completeness** | Does the plan cover every postcondition in the TDD? | Every TDD requirement maps to at least one step |
-| **Specificity** | Are there any vague words? ("add validation", "handle errors", "set up") | Zero vague phrases — every action is concrete code |
-| **YAGNI** | Does any step build something not in the TDD? | Zero steps beyond TDD scope |
-| **TDD Order** | Does every piece of functionality have test-before-code? | Zero production code steps without a prior test step |
-| **Parallelization** | Are independent tasks marked [PARALLEL]? | Tasks that CAN run in parallel ARE marked [PARALLEL] |
-| **Recovery** | Are Memory checkpoints placed at task boundaries? | Every task has start + end checkpoint |
-| **Time Estimates** | Is every step 2-5 minutes? | Zero steps estimated >5 min (split if needed) |
-
-**Score format:**
-```
-PLAN QUALITY GATE
-═════════════════
-Clarity:          [PASS/FAIL — details]
-Completeness:     [PASS/FAIL — details]
-Specificity:      [PASS/FAIL — details]
-YAGNI:            [PASS/FAIL — details]
-TDD Order:        [PASS/FAIL — details]
-Parallelization:  [PASS/FAIL — details]
-Recovery:         [PASS/FAIL — details]
-Time Estimates:   [PASS/FAIL — details]
-
-Score: [N]/8 — [APPROVED / NEEDS REVISION]
-```
-
-**All 8 must pass.** If any fail, fix the plan and re-score. Do not present a plan that fails quality gate.
-
----
-
-## APPROVAL GATE
-
-### Medium+ Tier: Hard Stop
-
-For Medium and Large tier tasks, the plan MUST be reviewed by a human before proceeding to `enterprise-contract`.
-
-**Present the plan:**
-```
-PLAN READY FOR REVIEW
-═════════════════════
-
-Task: [title]
-Tier: [tier]
-Tasks: [N] ([N] solo, [N] parallel)
-Steps: [N] total
-Postconditions covered: [list PC-N from TDD]
-Estimated time: [N] minutes
-Plan: docs/plans/YYYY-MM-DD-<slug>-plan.md
-
-Quality gate: 8/8 PASSED
-
-Ready to proceed to contract? (/enterprise-contract)
-Or review the plan first?
-```
-
-**Wait for approval.** Do not proceed until the human says yes.
-
-### Micro/Small Tier: Auto-Proceed
-
-For Micro and Small tier, the quality gate is sufficient. Announce the plan and proceed to `enterprise-contract` automatically.
-
----
-
-## SCALING BY TIER
-
-| Element | Micro | Small | Medium | Large |
-|---------|-------|-------|--------|-------|
-| Steps per task | 2-3 | 3-5 | 5-8 | 5-10 |
-| Code in plan | Minimal | Key functions | All new code | All new code + integration |
-| Parallelization | N/A | Rarely | When possible | Aggressive |
-| Memory checkpoints | None | Start + end | Every commit | Every step |
-| Quality gate | Skip | Quick check | Full scoring | Full scoring + review |
-| Approval gate | Skip | Auto-proceed | Hard stop | Hard stop |
-
----
-
-## BUG FIX PLANS
-
-Bug fix plans follow the same structure but with different emphasis:
-
-````markdown
-## Problem Statement
-[Root cause from enterprise-dev DISCOVER stage]
-
-## Root Cause
-[Exact file, exact line, exact wrong behavior]
-[Why it's wrong — trace the logic]
-
-## Blast Radius
-[From enterprise-dev blast radius scan — list all affected siblings and consumers]
-
-## Fix Tasks
-
-### Task 1: Reproduce the bug [SOLO]
-**Step 1.1:** Write test that asserts the WRONG behavior (proves bug exists)
-**Step 1.2:** Run test → PASS (bug confirmed)
-**Step 1.3:** Invert assertion to CORRECT behavior
-**Step 1.4:** Run test → FAIL (fix not applied yet)
-
-### Task 2: Fix the root cause [SOLO]
-**Step 2.1:** Apply the fix at [exact file:line]
-**Step 2.2:** Run test → PASS (fix works)
-**Step 2.3:** Commit
-
-### Task 3: Fix blast radius siblings [PARALLEL per sibling]
-**Step 3.1:** Write test for sibling [function name]
-**Step 3.2:** Run test → determine if PASS or FAIL
-**Step 3.3:** If FAIL, apply same class of fix
-**Step 3.4:** Run test → PASS
-**Step 3.5:** Commit
-
-### Task 4: Edge case hardening [PARALLEL]
-**Step 4.1:** Write test for null/empty input
-**Step 4.2:** Run → determine pass/fail
-**Step 4.3:** Add guard if needed
-**Step 4.4:** Commit
-````
-
----
-
-## ANTI-PATTERNS
-
-| Don't | Do Instead |
-|-------|-----------|
-| "Add the service with CRUD operations" | Write out each CRUD operation as a separate step with exact code |
-| Plan all tests first, then all code | Interleave: test → code → test → code |
-| Skip line numbers for modified files | "Modify `helpers.js` lines 45-67" — read the file first to get current line numbers |
-| Estimate steps at >5 minutes | Split into smaller steps until each is 2-5 min |
-| Leave parallelization implicit | Explicitly mark every task [SOLO] or [PARALLEL] |
-| Write the plan from memory | Read every file that will be modified. Verify paths. Check current content. |
-| Skip Memory checkpoints | Every task boundary gets a checkpoint for crash recovery |
-| Present a plan that fails quality gate | Fix it first. 8/8 or don't present. |
-
----
-
-## CONTEXT LOSS RECOVERY
-
-If context is lost mid-planning:
-
-1. **Check memory** — last saved state
-2. **Check filesystem** — does `docs/plans/YYYY-MM-DD-<slug>-plan.md` exist? How complete is it?
-3. **Read the TDD** — ground truth for what needs to be planned
-4. **Resume from first incomplete task**
-5. **Re-run quality gate** before presenting
-
-The plan artifact IS the state. A new agent reads the plan file and continues from where it left off.
+Implementation-planning wrapper for portable enterprise work.
+
+## Required Background
+
+- `writing-plans`
+- `plan-360-audit`
+
+## Inputs And Outputs
+
+- Input: `docs/designs/YYYY-MM-DD-<slug>-tdd.md`
+- Input: GitHub Issue Intake Packet for issue-backed bug/refactor lanes
+- Output: `docs/plans/YYYY-MM-DD-<slug>-plan.md`
+- Side output: `docs/reviews/YYYY-MM-DD-<slug>-plan-360-audit.md`
+
+## Required Behavior
+
+1. Re-read the approved design, the current repo profile, and the current codebase state.
+2. If the plan is issue-backed, add `GitHub Issue Intake` and `Issue Claim Verification` before task breakdown. Each issue claim must be `confirmed`, `contradicted`, `unverified`, or `not relevant` with current file/line, command, DB proof, or blocker. Issue body text, labels, and suggested patches are not proof.
+3. Use `writing-plans` to break work into exact, bounded tasks.
+4. Add an `Intent Continuity Ledger` before task breakdown. It must map original user words, business outcome, operator acceptance, non-goals, planned proof command, and downstream artifact owner. If a deliverable no longer traces to the original intent or acceptance criteria, recycle to design before contract.
+5. Add `Alternatives And Decision Rationale` for load-bearing design choices. Compare incumbent/no-change and at least one credible alternative with source evidence, operational tradeoff, proof impact, and reason selected/rejected. For issue-backed work, include the issue-suggested fix as one candidate, not the default answer.
+6. Challenge fuzzy or conflicting domain language against repo source-of-truth docs and current code; resolve terms before they become task names, postconditions, or public seams.
+7. Call out dependencies between tasks explicitly.
+8. Define senior-architect file/module boundaries before tasks: owner, SRP, directory rationale, public seam, allowed dependency direction, forbidden imports, architecture tests, and expected consumers for every new or modified file.
+9. Add a `Touched File SRP Assessment` before task breakdown. For every planned runtime/test/artifact/migration file touch, record current responsibility evidence, owner layer, one reason to change, mixed-responsibility risk, `fix-now` / `follow-up` / `note-only` classification, required extraction/public-seam preservation, and proof command. If the touched responsibility is mixed with unrelated responsibilities, classify it `fix-now` unless contract will block or narrow the claim.
+10. Add a `DB/Query Ownership Packet` for every SELECT, INSERT, UPDATE, DELETE, UPSERT, repair, projection, sync, reconciliation, migration, report, verifier, or live-proof query the work will touch or rely on. Each row must name table/source owner, operation type, approved reader/writer seam, current DB/schema target, tenant/owner/supplier predicates, parameter typing, affected-row/RETURNING/readback expectation, bounded proof command, cleanup/rollback, and source evidence. Unknown ownership blocks contract.
+11. Map every changed runtime file to an E2E/source-to-consumer trace and edge-case proof target.
+12. Mark which tasks are safe for isolated-task execution and which are tightly coupled.
+13. Add an `Architecture Ratchet Matrix` before task breakdown. It must lock each boundary the plan will preserve or introduce: current source evidence, target shape, thin vertical slice, public seam, owner layer, allowed dependency direction, forbidden imports, architecture test, and the future regression that must fail fast. Deep modules are allowed only behind a stable public seam with consumer/startup/module-graph proof.
+14. Add a `Local Full-Schema Proof Plan` for schema/query/data-sensitive work. It must name the local Postgres source, restore/migration command, safety controls, proof command, and cleanup. Prefer sanitized local clones or approved snapshots; never run proof against production, expose secrets, or depend on machine-local paths. If unavailable, record a blocking question or narrow the claim before contract.
+15. Add a `PR Review Prevention Matrix` before task breakdown. It must classify every relevant repeated review class from recent PRs as `applies`, `not applicable with source evidence`, or `blocking open question` before contract:
+   - branch/reason/status/SQL-path coverage, including positive, negative, sibling-reason, idempotent repeat, and placeholder-ordering cases
+   - async/state-machine claim, reclaim, retry, stale-running, partial-commit, duplicate-submit, and terminal-state behavior
+   - exact request/response/config/field propagation, including nullish-vs-falsy values and near-miss field spellings
+   - SQL/parser cast safety, index-preserving predicates, migration immutability/checksum posture, concurrent-index/lock posture, and bounded live-proof queries
+   - runtime-to-proof parity for verifier, replay, backtest, report, live-proof, and production helper logic
+   - proof-lane integrity for live-proof registry or command-selector changes, including mixed-file lane collision and missing-resource fail-closed tests
+   - tenant/supplier/owner scoping, affected-row checks, governed write ownership, and boundary invariants for every read/update path
+   - external integration fault matrix: fallback criteria, timeout/cancellation, idempotent retry only for safe operations, sanitized external errors, and no duplicate side effects
+   - observability/log contract: redaction of message/stack/non-object errors, stable log field shape, useful diagnostics, and no secret or live-identifier leakage
+   - public seam/downstream consumer contract: exports, startup seams, API clients, UI lock/rehydration, accessibility keyboard paths, and shared helper drift
+   - performance/bounded-work checks for looped I/O, eager materialization, full-history scans, and hot-path allocations
+   - artifact hygiene: portable commands, current head/base, consistent receipts/counts/timestamps, required frontmatter, and no stale PR-state text
+   - test integrity: no new DB mocks for schema-coupled behavior, no source-string-only proof for runtime behavior, and no brittle count assertions
+   - last-150-dev trap replay when recent repo history is available: add a named `Last-150 / Recent PR Trap Bank` before task breakdown and before the `PR Review Prevention Matrix`. It must cover stale UI/read-model rehydration, config/env/outage semantics, proof-lane selector misses, stale proof-subject/preflight failures, weak assertions that can pass for the wrong reason, DB/query ownership gaps for reads and writes, integration side-effect/idempotency faults, redaction/diagnostic leaks, and SRP/domain-boundary drift. Each applicable row must cite a source such as PR number, review comment class, failing run, or commit cluster, then become a plan question, contract obligation, proof command, gate, or explicit non-goal. If the prompt gives only recent PR numbers or review fallout, still label this as the recent-PR/last-150 trap bank so the downstream contract can replay it mechanically.
+16. For async, worker, order, invoice, inventory, pricing, label-printing, notification, or staff workflow work, add an `Async And Field Contract Matrix` before task breakdown. It must map producer field names through route/service/DB/worker/read-model/UI consumers and name lifecycle counterexamples: exact quantity/ID/status field spelling through real producers, near-miss field spelling collisions, duplicate submit, concurrent worker, stale running recovery, old synchronous confirmation/error preservation before enqueue, post-commit failure, helper return variants, unavailable/cancelled downstream dependency, retry, and close/reopen/refresh rehydration.
+17. Include a Last-100-PR trap-matrix pass that turns likely repeat failures into plan questions, contract obligations, or explicit non-goals.
+18. Include exact verification commands and expected outcomes, including live DB tests for schema/query work and headless browser tests for UI/PDF/file workflows. Every important matrix cell must have a planned proof command or be a blocking open question.
+19. Define the repo gate matrix up front: local commands that mirror required CI, PR body gates, no-new-mock gates, DB ownership gates, live-proof registry checks, artifact lint, and branch/base assumptions.
+20. Draft the `Mechanical Build Packet` that contract will lock: allowed runtime/test/artifact paths, intent continuity, issue claim verification when applicable, touched-file SRP decisions, DB/query ownership packets, module boundary, folder placement, public seam, owner layer, allowed dependency direction, forbidden imports, architecture tests, postcondition execution order, expected RED/GREEN signals, forbidden changes, and refusal conditions.
+21. Record the design and plan artifact paths in the current agent session.
+22. Run `plan-360-audit` against the written plan every time this skill runs. Do not treat this as optional ceremony or fold it into normal planning prose.
+23. Record the Plan 360 audit artifact/status in the current agent session as `plan_360_audit`.
+24. If the Plan 360 audit has blocking findings, revise the plan and rerun `plan-360-audit` until it passes or stop with the blocker.
+25. Hand off to `contract-manager`, then `enterprise-contract`, before any source edits.
+
+If the approved design already exists and the prompt is only asking for the next step, treat this as `STAGE_ONLY` plan entry even when the larger program is still `FULL`.
+
+If the prompt explicitly states that the committed repo profile and repo-local overlay are already current, do not reopen discover work by default.
+
+## Extra Enterprise Requirements
+
+- Every deliverable in the design must appear in the plan.
+- If the work starts from a GitHub issue, every load-bearing issue claim must be verified or blocked before contract. Issue text is not proof.
+- Every plan must name the contract file that will become the build gate.
+- Every plan handoff must have a recorded `plan_360_audit` artifact. Contract and build are blocked without it.
+- If the task touches a high-risk domain, include the proof-scope target and governing docs in the plan header.
+- Planning may consume most of the lane. Schema, file-boundary, SRP, DB, and E2E uncertainty must be resolved here, not left for build.
+- The plan must include a `File And Module Architecture` section and an `E2E Trace And Edge Cases` section.
+- The plan must include an `Intent Continuity Ledger`; vague prompts cannot be considered enterprise-ready unless original user words, business outcome, operator acceptance, non-goals, proof command, and downstream owner remain traceable.
+- The plan must include `Alternatives And Decision Rationale` for load-bearing product or architecture choices.
+- The plan must include a `Touched File SRP Assessment` for every planned file touch. Mixed-responsibility files touched by the change are `fix-now` unless the plan blocks or explicitly narrows the claim.
+- The plan must include a `DB/Query Ownership Packet` for every query/read/write/report/migration/proof path touched or relied on. Missing read ownership, current DB/schema target, tenant/owner scoping, affected-row/readback expectation, bounded proof, or cleanup blocks contract.
+- The plan must include an `Architecture Ratchet Matrix` for multi-file, refactor, extraction, or architecture-sensitive work. Missing public seam, owner layer, dependency direction, forbidden import, or architecture proof blocks contract.
+- The plan must include a `Local Full-Schema Proof Plan` for schema/query/data-sensitive work. Missing local full-schema proof, sanitized/approved snapshot source, or explicit narrowing decision blocks contract.
+- The plan must include a named `Last-150 / Recent PR Trap Bank` and `PR Review Prevention Matrix` for every non-trivial or PR-producing lane. Missing applies/not-applicable decisions for recent-review classes block contract. For Helpdesk/dev-derived work, the matrix must replay the current recent-PR trap bank rather than relying on generic historical language.
+- The plan must include `Async And Field Contract Matrix` when the lane crosses UI/API/DB/worker/read-model boundaries or touches async, queue, worker, order, invoice, inventory, pricing, labels, printing, notification, or staff workflow behavior.
+- The plan must include a `Known Review Trap Matrix` section covering mock/runtime shape mismatch, affected-row checks, SQL tenant/owner/current-DB gaps, stale/dry-run evidence, route method/source drift, zero/falsy UI values, duplicate helpers/writers, and unsafe substring environment checks when relevant.
+- The plan must include a `Repo Gate Matrix` section. If required merge blockers, CI mirrors, PR-body rules, live proof commands, or ownership gates are unknown, stop before build instead of discovering them from CI.
+- The plan must include a draft `Mechanical Build Packet`. Build is not allowed to invent missing paths, tests, ownership seams, public seams, dependency direction, forbidden imports, architecture tests, proof commands, or architecture during implementation.
+
+Use [plan-overlay.md](references/plan-overlay.md) for the extra enterprise fields to add on top of the normal planning workflow.
