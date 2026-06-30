@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # claude-harness installer
-# Installs hooks, skills, commands, and MCP servers GLOBALLY to ~/.claude/
+# Installs hooks, commands, and MCP servers globally, and mirrors full skill
+# directories into local agent skill homes.
 # Then optionally sets up a project with .mcp.json and CLAUDE.md
 #
 # Usage:
@@ -75,8 +76,39 @@ vault_server_path() { echo "$HOME/.vault-index/src/server.js"; }
 memory_server_path() { echo "$HOME/.cortex-memory/src/server.js"; }
 
 # ============================================================
-# GLOBAL INSTALL — hooks, skills, commands, settings to ~/.claude/
+# GLOBAL INSTALL — hooks/commands/settings to ~/.claude/, skills to agent homes
 # ============================================================
+preserve_local_skill_overlay() {
+  local src="$1"
+  local dst="$2"
+  [ -d "$src" ] || return 0
+  find "$src" \
+    \( -path '*/node_modules' -o -path '*/__pycache__' \) -prune -o \
+    -type f \( -path '*/.local/*' -o -name 'local.*' -o -name '*.local.*' \) -print0 |
+    while IFS= read -r -d '' file; do
+      local rel="${file#$src/}"
+      mkdir -p "$dst/$(dirname "$rel")"
+      cp -p "$file" "$dst/$rel"
+    done
+}
+
+sync_full_skill_dir() {
+  local skill_dir="$1"
+  local target="$2"
+  local overlay_tmp="$3"
+  local name
+  name=$(basename "$skill_dir")
+  local dest="$target/$name"
+  local overlay="$overlay_tmp/${target//\//_}__$name"
+
+  preserve_local_skill_overlay "$dest" "$overlay"
+  mkdir -p "$dest"
+  rsync -a --delete --exclude='node_modules/' --exclude='__pycache__/' "$skill_dir"/ "$dest"/
+  if [ -d "$overlay" ]; then
+    rsync -a "$overlay"/ "$dest"/
+  fi
+}
+
 install_global() {
   info "Installing globally to ${GLOBAL_DIR}/"
 
@@ -93,16 +125,29 @@ install_global() {
   ok "Installed ${hook_count} hooks to ~/.claude/hooks/"
 
   # --- Skills ---
-  mkdir -p "$GLOBAL_DIR/skills"
+  local skill_targets=(
+    "$HOME/.claude/skills"
+    "$HOME/.codex/skills"
+    "$HOME/.agents/skills"
+    "$HOME/.agent-platform/skills"
+    "$HOME/.continue/skills"
+    "$HOME/.cursor/skills-cursor"
+  )
+  for target in "${skill_targets[@]}"; do
+    mkdir -p "$target"
+  done
+  local overlay_tmp
+  overlay_tmp=$(mktemp -d)
   local skill_count=0
   for skill_dir in "$HARNESS_DIR/skills/"*/; do
-    [ -d "$skill_dir" ] || continue
-    local name=$(basename "$skill_dir")
-    rm -rf "$GLOBAL_DIR/skills/$name"
-    cp -r "$skill_dir" "$GLOBAL_DIR/skills/$name"
+    [ -f "$skill_dir/SKILL.md" ] || continue
+    for target in "${skill_targets[@]}"; do
+      sync_full_skill_dir "$skill_dir" "$target" "$overlay_tmp"
+    done
     skill_count=$((skill_count + 1))
   done
-  ok "Installed ${skill_count} skills to ~/.claude/skills/"
+  rm -rf "$overlay_tmp"
+  ok "Installed ${skill_count} full skills to ${#skill_targets[@]} local skill homes"
 
   # --- Commands ---
   if [ -d "$HARNESS_DIR/commands" ]; then
@@ -166,7 +211,7 @@ install_global() {
   echo ""
   ok "Global install complete"
   echo "  Hooks:    ${hook_count} in ~/.claude/hooks/"
-  echo "  Skills:   ${skill_count} in ~/.claude/skills/"
+  echo "  Skills:   ${skill_count} full skills mirrored to Claude/Codex/Agents/shared platform/Continue/Cursor"
   echo "  Settings: ~/.claude/settings.json"
   echo "  Runtime:  ${RUNTIME_HOME}"
   echo "  Claude:   ~/.claude.json mcpServers updated"
@@ -417,6 +462,7 @@ desired = {
         "type": "stdio",
         "command": "node",
         "args": [os.environ["SKILLS_SERVER_PATH"]],
+        "env": {"SKILLS_INDEX_RUNTIME": "claude"},
     },
     "cortex-memory": {
         "type": "stdio",
@@ -545,6 +591,7 @@ desired = {
         'type': 'stdio',
         'command': 'node',
         'args': [os.environ['SKILLS_SERVER_PATH']],
+        'env': {'SKILLS_INDEX_RUNTIME': 'claude'},
     },
     'cortex-memory': {
         'type': 'stdio',
@@ -583,7 +630,8 @@ else:
     "skills-index": {
       "type": "stdio",
       "command": "node",
-      "args": ["${skills_dir}/src/server.js"]
+      "args": ["${skills_dir}/src/server.js"],
+      "env": {"SKILLS_INDEX_RUNTIME": "claude"}
     },
     "cortex-memory": {
       "type": "stdio",
@@ -634,7 +682,7 @@ MCP_EOF
   echo "  .mcp.json:  cortex-engine + vault-index + skills-index + cortex-memory"
   echo "  CLAUDE.md:  enforcement chain documented"
   echo "  Hooks:      global (~/.claude/hooks/) — no local copies"
-  echo "  Skills:     global (~/.claude/skills/) — no local copies"
+  echo "  Skills:     global agent homes — no per-project copies"
 }
 
 # ============================================================
@@ -708,7 +756,7 @@ echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}claude-harness v${VERSION} installed${NC}"
 echo ""
-echo "  Global:  ~/.claude/hooks/, ~/.claude/skills/, ~/.claude/commands/"
+echo "  Global:  ~/.claude/hooks/, ~/.claude/commands/; skills mirrored to agent homes"
 echo "  MCP:     cortex-engine + vault-index + skills-index + cortex-memory"
 echo "  Runtime: ${RUNTIME_HOME}"
 echo ""

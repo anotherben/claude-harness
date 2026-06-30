@@ -42,12 +42,20 @@ export function parseSections(markdown) {
   const lines = String(markdown || '').split(/\r?\n/);
   const sections = [];
   const slugCounts = new Map();
+  const usedSlugs = new Set();
   const headingStack = [];
 
   function nextSlug(base) {
-    const count = (slugCounts.get(base) || 0) + 1;
-    slugCounts.set(base, count);
-    return count === 1 ? base : `${base}-${count}`;
+    let count = slugCounts.get(base) || 0;
+    while (true) {
+      count += 1;
+      const candidate = count === 1 ? base : `${base}-${count}`;
+      if (!usedSlugs.has(candidate)) {
+        slugCounts.set(base, count);
+        usedSlugs.add(candidate);
+        return candidate;
+      }
+    }
   }
 
   function makeSection({ heading, depth, startLine, parentHeading = null, parentSlug = null }) {

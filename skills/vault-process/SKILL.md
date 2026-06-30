@@ -15,7 +15,7 @@ Can be run on a loop with `/loop 10m /vault-process` for continuous processing.
 
 For Helpdesk items, the standards and routing source of truth is the MCP-backed platform, not vault prose:
 
-- Read the relevant explicit skill file directly before choosing a workflow lane. Do not route skill loading through `skills-index`.
+- Use `mcp__skills_index__get_policy_bundle(...)` and `mcp__skills_index__task_bootstrap(...)` on the raw item text before choosing a workflow lane.
 - Use `mcp__standards_mcp__standards_for_task(...)` for the applicable task types before autonomous code changes.
 - If the item is a Helpdesk bug, route through `helpdesk-bug` and let that lane create or refresh `.codex/enterprise-state/<slug>-standards.json`.
 

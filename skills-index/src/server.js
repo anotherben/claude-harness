@@ -10,6 +10,9 @@ import {
   getSkillMetadata,
   loadPlatform,
   matchSkills,
+  skillBundleStatus,
+  skillEvaluateChallengers,
+  taskBootstrap,
   skillCatalog,
   skillOutline,
   skillReadSection,
@@ -17,6 +20,7 @@ import {
   skillSearch,
   skillStatus,
   skillTelemetry,
+  skillValidateCandidates,
 } from './platform.js';
 import { buildMeta, estimateTokens, makeTextResult } from './telemetry.js';
 
@@ -230,7 +234,10 @@ export function buildToolHandlers({ platformLoader = loadPlatform, compileLoader
       return this.skill_catalog({ limit });
     },
     async match_skills({ task_text, limit = 10 }) {
-      return this.skill_search({ query: task_text, limit, mode: 'keyword' });
+      return withPlatform(platformLoader, async (platform) => {
+        const matches = await matchSkills(task_text, platform, limit);
+        return makeTextResult({ query: task_text, count: matches.length, matches });
+      });
     },
     async get_skill_metadata({ skill_id }) {
       return withPlatform(platformLoader, async (platform) => {
@@ -255,6 +262,69 @@ export function buildToolHandlers({ platformLoader = loadPlatform, compileLoader
         const payload = getPolicyBundle(agent, platform, repo || null, task_type || null);
         return makeTextResult(payload);
       });
+    },
+    async task_bootstrap({ agent, task_text, repo, task_type, limit = 8 }) {
+      const startedAt = performance.now();
+      return withPlatform(platformLoader, async (platform) => {
+        const payload = await taskBootstrap(agent, task_text, platform, {
+          repo: repo || null,
+          taskType: task_type || null,
+          limit,
+        });
+        const fileTokens = payload.recommendations.reduce(
+          (sum, skill) => sum + (skill.token_estimate || 0),
+          0,
+        );
+        const responseTokens = estimateTokens(JSON.stringify(payload));
+        platform.store.recordTelemetry({
+          toolName: 'task_bootstrap',
+          queryText: task_text,
+          fileTokens,
+          responseTokens,
+          resultCount: payload.recommendations.length,
+        });
+        const report = platform.store.getTelemetryReport();
+        return makeTextResult(
+          payload,
+          buildMeta({
+            timingMs: performance.now() - startedAt,
+            fileTokens,
+            responseTokens,
+            report,
+          }),
+        );
+      });
+    },
+    async skill_bundle_status({ repo, task_type }) {
+      return withPlatform(platformLoader, async (platform) =>
+        makeTextResult(skillBundleStatus(platform, { repo: repo || null, taskType: task_type || null })),
+      );
+    },
+    async skill_validate_candidates({ repo, task_type, task_text = '', skill_ids = [], limit = 10 }) {
+      return withPlatform(platformLoader, async (platform) =>
+        makeTextResult(
+          await skillValidateCandidates(platform, {
+            repo: repo || null,
+            taskType: task_type || null,
+            taskText: task_text,
+            skillIds: skill_ids,
+            limit,
+          }),
+        ),
+      );
+    },
+    async skill_evaluate_challengers({ repo, task_type, bundle_key, capability_key, shadow_limit }) {
+      return withPlatform(platformLoader, async (platform) =>
+        makeTextResult(
+          await skillEvaluateChallengers(platform, {
+            repo: repo || null,
+            taskType: task_type || null,
+            bundleKey: bundle_key || null,
+            capabilityKey: capability_key || null,
+            shadowLimit: shadow_limit || null,
+          }),
+        ),
+      );
     },
     async rebuild_platform() {
       const platform = await compileLoader({ forceRebuild: true });
@@ -333,6 +403,31 @@ export function createServer() {
     repo: z.string().optional(),
     task_type: z.string().optional(),
   }, async (args) => handlers.get_policy_bundle(args));
+  server.tool('task_bootstrap', 'Return the shared task-start skill routing payload for an agent.', {
+    agent: z.string().min(1),
+    task_text: z.string().min(1).max(4000),
+    repo: z.string().optional(),
+    task_type: z.string().optional(),
+    limit: z.number().int().min(1).max(20).optional().default(8),
+  }, async (args) => handlers.task_bootstrap(args));
+  server.tool('skill_bundle_status', 'Resolve the active stack-aware routing bundle for a repo/task context.', {
+    repo: z.string().optional(),
+    task_type: z.string().optional(),
+  }, async (args) => handlers.skill_bundle_status(args));
+  server.tool('skill_validate_candidates', 'Validate candidate skills for safety, compatibility, and evaluation coverage.', {
+    repo: z.string().optional(),
+    task_type: z.string().optional(),
+    task_text: z.string().optional(),
+    skill_ids: z.array(z.string()).optional().default([]),
+    limit: z.number().int().min(1).max(50).optional().default(10),
+  }, async (args) => handlers.skill_validate_candidates(args));
+  server.tool('skill_evaluate_challengers', 'Compare champions and challengers using benchmark and shadow prompts.', {
+    repo: z.string().optional(),
+    task_type: z.string().optional(),
+    bundle_key: z.string().optional(),
+    capability_key: z.string().optional(),
+    shadow_limit: z.number().int().min(1).max(100).optional(),
+  }, async (args) => handlers.skill_evaluate_challengers(args));
   server.tool('rebuild_platform', 'Rebuild the persistent index and compiled artifacts.', {}, async () =>
     handlers.rebuild_platform({}),
   );

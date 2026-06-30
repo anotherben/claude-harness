@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { resolvePaths } from './config.js';
 import { parseFrontmatter } from './frontmatter.js';
 import { parseSections } from './markdown.js';
+import { loadRoutingRegistry } from './routing.js';
 import { deriveTags } from './tagger.js';
 import { createEmbedder } from './embedder.js';
 
@@ -37,6 +38,11 @@ function hashContent(text) {
   return createHash('sha256').update(text).digest('hex');
 }
 
+function optionalString(value) {
+  const text = String(value || '').trim();
+  return text || null;
+}
+
 function resolveSkillId(filePath, attributes = {}) {
   if (attributes.id) {
     return String(attributes.id);
@@ -47,6 +53,11 @@ function resolveSkillId(filePath, attributes = {}) {
   const normalized = filePath.replace(/\\/g, '/');
   const parts = normalized.split('/').filter(Boolean);
   return parts.length > 1 ? parts[parts.length - 2] : parts[parts.length - 1];
+}
+
+function resolveCanonicalPath(filePath, attributes = {}) {
+  const canonicalPath = optionalString(attributes.canonical_path);
+  return canonicalPath ? resolve(dirname(filePath), canonicalPath) : null;
 }
 
 function readMarkdownFile(filePath) {
@@ -64,7 +75,54 @@ function readMarkdownFile(filePath) {
   };
 }
 
-function determineScope(filePath, paths) {
+function resolveSkillContentParsed(filePath, parsed) {
+  const shimFor = optionalString(parsed.attributes.shim_for);
+  const canonicalPath = resolveCanonicalPath(filePath, parsed.attributes);
+
+  if (!shimFor && !canonicalPath) {
+    return {
+      contentParsed: parsed,
+      shimFor,
+      canonicalPath,
+      canonicalHash: null,
+      canonicalMtime: null,
+      warnings: parsed.warnings,
+    };
+  }
+
+  if (!canonicalPath || !existsSync(canonicalPath)) {
+    return {
+      contentParsed: parsed,
+      shimFor,
+      canonicalPath,
+      canonicalHash: null,
+      canonicalMtime: null,
+      warnings: [
+        ...parsed.warnings,
+        `canonical_path_missing:${canonicalPath || filePath}`,
+      ],
+    };
+  }
+
+  const canonicalParsed = readMarkdownFile(canonicalPath);
+  return {
+    contentParsed: canonicalParsed,
+    shimFor,
+    canonicalPath,
+    canonicalHash: hashContent(canonicalParsed.text),
+    canonicalMtime: canonicalParsed.mtimeMs,
+    warnings: [...parsed.warnings, ...canonicalParsed.warnings],
+  };
+}
+
+function determineScope(filePath, paths, rootPath = null) {
+  const resolvedRoot = rootPath ? resolve(rootPath) : null;
+  if (resolvedRoot && paths.externalSkillRoots?.includes(resolvedRoot)) {
+    return 'external';
+  }
+  if (resolvedRoot && resolvedRoot === resolve(join(paths.harnessRoot, 'skills'))) {
+    return 'harness';
+  }
   if (filePath.startsWith(join(paths.repoRoot, '.codex', 'repo-skills'))) {
     return 'repo';
   }
@@ -78,28 +136,45 @@ function determineScope(filePath, paths) {
 }
 
 function buildSkillDocument(filePath, parsed, rootPath, paths) {
-  const id = resolveSkillId(filePath, parsed.attributes);
-  const sections = parseSections(parsed.body);
+  const {
+    contentParsed,
+    shimFor,
+    canonicalPath,
+    canonicalHash,
+    canonicalMtime,
+    warnings,
+  } = resolveSkillContentParsed(filePath, parsed);
+  const attributes = {
+    ...contentParsed.attributes,
+    ...parsed.attributes,
+  };
+  const id = shimFor || resolveSkillId(filePath, attributes);
+  const sections = parseSections(contentParsed.body);
   const description =
-    parsed.attributes.description ||
+    attributes.description ||
     sections.find((section) => section.slug !== 'overview' && section.content)?.content?.split('\n')[0] ||
     '';
 
   const document = {
     id,
-    name: String(parsed.attributes.name || id),
+    name: String(attributes.name || id),
     description: String(description || ''),
-    shortDescription: String(parsed.attributes.short_description || description || '').slice(0, 160),
+    shortDescription: String(attributes.short_description || description || '').slice(0, 160),
     contentType: 'skill',
     sourcePath: filePath,
     sourceRoot: rootPath,
     relativePath: relative(rootPath, filePath),
-    precedenceScope: determineScope(filePath, paths),
+    precedenceScope: determineScope(filePath, paths, rootPath),
     hash: hashContent(parsed.text),
-    lineCount: parsed.lineCount,
+    sourceMtime: parsed.mtimeMs,
+    shimFor,
+    canonicalPath,
+    canonicalHash,
+    canonicalMtime,
+    lineCount: contentParsed.lineCount,
     tokenEstimate: sections.reduce((sum, section) => sum + section.tokenEstimate, 0),
-    attributes: parsed.attributes,
-    warnings: parsed.warnings,
+    attributes,
+    warnings,
     sections,
   };
 
@@ -125,6 +200,11 @@ function buildPolicyDocument(filePath, parsed, paths) {
     relativePath: relative(paths.standardsRoot, filePath),
     precedenceScope: 'global',
     hash: hashContent(parsed.text),
+    sourceMtime: parsed.mtimeMs,
+    shimFor: null,
+    canonicalPath: null,
+    canonicalHash: null,
+    canonicalMtime: null,
     lineCount: parsed.lineCount,
     tokenEstimate: sections.reduce((sum, section) => sum + section.tokenEstimate, 0),
     attributes: parsed.attributes,
@@ -140,7 +220,15 @@ export function latestSourceMtime(paths) {
   const roots = [paths.standardsRoot, ...paths.skillRoots];
   let latest = 0;
   for (const root of roots) {
+    if (!existsSync(root)) {
+      continue;
+    }
     for (const filePath of walkFiles(root, (currentPath) => /\.md$/i.test(currentPath))) {
+      latest = Math.max(latest, statSync(filePath).mtimeMs);
+    }
+  }
+  for (const filePath of [paths.routingRegistryPath, paths.externalSourceManifestPath]) {
+    if (filePath && existsSync(filePath)) {
       latest = Math.max(latest, statSync(filePath).mtimeMs);
     }
   }
@@ -183,6 +271,7 @@ function buildCompiledArtifacts(paths, documents) {
   const generatedAt = new Date().toISOString();
   const skills = documents.filter((document) => document.contentType === 'skill');
   const policies = documents.filter((document) => document.contentType === 'policy');
+  const routingRegistry = loadRoutingRegistry(paths);
 
   const policiesArtifact = { generated_at: generatedAt };
   let skillHints = { generated_at: generatedAt, rules: [] };
@@ -228,6 +317,8 @@ function buildCompiledArtifacts(paths, documents) {
       source_root: skill.sourceRoot,
       relative_path: skill.relativePath,
       precedence_scope: skill.precedenceScope,
+      shim_for: skill.shimFor,
+      canonical_path: skill.canonicalPath,
       token_estimate: skill.tokenEstimate,
       sections: skill.sections.map((section) => ({
         heading: section.heading,
@@ -246,6 +337,10 @@ function buildCompiledArtifacts(paths, documents) {
     policiesArtifact,
     skillHints,
     adapters,
+    routingArtifact: {
+      generated_at: generatedAt,
+      ...routingRegistry,
+    },
   };
 }
 
@@ -291,6 +386,7 @@ export async function indexPlatform(store, options = {}) {
   writeJson(join(paths.compiledRoot, 'skills-registry.json'), compiled.skillsRegistry);
   writeJson(join(paths.compiledRoot, 'policies.json'), compiled.policiesArtifact);
   writeJson(join(paths.compiledRoot, 'skill-hints.json'), compiled.skillHints);
+  writeJson(join(paths.compiledRoot, 'skill-routing.json'), compiled.routingArtifact);
   for (const [name, adapter] of Object.entries(compiled.adapters)) {
     writeJson(join(paths.compiledRoot, 'adapters', `${name}.json`), adapter);
   }

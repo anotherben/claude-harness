@@ -1,0 +1,33 @@
+{
+  "skill_name": "plan-360-audit",
+  "definition_of_100_percent": [
+    "stakeholder_360_review",
+    "enterprise_architecture_gate",
+    "root_cause_structural_gate",
+    "boundary_ledger_complete",
+    "evidence_ledger_blocks_unproven_claims",
+    "vague_or_symptom_patch_plans_fail_before_build"
+  ],
+  "evals": [
+    {
+      "id": "plan-360-fails-missing-root-cause-structure",
+      "prompt": "Audit a plan that has stakeholder detail and architecture notes but does not prove root cause, owner boundary, correct seam, SRP/cohesion, or recurrence guard.",
+      "expected_output": "plan-360-audit must FAIL until the plan proves root cause, ownership, domain boundary, correct seam, required fix-now refactors, and recurrence guard. The report may list blocking conditions, but it must not return PASS or CONDITIONAL PASS.",
+      "assertions": [
+        "Checks Root-Cause Structural Gate as a required gate.",
+        "Does not allow implementation when root cause, ownership, correct seam, SRP/cohesion, domain boundary, standard work, or recurrence guard is FAIL or UNPROVEN.",
+        "Requires exact tasks, files or symbols, owner boundary, acceptance criteria, and verification for any FIX-NOW refactor before implementation."
+      ]
+    },
+    {
+      "id": "plan-360-fails-unproven-evidence-ledger",
+      "prompt": "Audit a plan whose Evidence Ledger marks DB schema and runtime route behavior as UNPROVEN, then says build will confirm during implementation.",
+      "expected_output": "plan-360-audit must fail because load-bearing UNPROVEN or CONTRADICTED evidence cannot support PASS or CONDITIONAL PASS.",
+      "assertions": [
+        "Rejects load-bearing unproven assumptions that build would need to prove later.",
+        "Treats migration-only, diff-only, mock-only, or stale-memory proof as insufficient for runtime/schema claims when stronger evidence is available.",
+        "Requires planning, discovery, or source/runtime proof to resolve blockers before implementation."
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ---
 name: vault-init
-description: Auto-setup skill that configures a new project with the full vault+enterprise ecosystem. Checks and installs Obsidian CLI, plugins, kepano/obsidian-skills, enterprise skills, vault-index MCP, vault folder structure, standards files, project mapping, and cortex-engine indexing. Run this on first entry to any new project directory, or when the user says "init", "setup vault", "bootstrap project", or invokes /vault-init.
+description: Auto-setup skill that configures a new project with the full vault+enterprise ecosystem. Checks and installs Obsidian CLI, plugins, kepano/obsidian-skills, enterprise skills, vault-index MCP, skills-index MCP, vault folder structure, standards files, project mapping, and cortex-engine indexing. Run this on first entry to any new project directory, or when the user says "init", "setup vault", "bootstrap project", or invokes /vault-init.
 ---
 
 # vault-init
@@ -76,14 +76,14 @@ rm -rf /tmp/obsidian-skills-repo
 
 ### 4. Enterprise Skills Present
 
-Check for enterprise skills through the active Codex-local skill root:
+Check for enterprise skills through the active Codex-local skill root or `skills-index`:
 
 ```bash
 ls ~/.codex/skills/enterprise/SKILL.md
 ```
 
 - **Found**: PASS
-- **Not found**: MANUAL — "Enterprise skills not found at ~/.codex/skills/enterprise/. Install from the reviewed skills snapshot."
+- **Not found**: MANUAL — "Enterprise skills not found at ~/.codex/skills/enterprise/. Resolve through skills-index or install from the reviewed skills snapshot."
 
 Also spot-check a few other expected skills:
 - `~/.codex/skills/vault-capture/SKILL.md`
@@ -234,6 +234,35 @@ codex mcp add cortex-engine -- node $HOME/.claude-harness/cortex-engine/src/serv
 If `jcodemunch` is present in `mcpServers`, **remove it** — cortex-engine is the replacement. Delete the entire `jcodemunch` entry from `~/.claude.json`.
 
 Verify the engine works by calling `mcp__cortex-engine__cortex_status()`. If it returns file/symbol counts, the index is live.
+
+### 11b. Skills Index MCP Registered
+
+Check if skills-index is configured as an MCP server:
+
+Read `~/.claude.json` and check for a `skills-index` entry in `mcpServers`.
+
+- **Found**: PASS
+- **Not found**: FIX — Add skills-index MCP entry to `~/.claude.json`:
+
+```json
+"skills-index": {
+  "type": "stdio",
+  "command": "node",
+  "args": ["$HOME/.claude-harness/skills-index/src/server.js"],
+  "env": {"SKILLS_INDEX_RUNTIME": "claude"}
+}
+```
+
+Merge into existing `mcpServers` — do NOT overwrite other entries.
+
+Also add to Codex if available:
+```bash
+codex mcp add skills-index -- node $HOME/.claude-harness/skills-index/src/server.js
+```
+
+Run `./install.sh --global` or `./install.sh --update` first so Codex sees the full mirrored skill directories in `~/.codex/skills`.
+
+Verify the engine works by calling `mcp__skills_index__skill_status()`. If it returns counts and freshness data, the index is live.
 
 ### 11c. Cortex Memory MCP Registered
 
