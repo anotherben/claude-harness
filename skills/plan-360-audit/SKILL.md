@@ -158,7 +158,7 @@ These five commands are not optional. They are the difference between a narrativ
 
 ### Step 4: Root-Cause Structural Gate
 
-Run a separate structural assessment before the enterprise gate. This gate borrows the strict fix lenses from `$diagnose` and `$patch-or-fix`: plans must remove why the problem happens, not only change what happens after it appears.
+Run a separate structural assessment before the enterprise gate. This gate borrows the strict fix lenses from `$diagnose` (including its post-fix PATCH-vs-FIX verification mode): plans must remove why the problem happens, not only change what happens after it appears.
 
 #### Required Root-Cause Questions
 

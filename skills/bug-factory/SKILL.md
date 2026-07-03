@@ -18,8 +18,13 @@ metadata:
 
 A standard, repeatable, **separation-of-duties** pipeline for bugs/build tasks. The orchestrator (main loop) **only** sweeps, sets up isolation, runs deterministic gates, integrates verified results, babysits CI, and escalates the `main` merge. Every unit of real work is a **separate single-job agent**.
 
+This pipeline's SHIP phase (step 7 below) is the universal SHIP stage that `/go` routes every
+depth (except ANSWER) to — see `skills/go/SKILL.md`. Canonical gate reference:
+`skills/go/GATES.md` — the gate mechanics embedded below are kept in this pass but GATES.md is the
+source of truth if they diverge.
+
 ## THE ONE RULE
-**One agent, one job.** The jobs are: *confirm, plan, zoom-out, blast-radius, build (one per file), test, review, verify*. No agent ever performs two of these. No agent works on two different bugs. A builder never tests or reviews its own build. A planner never approves its own plan. Always fresh eyes.
+**One agent, one job.** The jobs are: *confirm, plan, zoom-out, blast-radius, build (one per file), test, review, verify*. (The standalone `zoom-out` and `patch-or-fix` skills are now modes of `/diagnose` — its system-mapping phase and post-fix verification mode; the job names below are unchanged, run them via `/diagnose`.) No agent ever performs two of these. No agent works on two different bugs. A builder never tests or reviews its own build. A planner never approves its own plan. Always fresh eyes.
 
 ## Engage
 Triggered by: `/bug-factory`, or the user saying a task "must be workflowed" / "workflow this" / "run the bug factory" / "process the open bugs". Also the standing pipeline for any build/bug task the user flags for workflowing.

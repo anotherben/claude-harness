@@ -1,11 +1,13 @@
 ---
 name: triage
-description: Triage issues through a state machine driven by triage roles. Use when user wants to create an issue, triage issues, review incoming bugs or feature requests, prepare issues for an AFK agent, or manage issue workflow.
+description: Triage issues through a state machine driven by triage roles. Use when user wants to create an issue, triage issues, review incoming bugs or feature requests, prepare issues for an AFK agent, or manage issue workflow. Also covers vault inbox intake — "triage the inbox", "process inbox", "clear the inbox", or /vault-triage.
 ---
 
 # Triage
 
 Move issues on the project issue tracker through a small state machine of triage roles.
+**GitHub issues are the system of record.** The Obsidian vault inbox (see "Vault intake" below)
+is an optional mirror — route vault items the same way you'd triage an issue.
 
 Every comment or issue posted to the issue tracker during triage **must** start with this disclaimer:
 
@@ -101,3 +103,34 @@ Capture everything resolved during grilling under "established so far" so the wo
 ## Resuming a previous session
 
 If prior triage notes exist on the issue, read them, check whether the reporter has answered any outstanding questions, and present an updated picture before continuing. Don't re-ask resolved questions.
+
+## Vault intake
+
+Triggered by "triage the inbox", "process inbox", "clear the inbox", `/vault-triage`, or the
+vault-gates hook blocking `/enterprise` on inbox items older than 48 hours. Walks the Obsidian
+vault's `00-Inbox/` and routes each item — a lighter-weight sibling of issue-tracker triage above,
+since vault items are not yet GitHub issues.
+
+Vault path: `{{VAULT_PATH}}`. Folders: `00-Inbox`, `01-Bugs`, `02-Tasks`, `03-Ideas`,
+`04-In-Progress`, `05-Archive`. Frontmatter: `type, priority, project, module, agent, status,
+branch, complexity, blocked-by, related, tags, created, updated`.
+
+1. List inbox items: `mcp__vault-index__list_vault(folder="00-Inbox")`, oldest first. If empty,
+   report "Inbox is empty" and stop.
+2. For each item, present type/project/priority/excerpt/age, then ask:
+   `Route to: Bugs (B), Tasks (T), Ideas (I), Archive (A), or Skip (S)?`
+3. Route per the user's choice:
+   - **B** → move to `01-Bugs/`, set `type: bug`, assess and set `complexity`.
+   - **T** → move to `02-Tasks/`, set `type: task`, assess and set `complexity`.
+   - **I** → move to `03-Ideas/`, set `type: idea`.
+   - **A** → move to `05-Archive/`, set `status: wont-do`.
+   - **S** → leave in inbox, continue.
+   Update `updated` to now. Move a file by editing frontmatter, writing to the new path, then
+   `rm` the old path.
+4. Re-index after each move: `mcp__vault-index__index_vault(incremental=true)`.
+5. Continue until inbox is empty or the user says stop/done/quit.
+6. Print a summary: `Triaged X items: Y -> Bugs, Z -> Tasks, W -> Ideas, V -> Archive. Inbox: N
+   items remaining.`
+
+For bug/task items that are agent-ready and worth tracking on GitHub too, consider filing the
+corresponding issue (state-machine section above) rather than letting the vault be the only record.

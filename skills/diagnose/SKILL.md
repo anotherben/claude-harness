@@ -1,6 +1,6 @@
 ---
 name: diagnose
-description: Use when debugging bugs, failures, regressions, stale proof, recurring whack-a-mole fixes, unclear ownership, poor seams, missing domain boundaries, write/leak risks, or behavior needing coordinated root-cause investigation.
+description: Use when debugging bugs, failures, regressions, stale proof, recurring whack-a-mole fixes, unclear ownership, poor seams, missing domain boundaries, write/leak risks, or behavior needing coordinated root-cause investigation. Also use for "patch or fix", "is this a patch", "post-fix review" (post-fix verification mode), and "zoom out", "bigger picture", "how does this fit together" (system-mapping mode).
 ---
 
 # Diagnose
@@ -10,6 +10,8 @@ A discipline for hard bugs. `$diagnose` is an orchestrator skill: it builds the 
 Default boundary: `$diagnose` sets up the whole fix; it does not implement the fix unless the user explicitly asks this same run to implement after diagnosis and the active route permits edits. A normal `$diagnose` run stops at the JSON packet.
 
 When exploring the codebase, use the project's domain glossary to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
+
+Model routing per `/go`: root-cause reasoning (hypothesis ranking, causal chain, verdict) = opus; sweeps (trap replay, freshness checks, log trawls) = haiku/sonnet.
 
 ## Operating standard
 
@@ -65,8 +67,8 @@ Minimum reviewer lenses:
   shallow causality, and rejected alternatives.
 - `proof-eval-reviewer`: checks fix evals, proof freshness, and stop rules.
 
-Add `blast-radius-reviewer`, `patch-or-fix-reviewer`, domain, runtime, schema,
-or UI reviewers when the bug class requires them.
+Add `blast-radius-reviewer`, `post-fix-verdict-reviewer` (this skill's own Post-fix verification
+mode lens), domain, runtime, schema, or UI reviewers when the bug class requires them.
 
 Finite loop rules:
 
@@ -119,8 +121,9 @@ Each fix eval must name:
 
 The `/goal` prompt must be safe to paste into a fresh build thread. It must name
 the diagnosis packet path, allowed scope, required eval IDs, verification plan,
-and follow-up gates such as `patch-or-fix`, `blast-radius`, PR checks, or live
-proof when applicable. It must also tell the build agent what not to do.
+and follow-up gates such as this skill's own Post-fix verification mode,
+`blast-radius`, PR checks, or live proof when applicable. It must also tell the
+build agent what not to do.
 
 ## Mandatory structural diagnosis
 
@@ -226,6 +229,40 @@ the full packet must be returned inline. The rundown should let a human quickly
 understand what is wrong, why it is wrong, what still is not proven, and what the
 next agent should do.
 
+## Post-fix verification mode
+
+(Absorbs the archived `patch-or-fix` skill.) Triggers: "patch or fix", "is this a patch",
+"post-fix review", or reviewing a change that already landed. Reuses this skill's own
+Mandatory structural diagnosis fields (ownership, srp_refactor, domain_refactor, seam,
+write_leak_impact) as the boundary check — do not build a second ledger. Reuses
+`diagnose.build_packet.v1` as-is; do not invent a patch/fix schema variant.
+
+Run Phases 1–5 against the *already-applied* change instead of an unfixed bug: the feedback
+loop reproduces the original symptom, then proves it against current head with the fix
+applied.
+
+**Verdict** (put this first in the screen rundown, before anything else): one of `FIX`,
+`PARTIAL FIX`, `CONTAINED PATCH`, `PATCH`, `HARMFUL PATCH`, `OVERENGINEERED`, `UNDIAGNOSED`,
+`FAIL: UNPROVEN`. Every verdict claim must cite a `root_cause_chain` or
+`evidence_freshness` entry — no evidence, no verdict.
+
+`FIX` requires all of:
+- Mandatory structural diagnosis passes (ownership named and centralized, SRP/domain/seam
+  checks pass on the changed path).
+- **Recurrence guard proven**: the same class of bad state cannot be produced again through
+  any active entry point — one owner, all writers/consumers route through it. Show the old
+  symptom fails, adjacent/sibling paths still behave correctly, and no guard/fallback/catch
+  is silently absorbing the symptom instead of the fix removing its cause.
+- A ratchet exists (test, invariant, contract, or gate) that fails if the defect returns.
+
+Anything short of that is `PARTIAL FIX`/`PATCH`/`HARMFUL PATCH` — name the exact
+remaining file/symbol/owner in `build_plan` and set `diagnosis_status` accordingly:
+`FIX` with nothing left → `fixed_pending_verify`; a named remaining fix → `build_ready` or
+`root_cause_ready`; unresolved causal edge → `repro_ready` or `blocked`.
+
+Same finite-loop rules as the main flow: one specialist round, one recheck round on
+disagreement, then stop and report the blocker rather than looping.
+
 ## Phase 1 — Build a feedback loop
 
 **This is the skill.** Everything else is mechanical. If you have a fast, deterministic, agent-runnable pass/fail signal for the bug, you will find the cause — bisection, hypothesis-testing, and instrumentation all just consume that signal. If you don't have one, no amount of staring at code will save you.
@@ -280,6 +317,8 @@ Confirm:
 Do not proceed until you reproduce the bug.
 
 ## Phase 3 — Zoom out + assign investigators
+
+(Absorbs the archived `zoom-out` skill — same map, applied here instead of standalone.)
 
 Before hypothesising, map the bug one layer outward:
 

@@ -1,11 +1,20 @@
 ---
 name: vault-sweep
-description: Weekly accountability check for the Obsidian vault. Detects stale inbox, stale active work, ghost work, verification debt, dead branches, missing metadata, and cross-project sprawl. Use when the user says "sweep the vault", "what's stale", "clean up", or invokes /vault-sweep.
+description: Weekly accountability check AND quick cross-project status for the Obsidian vault. Detects stale inbox, stale active work, ghost work, verification debt, dead branches, missing metadata, and cross-project sprawl. Use when the user says "sweep the vault", "what's stale", "clean up", or invokes /vault-sweep. Also covers the former /vault-status: "what's open", "vault status", "show my dashboard", "what am I working on", or when the user seems unsure what to work on next.
 ---
 
 # Vault Sweep
 
-The sweep now follows the controller model. It is primarily a detection and triage routine, not an automatic mutation pass.
+The sweep follows the controller model. It has two modes:
+
+- **Quick status** (read-only, was `/vault-status`) — a fast project-load + attention summary,
+  no mutation offers. Triggered by "what's open", "vault status", "dashboard", "what am I working
+  on", or when the user needs a project overview.
+- **Full sweep** (default, weekly accountability) — quick status's flags plus dead-branch checks,
+  resolved-blocker checks, and guided cleanup offers. Triggered by "sweep the vault", "what's
+  stale", "clean up".
+
+Both modes share the same flag computation (Step 2 below) — do it once, then branch on mode.
 
 ## Controller Rules
 
@@ -40,9 +49,12 @@ Also load:
 - `folder="00-Inbox"`
 - `folder="04-In-Progress"`
 
+If the user named a project (quick status mode supports this), filter every result to that
+`project` and state clearly: `Filtered to project: <name>`.
+
 ### 2. Classify controller debt
 
-Flag:
+Flag (shared by both modes — compute once):
 
 - `STALE-INBOX`
   - inbox item older than 48 hours
@@ -54,10 +66,15 @@ Flag:
   - governed item missing `next_action`
 - `MISSING-ID`
   - item missing `id`
-- `PROOF-GAP`
-  - item has `proof_state`
+- `PROOF-GAP` (aka Verification Gap)
+  - item has `proof_state`, or has obvious completion signals but is still open
+- `NEEDS-ATTENTION`
+  - all `critical` items, all `blocked` items
 
-### 3. Check branches and blockers
+**Quick status mode stops here** — skip straight to Step 5's quick-status rendering, no mutation
+offers. **Full sweep continues** to Steps 3–4 for branch/blocker/sprawl checks.
+
+### 3. Check branches and blockers (full sweep only)
 
 For `04-In-Progress` items with a branch:
 
@@ -69,7 +86,7 @@ For items with `blocked_by`:
 - inspect blocker state through vault-index
 - flag blocks that are resolved in practice but still linked
 
-### 4. Compute project sprawl
+### 4. Compute project sprawl (full sweep only)
 
 Report:
 
@@ -81,7 +98,20 @@ If open projects are much higher than recently active projects, call that out as
 
 ### 5. Present the report
 
-Render these sections:
+**Quick status mode** — render just:
+
+- `Project Load` table (per project: open / inbox / active / blocked / critical counts)
+- `Needs Attention Today` (critical + blocked items)
+- `Ghost Work`
+- `Verification Gaps`
+- `Inbox Debt`
+
+Close with one recommendation, in priority order: critical items first, then blocked items, then
+ghost-work cleanup, then inbox triage, otherwise the highest-load project. If the user wants the
+actual dashboard surface, point to `[[Master Dashboard]]`, `[[06-Portfolio/00 Portfolio Control
+Tower]]`, `[[06-Portfolio/05 Verification Gap Register]]`, `[[Projects/<project>/README]]`.
+
+**Full sweep mode** — render all of:
 
 - `Immediate Cleanup`
 - `Ghost Work`
@@ -94,7 +124,7 @@ Render these sections:
 
 Use concise tables or flat lists.
 
-### 6. Offer actions
+### 6. Offer actions (full sweep only)
 
 Offer guided operations, not automatic ones:
 

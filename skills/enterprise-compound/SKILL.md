@@ -4,28 +4,16 @@ description: Use when verified enterprise work or a resolved debugging session s
 ---
 
 # Enterprise Compound
-## Global Precheck
-
-Before reading further, writing artifacts, delegating, or changing files, run:
-
-```bash
-enterprise-precheck --skill enterprise-compound
-```
-
-If it exits non-zero, stop and report stderr verbatim. Do not hand-craft packet files or evidence markers to bypass it.
-
 
 Capture the lesson while it is still fresh.
 
 ## Required Workflow
 
-1. Run the agent-bound compound gate in [agent-stage-gates.md](../enterprise/references/agent-stage-gates.md).
-2. Search for an existing related solution note.
-3. If none exists, create one under `docs/solutions/YYYY-MM-DD-<slug>.md`.
-4. Use [solution-template.md](references/solution-template.md).
-5. Include structured `enterprise_prevention_records` whenever the lane involved a failed review, unresolved conversation, Copilot finding, or review-thread closeout.
-6. Validate the solution artifact with `tools/enterprise-skills/scripts/validate_structured_proof.py`.
-7. Focus on retrieval and prevention, not storytelling.
+1. Search for an existing related solution note.
+2. If none exists, create one under `docs/solutions/YYYY-MM-DD-<slug>.md`.
+3. Use [solution-template.md](references/solution-template.md).
+4. Include structured prevention records whenever the lane involved a failed review, unresolved conversation, Copilot finding, or review-thread closeout.
+5. Focus on retrieval and prevention, not storytelling.
 
 ## Review Feedback Harvester
 

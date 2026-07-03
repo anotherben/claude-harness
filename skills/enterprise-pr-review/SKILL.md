@@ -5,30 +5,6 @@ description: "End-to-end PR conversation closer and advisory review harvester fo
 
 # Enterprise PR Review
 
-## Helpdesk Overlay Bootstrap
-
-When the current git root is a Helpdesk worktree, make the repo-local overlays
-available before PR review work:
-
-```bash
-node /Users/ben/.codex/skills/enterprise-pr-review/scripts/ensure-helpdesk-overlays.cjs
-```
-
-This creates or refreshes `.codex/repo-skills/helpdesk-enterprise-pr-review`,
-`.codex/repo-skills/helpdesk-enterprise-stack-review`, and the Helpdesk enterprise
-manifest in whichever branch or worktree is active. After it runs, prefer the
-repo-local `helpdesk-enterprise-pr-review` overlay for Helpdesk-specific rules.
-
-## Global Precheck
-
-Before reading further, writing artifacts, delegating, or changing files, run:
-
-```bash
-enterprise-precheck --skill enterprise-pr-review
-```
-
-If it exits non-zero, stop and report stderr verbatim. Do not hand-craft packet files or evidence markers to bypass it.
-
 ## Overview
 
 This skill turns PR review feedback into a closed, verified engineering loop. It is not a comment-cleanup skill. Treat every unresolved blocking thread as a possible production bug until current code, tests, CI, and review evidence prove otherwise. Treat non-blocking Copilot/advisory comments as valuable review signal to harvest, classify, and learn from without making them default merge blockers.
@@ -67,7 +43,7 @@ If a PR is already open and later becomes high-risk, do not churn the PR state m
 
 ## Universal Enterprise Hardening Baseline
 
-- Use the GPT-5.5 fresh baseline: outcome, success criteria, constraints, evidence, and stop rules come before legacy prompt ceremony.
+- Use a fresh baseline: outcome, success criteria, constraints, evidence, and stop rules come first.
 - Green checks are not enough for blocking-closeout. Async review comments can arrive after checks pass, so live blocking thread state is the merge blocker source of truth.
 - Non-blocking Copilot/advisory comments are not default merge blockers, but they are not disposable. Harvest them into fixes, follow-ups, traps, gates, contract/plan rules, or evals.
 - Never resolve a review thread just because it is outdated, annoying, or probably fine. Reply with evidence first, then resolve only after proof.
@@ -91,20 +67,17 @@ If a PR is already open and later becomes high-risk, do not churn the PR state m
 
 ## Entry Gate
 
-Before doing PR work, the global precheck above must already have passed.
-
 ### PR Requirements Snapshot
 
-Before deep work, read `.codex/enterprise-state/hook-ledger/latest-route-card.json`
-and state the current PR target in one compact snapshot. Use the route card for
-required PR body sections and PR/merge gate names; use live GitHub for the PR
-facts:
+Before deep work, state the current PR target in one compact snapshot. Use
+`skills/go/GATES.md` for the required PR body sections and PR/merge gate names; use
+live GitHub for the PR facts:
 
 - PR number/URL, target repository, base branch, head branch, and head SHA.
 - Draft policy: `normal`, `high-risk`, or `draft-default`, with the reason.
-- Required PR body sections from `route_card.required_pr_body_sections`.
-- Async review/thread policy from `route_card.required_pr_gates`, plus required checks, review-ai/Copilot/Claude wait, live unresolved-thread query, and pre-merge sweep.
-- Enterprise status: whether review, forge, verify, and `pr-readiness` or merge gate are already satisfied for the current head, or still required.
+- Required PR body sections (per `GATES.md`).
+- Async review/thread policy (per `GATES.md`), plus required checks, review-ai/Copilot/Claude wait, live unresolved-thread query, and pre-merge sweep.
+- Enterprise status: whether review and verification are already satisfied for the current head, or still required.
 
 Then collect the current PR facts:
 
@@ -264,13 +237,9 @@ For Helpdesk-like evidence, seed the trap bank with stale UI/read-model rehydrat
 
 ### 5.5 Pre-Merge Async Review Sweep
 
-Immediately before any merge command, run the executable sweep from the current repo:
-
-```bash
-node /Users/ben/.codex/skills/enterprise-pr-review/scripts/pre-merge-review-sweep.cjs <PR>
-```
-
-This is a hard stop, especially after green checks. Do not merge if it reports:
+Immediately before any merge command, run the pre-merge convergence check per
+`skills/go/GATES.md` (copilot-review-wait convergence protocol). This is a hard stop,
+especially after green checks. Do not merge if it reports:
 
 - any pending/running check
 - any failed check
@@ -302,7 +271,7 @@ Never resolve without a reply unless the user explicitly asks for administrative
 
 Before saying a blocking-closeout PR is clean:
 
-- `pre-merge-review-sweep.cjs <PR>` passed after the latest push
+- the pre-merge convergence check (GATES.md) passed after the latest push
 - live unresolved blocking thread count is 0
 - latest head SHA matches the verified local head or verified remote head
 - all required checks are passing

@@ -344,8 +344,8 @@ database schema — it needs a contract. When in doubt, contract it.
 - **THEN** `contract-manager` → Contract Review Document
 - **THEN** implementation (executing-plans, subagent-driven-development, etc.)
 - **AFTER** implementation → `contract-manager` verification mode
-- **THEN** `run-verification` → lint + tests
-- **THEN** `scope-check` → no creep
+- **THEN** the `/go` verify stage (or the repo's own pipeline) → lint + tests
+- **THEN** `session-heartbeat` scope-drift gate → no creep
 - **THEN** commit
 
 The contract sits between planning and implementation. It is the gate.

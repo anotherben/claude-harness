@@ -73,9 +73,16 @@ Call:
 
 Show claim owner and lease expiry for claimed work where available.
 
-### 4. Record session identity
+### 4. Compile the briefing content (project home, active items, claims)
 
-Create the session markers required by edit gates:
+Gather everything needed for the briefing sections below. This step is the actual work of
+`vault-context` — briefing the user. The next step is a separate, unrelated side effect.
+
+### 4a. Hook-gate compatibility (side effect, not briefing)
+
+The `vault-gates` hook blocks `/enterprise` unless it sees evidence that `/vault-context` ran
+this session. It checks for marker files, not for briefing content, so this step exists purely to
+satisfy that hook — it has nothing to do with the briefing itself:
 
 ```bash
 SESSION_ID=$(ls -t "$CLAUDE_PROJECT_DIR"/../*.jsonl 2>/dev/null | head -1 | xargs basename | sed 's/\.jsonl$//')
