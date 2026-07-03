@@ -15,6 +15,10 @@ Source: raw text | GitHub issue # | vault item. **GitHub issues are the system o
 if the request arrived as text and will take >1 session, create/label an issue first
 (use /triage's label state machine). Vault capture is an optional mirror, not a gate.
 
+For issue/PR-sourced work, BEFORE claiming: read the issue + linked PRs, and run the
+concurrent-orchestrator yield check (GATES.md) — a minutes-old commit means someone else is
+driving it. Normalize the ask into one sentence + acceptance criteria before the depth gate.
+
 ## Step 2 — Depth gate
 
 | Depth | Trigger | Pipeline |
@@ -24,7 +28,11 @@ if the request arrived as text and will take >1 session, create/label an issue f
 | **STANDARD** | multi-file, one domain, known territory | plan → build (TDD default for bugs) → review → SHIP |
 | **DEEP** | new integration, architectural, unfamiliar territory, or user says "research" | research fan-out → design → plan → build → review → SHIP |
 | **DEBUG** | root cause unknown / recurring failure | /diagnose first, then re-enter at QUICK or STANDARD with the diagnosis packet |
+| **OPS** | deploy/promote/infra/cleanup ask, no code change | route to the dedicated skill (/promote for dev→prod, /worktree-cleanup, /pr-schema-audit, …) — no build stages. Prod-facing ops pause for approval. |
 
+**Commit to a depth — don't hedge.** Tie-breaker: pick the LOWER depth and rely on escalation;
+exceptions that force the higher depth regardless: schema/auth/tenant surface, purchasing scope,
+money/orders, new external integration.
 Escalate, never downgrade silently: if a QUICK task grows past its trigger, say so and move up.
 Medium/high-risk items (schema changes, auth/tenant boundaries, purchasing scope, prod promote)
 pause once for user approval at the plan step; everything else runs autonomously.

@@ -20,8 +20,11 @@ Last verified: 2026-07-04 (30-PR mining sweep + merge-gate memories).
 6. **enterprise-delivery-gate** — SRP/file-size/dup/ratchet checks (see Ratchets).
 7. **copilot-review-wait** — the long pole. See convergence protocol.
 8. **CodeRabbit + content-survival** — additional async review checks.
-9. **Merge: rebase ONLY** (`gh pr merge <n> --rebase`). Squash/merge-commit disabled. 0 human
+9. **Merge: rebase ONLY** (`gh pr merge <n> --rebase`). Squash/merge-commit disabled. 0 GitHub
    approvals required; `enforce_admins=true` (no admin override).
+   **Operator authorization:** dev merges are autonomous once green. Merges to **main** (and any
+   prod-facing promote) are human-gated — never run them without Ben's explicit go-ahead for that
+   specific PR. Zero *GitHub* approvals ≠ zero *operator* approval.
 
 ## PR body template (exact section headers)
 
