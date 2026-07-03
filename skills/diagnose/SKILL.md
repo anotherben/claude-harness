@@ -5,6 +5,11 @@ description: Use when debugging bugs, failures, regressions, stale proof, recurr
 
 # Diagnose
 
+**Boundary:** diagnose investigates and hands off — it does not edit code. Use it whenever
+you need a proven root-cause packet BEFORE touching code. `/enterprise-debug` is the
+fix-with-TDD lane: it CONSUMES a diagnose packet inside an enterprise run rather than
+re-deriving the root cause.
+
 A discipline for hard bugs. `$diagnose` is an orchestrator skill: it builds the feedback loop, launches bounded investigators when work can be split, integrates evidence, proves root cause, reaches bounded cohort agreement on the issue and resolution when the work is substantive, emits a build-ready JSON packet with fix evals and a pasteable `/goal` handoff, and prints a human-readable diagnosis rundown to the screen. Skip phases only when explicitly justified.
 
 Default boundary: `$diagnose` sets up the whole fix; it does not implement the fix unless the user explicitly asks this same run to implement after diagnosis and the active route permits edits. A normal `$diagnose` run stops at the JSON packet.

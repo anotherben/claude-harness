@@ -5,6 +5,10 @@ description: "Systematic enterprise debugging for bugs, failing tests, and unexp
 
 # Enterprise Debug
 
+**Boundary:** use `/diagnose` first when the root cause is unknown or disputed — it produces
+the investigation packet this skill consumes. enterprise-debug is for fixing with TDD inside an
+enterprise lane once the cause is understood (or trivially reproducible).
+
 ## Learned Behavior
 
 Load domain-specific lessons before starting:
