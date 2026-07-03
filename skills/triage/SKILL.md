@@ -118,11 +118,14 @@ branch, complexity, blocked-by, related, tags, created, updated`.
 1. List inbox items: `mcp__vault-index__list_vault(folder="00-Inbox")`, oldest first. If empty,
    report "Inbox is empty" and stop.
 2. For each item, present type/project/priority/excerpt/age, then ask:
-   `Route to: Bugs (B), Tasks (T), Ideas (I), Archive (A), or Skip (S)?`
+   `Route to: Bugs (B), Tasks (T), Ideas (I), Done/Reference (D), Archive (A), or Skip (S)?`
 3. Route per the user's choice:
    - **B** → move to `01-Bugs/`, set `type: bug`, assess and set `complexity`.
    - **T** → move to `02-Tasks/`, set `type: task`, assess and set `complexity`.
    - **I** → move to `03-Ideas/`, set `type: idea`.
+   - **D** → for `decision`/`note` items whose content is already settled: move to `05-Archive/`,
+     KEEP their existing `type` and set `status: recorded` (they're reference material, not
+     wont-do). If a decision still needs acting on, route it as a Task instead.
    - **A** → move to `05-Archive/`, set `status: wont-do`.
    - **S** → leave in inbox, continue.
    Update `updated` to now. Move a file by editing frontmatter, writing to the new path, then

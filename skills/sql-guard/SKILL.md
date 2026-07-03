@@ -87,6 +87,21 @@ Run through every item before writing or modifying database code. Skipping even 
 
 **Dev vs production**: Migrations run on the dev database first. Production migrations are a separate deploy step. Never assume a migration that ran on dev has run on production — check the deploy notes.
 
+**Operating a rollout against shared prod infra (lock cascade trap)**: DDL taking `ACCESS
+EXCLUSIVE` (ALTER TABLE, DROP/CREATE MATERIALIZED VIEW) on the shared app pool head-of-line
+blocks every concurrent reader — each queued SELECT trips its own `lock_timeout` (55P03
+cascade across unrelated tables is the signature; confirm with
+`SELECT applied_at, filename FROM schema_migrations WHERE applied_at BETWEEN <window>`).
+Rules:
+- Transactional DDL MUST go through the single owner
+  `apps/api/src/services/migrations/migrationLockTimeout.js`
+  (`runTransactionalDdlWithLockTimeout`, `SET LOCAL lock_timeout='750ms'` + bounded retry) —
+  never raw pool clients. `CREATE INDEX CONCURRENTLY` stays unwrapped (and outside txns).
+- `lock_timeout` bounds lock *acquisition* only — a table-rewrite DDL still blocks while it
+  holds the lock; use online-DDL patterns for rewrites.
+- Never run out-of-band manual migration runs against prod during business hours; prod does
+  NOT migrate on boot, so a migration inside an incident window proves a manual run.
+
 ### 5. Type-Safe Joins
 
 Mixed column types cause silent bugs. Never rely on implicit PostgreSQL coercion — always cast explicitly when types differ.

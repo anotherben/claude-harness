@@ -87,7 +87,7 @@ ls ~/.claude/skills/enterprise/SKILL.md
 
 Also spot-check a few other expected skills:
 - `~/.claude/skills/vault-capture/SKILL.md`
-- `~/.claude/skills/vault-status/SKILL.md`
+- `~/.claude/skills/vault-sweep/SKILL.md`
 - `~/.claude/skills/vault-context/SKILL.md`
 
 If any vault skills are missing, flag as MANUAL.

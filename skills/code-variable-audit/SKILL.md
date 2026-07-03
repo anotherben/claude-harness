@@ -24,32 +24,32 @@ Use this skill for audit-only review of variable and member usage. It is designe
 2. Run the collector. For a GitHub PR:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --output /tmp/code-variable-audit-123.md
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --output /tmp/code-variable-audit-123.md
 ```
 
 For batch/evaluation runs, write JSON to a file. When `--json --output` are both set,
 stdout is a compact receipt and the full JSON is written only to the output file:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --fail-on never --json --output /tmp/code-variable-audit-123.json
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --fail-on never --json --output /tmp/code-variable-audit-123.json
 ```
 
 3. For local changes:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --base origin/dev --head HEAD --dry-run --output /tmp/code-variable-audit-local.md
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --base origin/dev --head HEAD --dry-run --output /tmp/code-variable-audit-local.md
 ```
 
 4. For a focused file or file list:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --file apps/api/src/services/example.js --dry-run --output /tmp/code-variable-audit-file.md
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --file apps/api/src/services/example.js --dry-run --output /tmp/code-variable-audit-file.md
 ```
 
 5. If publication was authorized:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --publish --output /tmp/code-variable-audit-123.md --handoff-output /tmp/code-variable-audit-123-issue-to-green-pr.json
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --publish --output /tmp/code-variable-audit-123.md --handoff-output /tmp/code-variable-audit-123-issue-to-green-pr.json
 ```
 
 6. If the report includes an `Issue-To-Green-PR Handoff` section or `issueToGreenPrHandoff` JSON, immediately invoke `$issue-to-green-pr` with the emitted issue URL. Pass only the explicit target issue; do not copy or restate the downstream workflow.

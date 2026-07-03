@@ -28,7 +28,7 @@ driving it. Normalize the ask into one sentence + acceptance criteria before the
 | **STANDARD** | multi-file, one domain, known territory | plan → build (TDD default for bugs) → review → SHIP |
 | **DEEP** | new integration, architectural, unfamiliar territory, or user says "research" | research fan-out → design → plan → build → review → SHIP |
 | **DEBUG** | root cause unknown / recurring failure | /diagnose first, then re-enter at QUICK or STANDARD with the diagnosis packet |
-| **OPS** | deploy/promote/infra/cleanup ask, no code change | route to the dedicated skill (/promote for dev→prod, /worktree-cleanup, /pr-schema-audit, …) — no build stages. Prod-facing ops pause for approval. |
+| **OPS** | deploy/promote/infra/cleanup ask, no code change | route to the dedicated skill (/promote for dev→prod, /incident for prod-down/rollback/alert-spike, /worktree-cleanup, /pr-schema-audit, …) — no build stages. Prod-facing ops pause for approval. |
 
 **Commit to a depth — don't hedge.** Tie-breaker: pick the LOWER depth and rely on escalation;
 exceptions that force the higher depth regardless: schema/auth/tenant surface, purchasing scope,
