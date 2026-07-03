@@ -35,5 +35,5 @@ related: []
 
 | Finding | Missed Stage | Prevention Upgrade | Target | Status |
 |---------|--------------|--------------------|--------|--------|
-| ... | plan/contract/build/review/forge/verify/harness | rule/gate/eval/trap/contract item | intent ledger / SRP assessment / DB query packet / other | implemented/tracked-follow-up/gate-added/eval-added/blocked-with-reason |
+| ... | plan/contract/build/review (adversarial/proof lenses) | rule/gate/eval/trap/contract item | intent ledger / SRP assessment / DB query packet / other | implemented/tracked-follow-up/gate-added/eval-added/blocked-with-reason |
 ```

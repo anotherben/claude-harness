@@ -72,5 +72,5 @@ green after the fix. For schema/query/data-sensitive work, mock-only or
 migration-only evidence is not enough. For UI/PDF/file/rendered-output work,
 headless browser proof is required when making completion claims.
 
-If review, forge, CI, or live proof forces a code pivot, previous review/forge
+If review, CI, or live proof forces a code pivot, previous review
 evidence for affected files expires.

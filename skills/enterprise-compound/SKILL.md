@@ -17,7 +17,7 @@ Capture the lesson while it is still fresh.
 
 ## Review Feedback Harvester
 
-When the lane includes PR review, Copilot review, Codex review, forge bugs, or verify defects, compound the learning before closing:
+When the lane includes PR review, Copilot review, Codex review, or adversarial/proof defects, compound the learning before closing:
 
 - Record each accepted P1/P2/P3 finding, root cause, missed prevention point, fix pattern, and regression proof.
 - Route each accepted finding to exactly one prevention target: plan question, contract postcondition, build authority scan, review check, forge lens, verify command, CI/gate recommendation, repo trap, or skill eval.
@@ -58,10 +58,10 @@ When compound follows a failed PR review, unresolved conversation, Copilot findi
 That section must name, for every real finding:
 
 - reviewer finding and root cause
-- which upstream stage should have caught it first: `plan`, `contract`, `build`, `review`, `forge`, `harness`, or `verify`
+- which upstream stage should have caught it first: `plan` (incl. lock), `build`, `review` (incl. adversarial/proof/release lenses), or `ship`
 - the exact prevention upgrade: trap-matrix entry, repo gate, deterministic script, contract invariant/postcondition, plan rule, or skill eval
-- whether the upgrade targets the Intent Continuity Ledger, Touched File SRP
-  Assessment, DB/Query Ownership Packet, review/forge/verify lens, or harness gate
+- whether the upgrade targets the plan Lock, the review lens list, a domain guard
+  (/sql-guard, /integration-guard, /blast-radius), or a GATES.md rule
 - whether the upgrade was implemented now or recorded as a dated follow-up blocker
 - a matching structured `enterprise_prevention_records` entry with status `implemented`, `tracked-follow-up`, `gate-added`, `eval-added`, or `blocked-with-reason`
 

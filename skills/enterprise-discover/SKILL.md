@@ -29,7 +29,8 @@ unknowns instead of inventing them.
 - known structural traps
 - source-of-truth docs for risky domains
 
-Report these findings back to the orchestrator so plan and build inherit them. Real CI merge
+Write the profile to `docs/designs/YYYY-MM-DD-<slug>-discover.md` and report the highlights
+back to the orchestrator — plan reads that file, not this conversation. Real CI merge
 gates for this repo live in `skills/go/GATES.md` — reference that, do not restate it here.
 
 ## Rules

@@ -23,7 +23,7 @@ driving it. Normalize the ask into one sentence + acceptance criteria before the
 
 | Depth | Trigger | Pipeline |
 |---|---|---|
-| **ANSWER** | question / read-only | Answer it (Explore subagents if needed). No build stages. STOP. |
+| **ANSWER** | question / read-only | Answer it (Explore subagents if needed). Decision-shaped questions ("should I X or Y") → /advisor. No build stages. STOP. |
 | **QUICK** | ≤2 files, single module, no schema/integration surface | analyze → build → test → SHIP |
 | **STANDARD** | multi-file, one domain, known territory | plan → build (TDD default for bugs) → review → SHIP |
 | **DEEP** | new integration, architectural, unfamiliar territory, or user says "research" | research fan-out → design → plan → build → review → SHIP |

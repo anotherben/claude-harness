@@ -98,5 +98,5 @@ Include:
 
 - If the fix is narrow and contract exists, return to `enterprise-build`.
 - If the bug revealed missing requirements, update plan/contract before coding.
-- If verification proves the fix, proceed through review, forge, verify, harness,
-  and compound as required by the lane.
+- If verification proves the fix, proceed through review (incl. adversarial pass and
+  proof-scope verdict) and compound as required by the lane.

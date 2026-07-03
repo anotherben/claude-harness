@@ -16,7 +16,7 @@ lenses across parallel subagents when available; otherwise run them sequentially
 
 - Every plan/contract postcondition has a matching implementation target and a real test.
 - Every change is inside the plan's allowed paths; unlisted paths fail unless the plan was recycled.
-- Build receipts show real RED→GREEN loops; missing, wrong-reason, or post-hoc evidence fails.
+- Build receipts (`docs/verify/<slug>-receipts.jsonl`) show real RED→GREEN loops; missing, wrong-reason, or post-hoc evidence fails.
 - Schema/query claims have current-code reads **plus real live-DB proof** — never migrations,
   diffs, or mocks. Read-only SELECT/report/proof queries count: they must use the owning seam
   and carry tenant/owner/current-DB scope and a readback/affected-row expectation.

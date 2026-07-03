@@ -26,7 +26,7 @@ If any is missing, stop and go back upstream — do not fill the gap by guessing
 
 ## Execute
 
-1. Read the locked plan, the current repo state, and the domain guards in scope:
+1. Read the locked plan at `docs/plans/YYYY-MM-DD-<slug>-plan.md`, the current repo state, and the domain guards in scope:
    `/sql-guard` (any SQL), `/integration-guard` (REX/Shopify), `/blast-radius` (multi-caller).
 2. Pre-edit authority scan: search for an existing owner before adding money/date/quantity/
    status/route/tenant logic or any DB writer/reader. Reuse the owned seam; if a second
@@ -34,7 +34,8 @@ If any is missing, stop and go back upstream — do not fill the gap by guessing
 3. Work the plan's postconditions **in order**, one RED→GREEN loop each:
    run the expected RED (it must fail for the stated reason), make the smallest allowed edit,
    run the expected GREEN. Build in tracer bullets — never all tests first then all code.
-4. Emit **receipts**, not claims: for each loop record changed paths, postcondition id,
+4. Emit **receipts**, not claims — append one JSON line per loop to
+   `docs/verify/<slug>-receipts.jsonl` (review reads this exact path): changed paths, postcondition id,
    command, exit status, proof type, test file/name, and log path. Mark `green` only from a
    command you actually ran and that passed — never from staged, queued, or "CI-will-pass".
 5. Schema/query/data work: the first relevant RED test is live-DB / real-integration proof

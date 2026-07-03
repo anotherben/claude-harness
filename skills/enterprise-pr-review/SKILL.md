@@ -34,7 +34,7 @@ Escalate any advisory comment to `blocking-closeout` or an immediate hotfix if i
 Do not make every PR draft by default. Use this policy:
 
 - `normal`: open PR and keep it open until required gates, async review checks, review-thread state, and any repo-specific pre-merge sweep pass. Do not enable auto-merge by default.
-- `high-risk`: draft PR until enterprise review/forge/verify/harness have passed and Copilot has either reviewed the current head or an explicit advisory-harvest follow-up is recorded.
+- `high-risk`: draft PR until enterprise review (incl. adversarial pass and proof-scope verdict) has passed and Copilot has either reviewed the current head or an explicit advisory-harvest follow-up is recorded.
 - `draft-default`: only use draft for all PRs if the repo is confirmed to run Copilot review on draft PRs. If that setting is unknown or disabled, draft-by-default can hide the PR from useful review and slow delivery.
 
 High-risk means schema/query/data-sensitive work, tenant/security, money, orders, invoices, inventory, external integrations, destructive writes, authentication, or UI/PDF/file workflows that affect real operators.
@@ -249,6 +249,13 @@ especially after green checks. Do not merge if it reports:
 
 If the sweep blocks, return to the conversation matrix. Reply with evidence and resolve only after the current-head fix or proof is green, then rerun the sweep.
 
+Treadmill mechanics (per GATES.md — follow exactly): bots re-review on EVERY push and resolving
+threads does NOT re-trigger them — batch ALL code fixes first, minimise pushes, then resolve
+remaining threads reply-only. Reply-required threads need a substantive (≥40 char) human reply
+as the LAST comment; when a bot re-acks after your reply, reply once more so the human has the
+last word. copilot-review-wait gives up early while base checks run — after base goes green,
+re-fire it with `gh run rerun <runid> --failed`.
+
 ### 6. Reply And Resolve
 
 For each thread, reply with:
@@ -280,7 +287,7 @@ Before saying a blocking-closeout PR is clean:
 - PR body gate requirements are satisfied
 - no unrelated dirty changes were included
 
-If merge is requested, use the repository's allowed merge strategy. If squash and merge commits are disallowed, try rebase merge. Never push directly to protected `main`.
+If merge is requested, use the repository's allowed merge strategy. If squash and merge commits are disallowed, try rebase merge. Never push directly to protected `main`. Operator authorization per GATES.md: dev merges are autonomous once green; merges to `main` (or any prod-facing promote) require Ben's explicit go-ahead for that specific PR — green checks and zero GitHub approvals do NOT constitute authorization.
 
 For advisory-harvest, final readiness means every harvested advisory comment is classified and routed. The report must not claim advisory threads are resolved unless they actually were; it should say `advisory harvested` and list any follow-ups opened or recommended.
 
