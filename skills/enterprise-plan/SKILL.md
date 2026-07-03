@@ -11,8 +11,8 @@ uncertainty here, not during build. Read `skills/go/GATES.md` before planning pr
 
 ## Inputs / outputs
 
-- In: the design doc (or the issue + verified claims), the current repo state, `GATES.md`.
-- Out: `docs/plans/YYYY-MM-DD-<slug>-plan.md` — the plan (tasks, paths, commands) with the
+- In: the design doc (`docs/designs/YYYY-MM-DD-<slug>-tdd.md`, or the issue + verified claims), the current repo state, `GATES.md`.
+- Out: `docs/designs/YYYY-MM-DD-<slug>-plan.md` — the plan (tasks, paths, commands) with the
   **Lock** section (below) inline. This exact path is what build consumes; never hand off a
   plan that lives only in conversation.
 

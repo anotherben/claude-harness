@@ -20,7 +20,7 @@ Capture the lesson while it is still fresh.
 When the lane includes PR review, Copilot review, Codex review, or adversarial/proof defects, compound the learning before closing:
 
 - Record each accepted P1/P2/P3 finding, root cause, missed prevention point, fix pattern, and regression proof.
-- Route each accepted finding to exactly one prevention target: plan question, contract postcondition, build authority scan, review check, forge lens, verify command, CI/gate recommendation, repo trap, or skill eval.
+- Route each accepted finding to exactly one prevention target: plan question, contract postcondition, build authority scan, review check, review lens, release-proof check, CI/gate recommendation, repo trap, or skill eval.
 - Classify whether the missed prevention point was intent continuity, touched-file
   SRP/refactor, DB/query ownership, runtime proof, or another class. Intent/SRP/
   DB ownership misses must update the corresponding ledger, packet, lens, gate,

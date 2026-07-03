@@ -26,7 +26,7 @@ If any is missing, stop and go back upstream — do not fill the gap by guessing
 
 ## Execute
 
-1. Read the locked plan at `docs/plans/YYYY-MM-DD-<slug>-plan.md`, the current repo state, and the domain guards in scope:
+1. Read the locked plan at `docs/designs/YYYY-MM-DD-<slug>-plan.md`, the current repo state, and the domain guards in scope:
    `/sql-guard` (any SQL), `/integration-guard` (REX/Shopify), `/blast-radius` (multi-caller).
 2. Pre-edit authority scan: search for an existing owner before adding money/date/quantity/
    status/route/tenant logic or any DB writer/reader. Reuse the owned seam; if a second

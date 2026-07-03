@@ -62,7 +62,7 @@ If a PR is already open and later becomes high-risk, do not churn the PR state m
   intent, update the Intent Continuity Ledger and recycle before claiming the PR
   is ready.
 - All verification must be headless. Manual browser or GitHub UI observation is supporting context only.
-- If any code, contract, docs, or gate changes are made after review/forge/verify evidence, prior evidence for affected files expires.
+- If any code, contract, docs, or gate changes are made after review-stage evidence, prior evidence for affected files expires.
 - Keep PR review orchestration inside the current harness. Do not route enterprise PR review through external bridge roles.
 
 ## Entry Gate
@@ -230,7 +230,7 @@ When the user asks to learn why PRs fail, update enterprise skills, or harvest r
 - identify the branch/head window and PR set, such as the last 150 commits on `dev`
 - count review comments by reviewer and PR, and classify failure classes rather than pasting raw comments
 - include CI/check failures from the same window, especially false-green or preflight failures after review/proof refresh commits
-- extract prevention targets: plan questions, contract postconditions, build ratchets, review checks, forge lenses, verify/harness commands, repo gates, or skill evals
+- extract prevention targets: plan questions, contract postconditions, build ratchets, review checks, review lenses, release-proof checks, repo gates, or skill evals
 - prove each accepted trap has a prevention target; `fixed in the PR` is not enough unless a ratchet or upstream rule now catches the class earlier
 
 For Helpdesk-like evidence, seed the trap bank with stale UI/read-model rehydration, config/env/outage semantics, proof-lane selector misses, stale proof-subject/preflight failures, weak assertions, DB/query ownership gaps, integration side-effect/idempotency faults, redaction/diagnostic leaks, and SRP/domain-boundary drift.
@@ -300,7 +300,7 @@ After the PR is clean or merged, capture what the review taught:
 - root cause
 - fix pattern
 - regression proof
-- whether the trap should become a contract, plan, forge, verify, or deterministic gate check
+- whether the trap should become a plan-lock, review-lens, release-proof, or deterministic gate check
 - whether the miss was an intent-continuity, touched-file SRP/refactor, or
   DB/query ownership failure that should become a skill eval or gate
 
@@ -310,7 +310,7 @@ For advisory-harvest, compound is the main output. The run is incomplete until e
 
 ## Review Feedback Harvester Hard Gate
 
-For blocking-closeout, the run is also incomplete until every accepted P1/P2/P3 finding has exactly one prevention target: plan question, contract postcondition, build authority scan, review check, forge lens, verify command, CI/gate recommendation, repo trap, or skill eval. Do not treat "fixed in this PR" as prevention unless the upstream rule or deterministic proof path was also updated or explicitly tracked.
+For blocking-closeout, the run is also incomplete until every accepted P1/P2/P3 finding has exactly one prevention target: plan question, contract postcondition, build authority scan, review check, review lens, release-proof check, CI/gate recommendation, repo trap, or skill eval. Do not treat "fixed in this PR" as prevention unless the upstream rule or deterministic proof path was also updated or explicitly tracked.
 
 For branch-window retrospectives, the run is incomplete until the trap bank has both an old-skill/baseline verdict and a new-skill verdict for the accepted eval cases, or a clear blocker explaining why model-based A/B could not be run and what deterministic proof was used instead.
 
