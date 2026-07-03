@@ -24,16 +24,6 @@ python scripts/project_architect.py [options]
 python scripts/dependency_analyzer.py [options]
 ```
 
-## Enterprise Architecture Guardrails
-
-When reviewing or designing high-risk lanes such as async workers, queues, invoices, orders, inventory, pricing, label-printing, notifications, or staff workflows:
-
-- Treat partial proof as failure. Only full proof can support done, PR-ready, merge-ready, or ship-ready claims.
-- Require a field-level producer-to-consumer contract for UI/API/DB/worker/read-model/print/notification payloads.
-- Require lifecycle proof for exact field spelling through real producers, near-miss field spelling collisions, duplicate submit, concurrent workers, stale running recovery, old synchronous confirmation/error preservation before enqueue, post-commit bookkeeping failure, helper return variant success semantics, unavailable/cancelled downstream dependencies, retry, and close/reopen/refresh rehydration.
-- Reject source-string, fixture-only, or hard-coded mock tests as primary proof when a real runtime, DB, worker, browser, or integration boundary exists.
-- Push missing lifecycle or field-contract cells back to plan/contract before implementation continues.
-
 ## Core Capabilities
 
 ### 1. Architecture Diagram Generator

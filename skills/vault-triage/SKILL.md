@@ -9,7 +9,7 @@ Walk through all inbox items one by one, presenting each to the user and routing
 
 Vault path: `{{VAULT_PATH}}`
 Vault folders: 00-Inbox, 01-Bugs, 02-Tasks, 03-Ideas, 04-In-Progress, 05-Archive
-Frontmatter schema: id, type, priority, project, module, agent, status, branch, worktree_path, complexity, next_action, proof_state, blocked_by, related, tags, created, updated
+Frontmatter schema: type, priority, project, module, agent, status, branch, complexity, blocked-by, related, tags, created, updated
 
 ## Steps
 

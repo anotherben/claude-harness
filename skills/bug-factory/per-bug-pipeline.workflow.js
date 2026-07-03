@@ -12,11 +12,14 @@ export const meta = {
 }
 
 // args: { bugs: [{ id, title, summary, worktree, branch }], mainRepo, maxRounds }
-const A = args || {}
+const A = typeof args === 'string' ? JSON.parse(args) : (args || {})
 const MAIN = A.mainRepo || '/Users/ben/helpdesk'
 const MAX_ROUNDS = A.maxRounds || 4
 const BUGS = Array.isArray(A.bugs) ? A.bugs : []
 if (!BUGS.length) { log('bug-factory: no bugs passed in args.bugs — nothing to do'); return { results: [] } }
+
+// price-aware routing (user directive: cheaper models for grunt work)
+const GRUNT = 'sonnet'
 
 const env = (wt) => `Worktree: ${wt} (cd here; verify \`git -C ${wt} branch --show-current\`; NEVER main/dev). NO MCP; Read blocked on source >50 lines — use sed/grep/git; edit via Edit (small) or perl/git-apply (large). Commit ONLY files your job needs by explicit path (no \`git add -A\`). For jest/psql you MUST target the DEV DB (helpdesk_dev), NEVER prod: \`. /Users/ben/.claude/skills/bug-factory/devdb-env.sh || exit 1\` then run against "\$TEST_DATABASE_URL" (verify: \`psql "\$TEST_DATABASE_URL" -c "SELECT current_database()"\` prints helpdesk_dev). root .env DATABASE_URL is PROD htnhelpdesk — never use it; apps/api/.env is a drifted local DB. Never --no-verify, no push, no PR. Proof = pasted evidence only.`
 
@@ -53,23 +56,26 @@ async function planConverge(bug) {
   for (let round = 1; round <= MAX_ROUNDS && cleanPasses < 2; round += 1) {
     const fresh = round > 1 || cleanPasses > 0 ? ' (FRESH eyes — a previous round raised concerns; re-examine from scratch)' : ''
     plan = await agent(
-      `PLANNER for bug "${bug.title}"${fresh}. ${env(bug.worktree)}\nBUG: ${bug.summary}\n${plan ? 'PRIOR PLAN + concerns to resolve:\n' + JSON.stringify({ plan, concerns: history.slice(-1)[0] }) : ''}\nInvestigate with grep/sed, produce the minimal safe plan (approach, root-cause decision w/ evidence, exact files+changes, RED test, do-not-change). Do NOT write code.\nCI-GATE PRE-SATISFACTION (the plan MUST bake these in, they are push/merge-blocking gates discovered the hard way): (1) if any changed file is schema-coupled/DB-backed (SQL, db.query callers, table reads/writes), the test plan uses a real .live.test.js against helpdesk_dev (env-gated, self-cleaning, close config/database pool in afterAll) — mocked db.query shape-tests are BLOCKED at push by scripts/ci/ensureNoNewMockTests.cjs; (2) any DB-backed source file in filesToChange needs a matching REGISTRY entry in scripts/review/live-proof-registry.cjs (pattern + live-proof command) or the required review-hard check fails with "Live DB proof registry gap" — include that registry edit in filesToChange; (3) if the diff touches apps/api/src/domains/purchasing/**, plan a purchasing full-kit freshness refresh as the LAST commit before push (re-prove PC-LIVE-DB live via ~/.claude/skills/bug-factory/purchasing-cert-env.sh, re-subject docs/verify/2026-05-02-purchasing-dev-full-kit-closeout-artifact.json+md to HEAD; recipe = git show 67ab6381e) or preflight-dev fails and copilot-review-wait treats it as a blocking check.`,
+      `PLANNER for bug "${bug.title}"${fresh}. ${env(bug.worktree)}\nBUG: ${bug.summary}\n${plan ? 'PRIOR PLAN + concerns to resolve:\n' + JSON.stringify({ plan, concerns: history.slice(-1)[0] }) : ''}\nInvestigate with grep/sed, produce the minimal safe plan (approach, root-cause decision w/ evidence, exact files+changes, RED test, do-not-change). Do NOT write code.\nCI-GATE PRE-SATISFACTION (the plan MUST bake these in, they are push/merge-blocking gates discovered the hard way): (1) if any changed file is schema-coupled/DB-backed (SQL, db.query callers, table reads/writes), the test plan uses a real .live.test.js against helpdesk_dev (env-gated, self-cleaning, close config/database pool in afterAll) — mocked db.query shape-tests are BLOCKED at push by scripts/ci/ensureNoNewMockTests.cjs; (2) any DB-backed source file in filesToChange needs a matching REGISTRY entry in scripts/review/live-proof-registry.cjs (pattern + live-proof command) or the required review-hard check fails with "Live DB proof registry gap" — include that registry edit in filesToChange; (3) if the diff touches apps/api/src/domains/purchasing/**, plan a purchasing full-kit freshness refresh as the LAST commit before push (re-prove PC-LIVE-DB live via ~/.claude/skills/bug-factory/purchasing-cert-env.sh, re-subject docs/verify/2026-05-02-purchasing-dev-full-kit-closeout-artifact.json+md to HEAD; recipe = git show 67ab6381e) or preflight-dev fails and copilot-review-wait treats it as a blocking check; (4) CODE PLACEMENT LAW: any NEW runtime file is FORBIDDEN under apps/api/src/services/ — new modules go under apps/api/src/domains/<domain>/ (editing existing services/ files is allowed); (5) SRP cohort ratchet: keep new/edited files under 400 lines or plan an evidence-quality srp_justification.`,
       { schema: PLAN, label: `plan:${bug.id}:r${round}`, phase: 'Plan-converge' })
     const zoom = await agent(
       `ZOOM-OUT for "${bug.title}" (independent of planner). ${env(bug.worktree)}\nPLAN: ${JSON.stringify(plan)}\nMap the area in plain language, correct any hallucinated symbol names (verify by grep), and list concerns this plan misses. concerns=[] if none.`,
-      { schema: ZOOM, label: `zoom:${bug.id}:r${round}`, phase: 'Plan-converge' })
+      { schema: ZOOM, label: `zoom:${bug.id}:r${round}`, phase: 'Plan-converge', model: GRUNT })
     const blast = await agent(
       `BLAST-RADIUS for "${bug.title}" (independent). ${env(bug.worktree)}\nPLAN: ${JSON.stringify(plan)}\nTrace callers/tests/SQL/tenant/siblings. MANDATORY: validate the plan against the LIVE LOCAL DB for schema drift and PASTE the evidence into liveDbEvidence (psql "$TEST_DATABASE_URL" -c "\\d <table>" + real sample queries + constraint/index checks). verdict SAFE/ADJUST/BLOCK; concerns=[] if none.`,
-      { schema: BLAST, label: `blast:${bug.id}:r${round}`, phase: 'Plan-converge' })
-    const concerns = [...(zoom.concerns || []), ...(blast.concerns || []), ...(blast.verdict !== 'SAFE' ? [`blast verdict=${blast.verdict}`] : [])]
-    history.push({ round, concerns, liveDbEvidence: blast.liveDbEvidence })
+      { schema: BLAST, label: `blast:${bug.id}:r${round}`, phase: 'Plan-converge', model: GRUNT })
+    // agent() returns null on terminal API errors (e.g. session limits) — treat as a failed round, not a crash
+    const zoomR = zoom || { concerns: ['zoom agent errored (null result) — fresh re-run needed'] }
+    const blastR = blast || { verdict: 'ADJUST', concerns: ['blast agent errored (null result) — fresh re-run needed'], liveDbEvidence: '' }
+    const concerns = [...(zoomR.concerns || []), ...(blastR.concerns || []), ...(blastR.verdict !== 'SAFE' ? [`blast verdict=${blastR.verdict}`] : [])]
+    history.push({ round, concerns, liveDbEvidence: blastR.liveDbEvidence })
     // Convergence gates on the STRUCTURED plan-safety signal (blast-radius verdict SAFE) sustained
     // for 2 consecutive fresh-eyes rounds — NOT on zero advisory concerns (fresh agents always surface
     // minor test-craft/line-drift/out-of-scope nits, so zero-concerns is unreachable and nothing ever builds).
     // Advisory concerns are still captured in history and must be honored by the build agents.
-    const planSafe = blast.verdict === 'SAFE'
+    const planSafe = blastR.verdict === 'SAFE'
     if (planSafe) { cleanPasses += 1 } else { cleanPasses = 0 }
-    log(`bug ${bug.id} plan round ${round}: blast=${blast.verdict}, ${concerns.length} advisory concerns, cleanPasses=${cleanPasses}`)
+    log(`bug ${bug.id} plan round ${round}: blast=${blastR.verdict}, ${concerns.length} advisory concerns, cleanPasses=${cleanPasses}`)
   }
   return { plan, converged: cleanPasses >= 2, history }
 }
@@ -79,14 +85,14 @@ async function buildPerFile(bug, plan) {
   // RED test first (its own job)
   builds.push(await agent(
     `RED-TEST AUTHOR for "${bug.title}" (TDD; you only write the failing test). ${env(bug.worktree)}\nPLAN: ${JSON.stringify(plan.plan || plan)}\nWrite the failing test described in the plan's redTest, run it, PASTE the failing output (proving it catches the bug), commit ONLY the test file by explicit path.\nGATE RULE: if the code under test is schema-coupled/DB-backed, the test MUST be a real .live.test.js against helpdesk_dev (mirror an existing *.live.test.js: env-flag-gated describe.skip, TEST_DATABASE_URL with no DATABASE_URL fallback, self-cleaning rows, close require('../../config/database').pool in afterAll so no --forceExit). Do NOT write mocked db.query/jest.mock(...database) shape-tests — scripts/ci/ensureNoNewMockTests.cjs hard-blocks them at push for schema-coupled files.`,
-    { schema: BUILD1, label: `build-redtest:${bug.id}`, phase: 'Build' }))
+    { schema: BUILD1, label: `build-redtest:${bug.id}`, phase: 'Build', model: GRUNT }))
   // one agent per production file, SEQUENTIAL (each sees prior commits)
   const files = ((plan.plan || plan).filesToChange || []).map((f) => f.file).filter(Boolean)
   for (let i = 0; i < files.length; i += 1) {
     const file = files[i]
     builds.push(await agent(
       `BUILDER for "${bug.title}" — you edit EXACTLY ONE file: ${file}. ${env(bug.worktree)}\nLOCKED PLAN: ${JSON.stringify(plan.plan || plan)}\nImplement the plan's change for THIS file only (other files are handled by other builders). Make the minimal edit, verify with git diff, commit ONLY ${file} by explicit path. Re-read your own diff vs the plan before returning.`,
-      { schema: BUILD1, label: `build:${bug.id}:${file.split('/').pop()}`, phase: 'Build' }))
+      { schema: BUILD1, label: `build:${bug.id}:${file.split('/').pop()}`, phase: 'Build', model: GRUNT }))
   }
   return builds
 }
@@ -95,7 +101,7 @@ const results = await pipeline(
   BUGS,
   (bug) => agent(
     `CONFIRM agent for bug "${bug.title}". ${env(bug.worktree)}\nBUG: ${bug.summary}\nReproduce it; produce concrete evidence it is REAL (failing test / log signature / DB state / repro steps). reproducible=false if you cannot reproduce (with evidence).`,
-    { schema: CONFIRM, label: `confirm:${bug.id}`, phase: 'Confirm' }).then((confirm) => ({ bug, confirm })),
+    { schema: CONFIRM, label: `confirm:${bug.id}`, phase: 'Confirm', model: GRUNT }).then((confirm) => ({ bug, confirm })),
   async ({ bug, confirm }) => {
     if (!confirm.reproducible) { log(`bug ${bug.id} NOT reproducible — skipping to sweep`); return { bug, confirm, skip: 'not-reproducible' } }
     const planned = await planConverge(bug)
@@ -111,7 +117,7 @@ const results = await pipeline(
     if (ctx.skip) return ctx
     const test = await agent(
       `INDEPENDENT TESTER for "${ctx.bug.title}" (you did NOT build it). ${env(ctx.bug.worktree)}\nRun the relevant unit + integration suites against the live DB and PASTE output. Confirm the bug behaviour is fixed + no regression in touched modules (prove any pre-existing failures identical on parent). pass=true ONLY with pasted passing output.`,
-      { schema: TEST, label: `test:${ctx.bug.id}`, phase: 'Test' })
+      { schema: TEST, label: `test:${ctx.bug.id}`, phase: 'Test', model: GRUNT })
     return { ...ctx, test }
   },
   async (ctx) => {
@@ -133,7 +139,7 @@ This is the MANDATORY pre-ship verify gate — it runs against the LOCAL CORTEX 
    SURFACE-GATED (HARD — mocks NEVER sufficient): Shopify diff -> a REAL dev-Shopify canary (actual dev Shopify store call, paste request+response); REX diff -> a REAL dev-REX canary (actual dev REX/SOAP call, paste response); other API/script -> a REAL live-dev canary (run the job/script against the dev DB/runtime, paste output; use integration-guard for dev endpoints). State "UI path n/a because <reason>" as the non-UI disclaimer — it does NOT exempt the canary.
 4. Write the proof to docs/verify/${slug}-browser-proof.md (commit it by explicit path) with an EXPLICIT statement: "fix <change> resolved bug <id> by demonstrating the REAL fixed behaviour, in PLAIN TEXT with real before/after values (NO 'behaviour Y' / angle-bracket placeholders). Then RUN the gate and paste its PASS: node ~/.claude/skills/bug-factory/verify-proof-gate.cjs --proof docs/verify/${slug}-browser-proof.md --diff-base origin/dev --repo ${ctx.bug.worktree}. "seems to work" / mocks-as-canary are rejected.
 Return verified=true ONLY with the pasted demonstrative evidence + the smoke result + proofPath.`,
-      { schema: VERIFY, label: `verify:${ctx.bug.id}`, phase: 'Verify' })
+      { schema: VERIFY, label: `verify:${ctx.bug.id}`, phase: 'Verify', model: GRUNT })
     return { ...ctx, verify }
   },
 )

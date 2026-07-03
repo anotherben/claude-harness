@@ -31,12 +31,6 @@ Prioritize these fields in the briefing:
 - `claimed_at`
 - `completed_at`
 
-Control-board policy:
-
-- A project may have 5+ active slices; show at least 5 before collapsing, and do not treat more as a failure.
-- There is no active-project cap.
-- Quiet active work from the last week or two should be treated as `Resume Context Needed`, not abandoned or failed.
-
 ## Steps
 
 ### 0. Check for stale vault index
@@ -65,7 +59,6 @@ Group into:
 
 - immediate attention: `critical` or `blocked`
 - active delivery: `claimed` and `in-progress`
-- resume context needed: claimed/in-progress items quiet for 7-14 days, with branch/worktree/owner/next_action/handoff/proof anchors
 - open queue: `open`
 - inbox debt: `00-Inbox`
 - ideas: `03-Ideas`
@@ -114,15 +107,13 @@ Present sections in this order:
    - critical and blocked items
 3. `Active Delivery`
    - claimed and in-progress items with owner, lease, branch, and next action
-4. `Resume Context Needed`
-   - quiet active items with their resume anchors and the next safe read/action
-5. `Ghost Work`
+4. `Ghost Work`
    - items with completion signals but not `done`
-6. `Verification Gaps`
+5. `Verification Gaps`
    - items with `proof_state`
-7. `Inbox And Ideas`
+6. `Inbox And Ideas`
    - inbox older than 48h first, then ideas
-8. `Code Repo Structure`
+7. `Code Repo Structure`
    - top-level tree and key modules
 
 ### 7. Close with one actionable recommendation
@@ -131,7 +122,7 @@ Choose one:
 
 - address critical work
 - unblock blocked work
-- resume context-needed active work
 - clean ghost work
 - triage stale inbox
 - otherwise start highest-priority open task
+
