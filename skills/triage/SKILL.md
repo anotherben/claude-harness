@@ -128,6 +128,8 @@ branch, complexity, blocked-by, related, tags, created, updated`.
      wont-do). If a decision still needs acting on, route it as a Task instead.
    - **A** → move to `05-Archive/`, set `status: wont-do`.
    - **S** → leave in inbox, continue.
+   Create the destination folder if it does not exist yet (vault-capture only creates
+   `00-Inbox/`–`03-Ideas/`; `04-In-Progress/` and `05-Archive/` may be missing on new vaults).
    Update `updated` to now. Move a file by editing frontmatter, writing to the new path, then
    `rm` the old path.
 4. Re-index after each move: `mcp__vault-index__index_vault(incremental=true)`.

@@ -17,7 +17,8 @@ if the request arrived as text and will take >1 session, create/label an issue f
 
 For issue/PR-sourced work, BEFORE claiming: read the issue + linked PRs, and run the
 concurrent-orchestrator yield check (GATES.md) — a minutes-old commit means someone else is
-driving it. Normalize the ask into one sentence + acceptance criteria before the depth gate.
+driving it. Normalize the ask into one sentence + acceptance criteria before the depth gate (for
+DEBUG-bound work, symptom + observable "fixed when" is enough — refine after /diagnose).
 
 ## Step 2 — Depth gate
 
@@ -30,6 +31,9 @@ driving it. Normalize the ask into one sentence + acceptance criteria before the
 | **DEBUG** | root cause unknown / recurring failure | /diagnose first, then re-enter at QUICK or STANDARD with the diagnosis packet |
 | **OPS** | deploy/promote/infra/cleanup ask, no code change | route to the dedicated skill (/promote for dev→prod, /incident for prod-down/rollback/alert-spike, /worktree-cleanup, /pr-schema-audit, …) — no build stages. Prod-facing ops pause for approval. |
 
+**DEBUG and OPS are categorical, not on the ladder**: unknown/disputed root cause ALWAYS
+forces DEBUG first regardless of apparent size; ops asks always route OPS. The ladder
+tie-breaker below applies only among QUICK/STANDARD/DEEP.
 **Commit to a depth — don't hedge.** Tie-breaker: pick the LOWER depth and rely on escalation;
 exceptions that force the higher depth regardless: schema/auth/tenant surface, purchasing scope,
 money/orders, new external integration.
@@ -62,12 +66,12 @@ fresh eyes between plan and review (never let the builder review its own diff).
 - **review**: fresh-eyes /code-review (sonnet finder, opus verify) + codex adversarial review of
   the diff. Fix genuine bugs; justify-and-drop nits.
 - **verify**: surface-gated proof — Playwright/browser for UI, dev-canary for integrations,
-  live-DB contract test for SQL (see GATES.md live-DB rules). Demonstrative proof or it didn't
+  live-DB contract test for SQL (GATES.md “Tests: live-DB, not mocks”). Demonstrative proof or it didn't
   happen.
 - **SHIP** (universal terminal stage — every depth except ANSWER ends here): run /bug-factory's
-  ship phase mechanics per [GATES.md](GATES.md): 6-section PR body with exact DB-proof line,
-  batch fixes → resolve-reply-only convergence on copilot-review-wait, rebase-only merge,
-  worktree teardown. Draft PR early; babysit with a sonnet poller, not the orchestrator.
+  ship phase, following [GATES.md](GATES.md) for every gate mechanic (PR body, review
+  convergence, merge, teardown) — no gate details restated here by design. Draft PR early;
+  babysit with a sonnet poller, not the orchestrator.
 - **compound**: after a nontrivial ship, one short /enterprise-compound pass to capture the trap.
 - **recovery**: long runs checkpoint via /handover-writer (plan-file checkbox state + blockers +
   git log) so any fresh session can resume mid-pipeline.

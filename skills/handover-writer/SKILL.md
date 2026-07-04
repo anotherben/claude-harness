@@ -107,7 +107,7 @@ Update the "Resume Point" section in MEMORY.md with:
 ### Step 4: Save to Obsidian Vault
 
 If the work involves important decisions, gotchas, or patterns worth preserving:
-- `/vault-capture` with key findings (type="issue" for gotchas, type="decision" for decisions)
+- `/vault-capture` with key findings (type="note" for gotchas, type="decision" for decisions)
 - Vault handles relations via tags/links automatically
 
 ### Step 5: Commit the Handover
