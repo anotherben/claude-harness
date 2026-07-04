@@ -234,6 +234,13 @@ the full packet must be returned inline. The rundown should let a human quickly
 understand what is wrong, why it is wrong, what still is not proven, and what the
 next agent should do.
 
+## System-mapping mode (zoom-out only, no bug)
+
+When the request is mapping-only — "zoom out", "how does X fit together", no failing behavior
+to reproduce — SKIP Phases 1–2 (feedback loop, reproduction) entirely: run the Phase 3
+system-mapping pass directly (modules, callers, ownership, runtime flow, state lifecycle,
+edge cases), report the map, and stop. No verdict, no packet.
+
 ## Post-fix verification mode
 
 (Absorbs the archived `patch-or-fix` skill.) Triggers: "patch or fix", "is this a patch",
@@ -250,6 +257,11 @@ applied.
 `PARTIAL FIX`, `CONTAINED PATCH`, `PATCH`, `HARMFUL PATCH`, `OVERENGINEERED`, `UNDIAGNOSED`,
 `FAIL: UNPROVEN`. Every verdict claim must cite a `root_cause_chain` or
 `evidence_freshness` entry — no evidence, no verdict.
+
+**Consumer roll-up** (bug-factory and other exit gates key on three classes): `FIX` = pass;
+`PARTIAL FIX` = PARTIAL (gap remains); everything else (`CONTAINED PATCH`, `PATCH`,
+`HARMFUL PATCH`, `OVERENGINEERED`, `UNDIAGNOSED`, `FAIL: UNPROVEN`) = PATCH-class = fail.
+Always state the roll-up class alongside the fine-grained verdict.
 
 `FIX` requires all of:
 - Mandatory structural diagnosis passes (ownership named and centralized, SRP/domain/seam
