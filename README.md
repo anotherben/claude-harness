@@ -10,6 +10,8 @@ This is the main entrypoint for the platform and the fastest way to get a projec
 
 - `./install.sh --global` (recommended for most environments)
 - `./install.sh --project <path>` for repo-specific MCP wiring
+- `./scripts/install-codex-overhead-savings.sh` to install the portable Codex
+  startup-overhead reduction bundle on another server
 
 **Current release:** `v2.2.2`
 
