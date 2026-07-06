@@ -1,0 +1,10 @@
+# Keep local searches cheap by default. Target these paths explicitly when doing
+# session archaeology, plugin-cache work, or raw memory maintenance.
+sessions/
+plugins/cache/
+.tmp/
+logs/
+*.log
+*.jsonl
+memories/rollout_summaries/
+memories/*.bak
