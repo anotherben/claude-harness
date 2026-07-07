@@ -1,6 +1,6 @@
 ---
 name: deploy-checklist
-description: Use when preparing to deploy code to production, merging to main, running migrations on production databases, or setting environment variables on Render. Use when the user mentions "deploy", "push to production", "merge to main", "run migrations", or asks about pending deploy items. Also use when reviewing what needs to happen before a feature goes live.
+description: Use when preparing to deploy code to production, merging to main, running migrations on production databases, or setting environment variables on hosting platforms such as Render. Use when the user mentions "deploy", "push to production", "merge to main", "run migrations", or asks about pending deploy items. Also use when reviewing what needs to happen before a feature goes live.
 ---
 
 # Deploy Checklist
@@ -13,7 +13,7 @@ A structured pre-deployment validation process that ensures nothing is missed wh
 
 - Before merging dev to main
 - Before running migrations on production DB
-- Before setting/changing env vars on Render
+- Before setting/changing env vars on a hosting platform such as Render
 - When user asks "what needs to be deployed" or "is this ready for prod"
 
 ## When NOT to Use
@@ -27,7 +27,7 @@ A structured pre-deployment validation process that ensures nothing is missed wh
 ### 1. Code Readiness
 
 - [ ] All changes committed to dev branch
-- [ ] All tests passing (`npm test`)
+- [ ] All tests passing (run the repo's full test suite)
 - [ ] No debug code (console.log, debugger statements)
 - [ ] No hardcoded URLs or credentials
 - [ ] `git diff dev..main` reviewed — understand what's changing
@@ -37,7 +37,8 @@ A structured pre-deployment validation process that ensures nothing is missed wh
 Check pending migrations:
 ```bash
 # List migration files
-ls prisma/migrations/
+: "${MIGRATION_DIR:?Set MIGRATION_DIR to your repo migration directory}"
+ls "$MIGRATION_DIR"/
 
 # Compare against what's been run (check production DB)
 # Migrations are sequential — run in order, never skip
@@ -61,16 +62,16 @@ diff <(grep -oP '^[A-Z_]+=' .env | sort) <(grep -oP '^[A-Z_]+=' .env.example | s
 ```
 
 For each new env var:
-- [ ] Value set on Render (use PATCH/append, NEVER PUT which wipes all vars)
+- [ ] Value set on hosting platform using a safe append/PATCH/update method
 - [ ] Default/fallback in code if var is optional
 - [ ] Documented in .env.example
 
-**CRITICAL**: Never use PUT on Render env vars API — it WIPES ALL existing variables. Always use APPEND/PATCH.
+**CRITICAL**: Some platforms wipe all variables on full replacement. On Render, never use PUT for env vars; use append/PATCH/update semantics.
 
 ### 4. Dependency Check
 
-- [ ] No new npm packages that need `npm install` on production
-- [ ] If new packages exist, verify they're in package.json (not just locally installed)
+- [ ] No new packages that need installation on production
+- [ ] If new packages exist, verify they're in the committed dependency manifest (not just locally installed)
 - [ ] Check for breaking version changes in updated packages
 
 ### 5. Feature Flags
@@ -89,11 +90,11 @@ Check if new extensions are needed:
 ### 7. Deploy Sequence
 
 Execute in this exact order:
-1. Set env vars on Render (PATCH endpoint)
+1. Set env vars on the hosting platform using a safe append/PATCH/update method
 2. Install DB extensions if needed
 3. Run migrations in batch order (see migration plan)
-4. Push code to main (`git push origin main`)
-5. Verify service restarts successfully on Render
+4. Push or merge code to main through the approved release path
+5. Verify service restarts successfully
 6. Run smoke test (hit key API endpoints)
 7. Monitor logs for 15 minutes
 
@@ -107,9 +108,10 @@ Before deploying, document:
 
 ## Post-Deploy Verification
 
+- [ ] Run `post-merge-test-kit` for the merged PR: draft it before merge when possible, then execute it after deploy with deployed-SHA proof; choose `agent-run` for safe read-only checks or `human-run` when privileged/manual validation is required
 - [ ] API responds on production URL
 - [ ] Key endpoints return expected data
-- [ ] No new errors in Render logs
+- [ ] No new errors in deployment logs
 - [ ] Cron jobs running on schedule
 - [ ] Background workers processing queue
 
@@ -117,7 +119,7 @@ Before deploying, document:
 
 | Mistake | Impact | Prevention |
 |---------|--------|------------|
-| PUT on Render env vars | Wipes ALL vars, full outage | Always PATCH/append |
+| Unsafe env-var replacement | Wipes ALL vars, full outage | Always use append/PATCH/update semantics; Render PUT is dangerous |
 | Skip migration order | Foreign key violations, data loss | Run in sequence |
 | Deploy without env vars | Features crash on missing config | Set vars BEFORE push |
 | No rollback plan | Extended downtime | Document rollback for each migration |

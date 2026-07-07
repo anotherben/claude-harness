@@ -279,7 +279,8 @@ codex mcp add vault-index -- node $HOME/.vault-index/src/server.js
 "skills-index": {
   "type": "stdio",
   "command": "node",
-  "args": ["$HOME/.claude-harness/skills-index/src/server.js"]
+  "args": ["$HOME/.claude-harness/skills-index/src/server.js"],
+  "env": {"SKILLS_INDEX_RUNTIME": "claude"}
 }
 ```
 
@@ -287,6 +288,8 @@ codex mcp add vault-index -- node $HOME/.vault-index/src/server.js
 ```bash
 codex mcp add skills-index -- node $HOME/.claude-harness/skills-index/src/server.js
 ```
+
+Run `./install.sh --global` or `./install.sh --update` first so Codex sees the full mirrored skill directories in `~/.codex/skills`.
 
 ### cortex-memory (cross-platform transcript recall)
 

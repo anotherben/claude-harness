@@ -24,6 +24,15 @@ Primary workflow.
 
 ## Workflow
 Secondary workflow.
+
+## 3
+Repeated numeric heading.
+
+## 3
+Second repeated numeric heading.
+
+## 3-2
+Natural numeric suffix heading.
 `);
 
   const overview = sections[0];
@@ -31,6 +40,8 @@ Secondary workflow.
   const step = sections.find((section) => section.heading === 'Step 1 Search');
   const template = sections.find((section) => section.heading === 'Template Output');
   const workflowRepeat = sections.find((section) => section.slug === 'workflow-2');
+  const repeatedThree = sections.find((section) => section.slug === '3-2');
+  const naturalThreeTwo = sections.find((section) => section.heading === '3-2');
 
   assert.equal(overview.slug, 'overview');
   assert.equal(overview.depth, 0);
@@ -53,4 +64,6 @@ Secondary workflow.
 
   assert.ok(workflowRepeat);
   assert.equal(workflowRepeat.kind, 'section');
+  assert.equal(repeatedThree.slug, '3-2');
+  assert.equal(naturalThreeTwo.slug, '3-2-2');
 });

@@ -273,7 +273,8 @@ All projects pick up the update immediately.
     "skills-index": {
       "type": "stdio",
       "command": "node",
-      "args": ["/Users/you/.claude-harness/skills-index/src/server.js"]
+      "args": ["/Users/you/.claude-harness/skills-index/src/server.js"],
+      "env": {"SKILLS_INDEX_RUNTIME": "claude"}
     },
     "cortex-memory": {
       "type": "stdio",
@@ -296,6 +297,8 @@ codex mcp add skills-index -- node ~/.claude-harness/skills-index/src/server.js
 codex mcp add cortex-memory -- node ~/.cortex-memory/src/server.js
 codex mcp add vault-index -- node ~/.vault-index/src/server.js
 ```
+
+Run `./install.sh --global` or `./install.sh --update` first so Codex sees the full mirrored skill directories in `~/.codex/skills`.
 
 ### 5. Set up Obsidian vault
 

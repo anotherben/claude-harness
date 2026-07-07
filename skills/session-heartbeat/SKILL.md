@@ -32,6 +32,20 @@ Then re-read ONE rule from the Rule Re-injection section — whichever is most r
 
 A Quick Heartbeat is better than no heartbeat. Use the full 6-Point Check at major milestones (before commits, before task switches, after compaction).
 
+## Vault Controller Check
+
+When the session touches vault-backed work, add this quick controller pass:
+
+1. Open or summarize `[[Master Dashboard]]`
+2. Check the relevant `[[Projects/<project>/README]]`
+3. Ask whether the current item has:
+   - canonical `status`
+   - `next_action`
+   - any ghost-work signal (`completed_at` or `handoff_note` while still open)
+   - `proof_state` if proof is the real blocker
+
+If the session status request is really a portfolio request, prefer the controller view over transcript memory.
+
 ## The 6-Point Check
 
 Run these in order. Each takes seconds. Together they catch the problems that slip through in long sessions.
@@ -54,7 +68,7 @@ State the original task in one sentence. If you cannot state it clearly, that is
 
 If drift detected: propose `git checkout -- [drifted-file]` to revert out-of-scope changes before they compound.
 
-**Cortex-specific drift patterns to watch for:**
+**Common drift patterns to watch for:**
 - Import cleanup in files you didn't need to touch
 - Formatting/whitespace changes alongside functional edits
 - Adding error handling to existing code that works fine
@@ -106,9 +120,9 @@ These rules fade from working memory over time. Re-read and internalize each one
 
 **REVERT-FIRST**: If a test that was passing is now failing after your change: `git checkout -- [file]`. Do NOT update the test to match your code. Do NOT fix forward. Revert first, understand why, then re-approach.
 
-**PRE-CODE CHECKLIST**: Before the next edit, recall gotchas from Obsidian vault: `search_vault(query="cortex coding gotchas PRE-CODE checklist")`. Quote the specific trap that applies. "Checked" is not enough — name the specific trap.
+**PRE-CODE CHECKLIST**: Before the next edit, recall gotchas from the configured memory or vault source. For Obsidian-backed work, use `search_vault(query="coding gotchas PRE-CODE checklist")`. Quote the specific trap that applies. "Checked" is not enough — name the specific trap.
 
-**TENANT ISOLATION**: Every INSERT needs `tenant_id`. Every SELECT/UPDATE/DELETE scopes to `tenant_id` in the WHERE clause. Exception: `products`, `inventory`, `suppliers` tables (shared across tenants in this codebase).
+**TENANT ISOLATION**: If multi-tenant: every INSERT needs `tenant_id`. Every SELECT/UPDATE/DELETE scopes to `tenant_id` in the WHERE clause. Check the stack profile for shared-table exceptions.
 
 **SQL SAFETY**: `$1, $2` placeholders only — never template literals in SQL. `TIMESTAMPTZ` not `TIMESTAMP`. `IF NOT EXISTS` on all DDL.
 
@@ -128,6 +142,7 @@ Estimate how deep into the context window we are:
 - **50-70%**: Wrap up the current sub-task. Commit what is working. Prepare a mental summary of remaining work.
 - **Over 70%**: STOP new work immediately. Save state to Obsidian vault (`/vault-capture`). Write handover doc to `docs/handovers/`. Commit everything. Tell user to `/clear`.
 
+When context-gate.sh blocks Edit/Write, that is the hard signal you are over 70%. Do not fight the hook — save state and hand over.
 
 ## Post-Commit Checkpoint
 
@@ -174,13 +189,14 @@ When the heartbeat detects specific types of work, suggest the relevant skill:
 
 | Detected Activity | Suggest Skill |
 |-------------------|---------------|
-| SQL query being written or modified | `sql-guard` — run the checklist before writing |
-| REX/Shopify integration code | `integration-guard` — check field mappings |
+| SQL query being written or modified | `sql-guard` — run the checklist before writing, if available |
+| External API integration code | `integration-guard` — check field mappings, if available |
 | About to commit | `scope-check` — verify no drift |
 | Approaching context limit | `handover-writer` — save state properly |
 | Starting a new feature branch | `worktree-cleanup` — check for stale worktrees |
 | Migration being created | `sql-guard` — migration safety section |
 | Code exploration / symbol lookup | `cortex-engine` — `cortex_status`, then `cortex_outline`/`cortex_find_symbol` |
+| Portfolio or task status review | `vault-status` or `vault-context` — prefer the controller over transcript memory |
 
 ## When to Invoke
 
