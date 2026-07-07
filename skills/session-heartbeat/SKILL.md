@@ -1,11 +1,13 @@
 ---
 name: session-heartbeat
-description: Use this skill when the user asks "where are we", "status check", "health check", "checkpoint", "what have we done", or any progress review of the current session. Also use when the user wants to switch tasks, drop current work for something urgent, pause to review scope, or says the context/session is getting long. Covers session progress summaries, scope drift detection, task switching protocols, and context health checks.
+description: Use this skill when the user asks "where are we", "status check", "health check", "checkpoint", "what have we done", or any progress review of the current session. Also use when the user wants to switch tasks, drop current work for something urgent, pause to review scope, or says the context/session is getting long. Also use before any `git commit`, when a diff touches >5 files or files unrelated to the task, or when the user says "check scope", "did I go off track", or "review my changes". Covers session progress summaries, scope drift detection, task switching protocols, and context health checks.
 ---
 
 # Session Heartbeat
 
 Discipline decays silently in long sessions. After 50+ tool calls, rules start dropping — not because they're forgotten, but because momentum makes skipping feel productive. This skill re-injects the rules that matter most and catches drift before it compounds.
+
+Model routing per `/go`: this is a cheap sweep (haiku/sonnet), not a reasoning task — don't spend opus on a heartbeat.
 
 ## Task Switch Protocol
 
@@ -54,6 +56,14 @@ State the original task in one sentence. If you cannot state it clearly, that is
 
 If drift detected: propose `git checkout -- [drifted-file]` to revert out-of-scope changes before they compound.
 
+**Pre-commit scope-drift gate** (absorbs the archived `scope-check` skill — run this before every
+`git commit`): if `git diff --stat` shows more than 5 files, or any file unrelated to the one-sentence
+task statement, flag it explicitly. Common drift shapes: refactoring unrelated code, features not
+requested, bugs noticed-but-not-asked-for (note them, don't fix), comments/reformatting on untouched
+logic, dependency bumps not required by the task. For each: revert (`git checkout -- <file>`) if
+fully out-of-scope, or note it for the user if it's a real bug/security issue found along the way —
+never fix it silently in the same commit.
+
 **Cortex-specific drift patterns to watch for:**
 - Import cleanup in files you didn't need to touch
 - Formatting/whitespace changes alongside functional edits
@@ -73,7 +83,7 @@ Verify we are not accidentally editing files in the wrong worktree or on `dev`/`
 ### 3. Verification Ledger
 
 For each modified file, answer YES or NO:
-- Was `run-verification` invoked AFTER the last edit to this file?
+- Was the project's verification pipeline (lint + tests; `/go`'s verify stage) run AFTER the last edit to this file?
 - Did it pass?
 
 Format as a table:
@@ -176,7 +186,6 @@ When the heartbeat detects specific types of work, suggest the relevant skill:
 |-------------------|---------------|
 | SQL query being written or modified | `sql-guard` — run the checklist before writing |
 | REX/Shopify integration code | `integration-guard` — check field mappings |
-| About to commit | `scope-check` — verify no drift |
 | Approaching context limit | `handover-writer` — save state properly |
 | Starting a new feature branch | `worktree-cleanup` — check for stale worktrees |
 | Migration being created | `sql-guard` — migration safety section |

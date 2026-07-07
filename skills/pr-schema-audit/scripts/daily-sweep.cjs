@@ -13,7 +13,7 @@ const os = require('os');
 const path = require('path');
 
 const REPO = 'anotherben/helpdesk';
-const AUDIT = '/Users/ben/.codex/skills/pr-schema-audit/scripts/pr-schema-audit.cjs';
+const AUDIT = require('path').join(__dirname, 'pr-schema-audit.cjs');
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function log(msg) { process.stdout.write('[' + new Date().toISOString() + '] ' + msg + '\n'); }

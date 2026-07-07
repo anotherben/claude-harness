@@ -10,9 +10,9 @@ Use this skill to run an audit-only schema check for a Helpdesk GitHub PR. It re
 ## Guardrails
 
 - Never paste or store the database URL in this skill.
-- Read the URL from `HELPDESK_SCHEMA_AUDIT_DATABASE_URL` or from `~/.codex/secrets/helpdesk-schema-audit-db-url`.
+- Read the URL from `HELPDESK_SCHEMA_AUDIT_DATABASE_URL` or from `~/.codex/secrets/helpdesk-schema-audit-db-url (canonical secret location — used by the live launchd job; do not “fix” this path)`.
 - Keep the secret file owner-only. The script refuses group or world-readable secret files.
-- Use the full skill body and bundled scripts from the invoked skill directory.
+- Use the bundled scripts from the canonical install `~/.claude/skills/` (examples below are absolute for that reason; the launchd daily job runs the synced `~/.codex` copy).
   Keep the Codex and Claude copies in sync; do not create a second secret or
   replace either copy with a redirect-only wrapper.
 - Do not edit repo code, run migrations, execute application write workflows, or fix findings.
@@ -32,13 +32,13 @@ test -n "$HELPDESK_SCHEMA_AUDIT_DATABASE_URL" || test -f "$HOME/.codex/secrets/h
 4. Run the audit. For proof or exploration, keep dry-run:
 
 ```bash
-/Users/ben/.codex/skills/pr-schema-audit/scripts/pr-schema-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --output /tmp/pr-schema-audit-123.md
+~/.claude/skills/pr-schema-audit/scripts/pr-schema-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --output /tmp/pr-schema-audit-123.md
 ```
 
 5. For an authorized audit that should post findings:
 
 ```bash
-/Users/ben/.codex/skills/pr-schema-audit/scripts/pr-schema-audit.cjs --repo anotherben/helpdesk --pr 123 --publish --output /tmp/pr-schema-audit-123.md
+~/.claude/skills/pr-schema-audit/scripts/pr-schema-audit.cjs --repo anotherben/helpdesk --pr 123 --publish --output /tmp/pr-schema-audit-123.md
 ```
 
 6. Evaluate any residual `DB call is not statically resolved` finding before trusting the verdict. The script already auto-handles the common false positives (see Edge-Case Handling), so a surviving one is either a real gap or a new construct the resolver does not yet model. For each such finding, do not report it blindly — evaluate it:
@@ -102,7 +102,7 @@ Secrets:
 When the resolver meets a new wrapper shape it does not yet model, extend `isFunctionArg`/`calls` in `scripts/pr-schema-audit.cjs` rather than downgrading the finding by hand, and add a case to the offline parser guard so it stays fixed:
 
 ```bash
-node /Users/ben/.codex/skills/pr-schema-audit/scripts/pr-schema-audit.test.cjs
+node ~/.claude/skills/pr-schema-audit/scripts/pr-schema-audit.test.cjs
 ```
 
 ## Output Requirements

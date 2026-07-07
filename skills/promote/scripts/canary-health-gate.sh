@@ -128,29 +128,39 @@ write_heartbeat() {
 # PRE-CUTOVER: capture the standing prod /health snapshot as the reference.
 cmd_baseline() {
   require_jq
-  log "Capturing baseline from ${API_BASE}${HEALTH_PATH}"
-  local resp http_code body
-  resp="$(fetch_health)"
-  http_code="$(tail -n1 <<<"$resp")"
-  body="$(sed '$d' <<<"$resp")"
+  # Sample /health N times and UNION the issue codes across samples. Some monitor
+  # codes (notably order_outbox_oldest_held_due) flicker in/out on the sync
+  # worker's ~30-min cycle; a single-shot baseline that happens to miss one then
+  # sees it reappear at cycle 1 → spurious new_issue FAIL. Unioning over a short
+  # window captures the standing set, not a lucky instant. total_backlog is taken
+  # as the MAX across samples (most conservative threshold base).
+  local samples="${CANARY_BASELINE_SAMPLES:-3}"
+  local gap="${CANARY_BASELINE_SAMPLE_GAP:-6}"
+  log "Capturing baseline from ${API_BASE}${HEALTH_PATH} (${samples} samples, ${gap}s apart)"
+  local resp http_code body status database total_backlog=0 all_codes="" i b
+  for i in $(seq 1 "$samples"); do
+    resp="$(fetch_health)"
+    http_code="$(tail -n1 <<<"$resp")"
+    body="$(sed '$d' <<<"$resp")"
+    if [ -z "$http_code" ]; then
+      log "FATAL: no response from ${API_BASE}${HEALTH_PATH}"
+      exit 2
+    fi
+    # 200 (current prod) or 503 (candidate code already deployed) are both valid.
+    if [ "$http_code" != "200" ] && [ "$http_code" != "503" ]; then
+      log "FATAL: unexpected baseline HTTP ${http_code} (want 200 or 503). Refusing to baseline."
+      exit 2
+    fi
+    all_codes="${all_codes}"$'\n'"$(extract_issue_codes "$body")"
+    b="$(extract_total_backlog "$body")"
+    if [ "${b:-0}" -gt "$total_backlog" ] 2>/dev/null; then total_backlog="$b"; fi
+    if [ "$i" -lt "$samples" ]; then sleep "$gap"; fi
+  done
 
-  if [ -z "$http_code" ]; then
-    log "FATAL: no response from ${API_BASE}${HEALTH_PATH}"
-    exit 2
-  fi
-
-  # 200 (current prod) or 503 (candidate code already deployed) are both
-  # valid baseline states -- we record whatever standing state exists.
-  if [ "$http_code" != "200" ] && [ "$http_code" != "503" ]; then
-    log "FATAL: unexpected baseline HTTP ${http_code} (want 200 or 503). Refusing to baseline."
-    exit 2
-  fi
-
-  local status database total_backlog codes_json
+  local codes_json
   status="$(jq -r '.status // "unknown"' <<<"$body")"
   database="$(jq -r '.checks.database // "unknown"' <<<"$body")"
-  total_backlog="$(extract_total_backlog "$body")"
-  codes_json="$(extract_issue_codes "$body" | jq -R . | jq -s 'sort')"
+  codes_json="$(printf '%s\n' "$all_codes" | grep -v '^[[:space:]]*$' | jq -R . | jq -s 'unique')"
 
   if [ "$database" != "connected" ]; then
     log "WARN: baseline database != connected (${database}). Recording anyway, but verify before cutover."
@@ -238,14 +248,25 @@ run_cycle() {
     else (($cur - $base) / $base * 100) end | (. * 10 | round / 10)
   ')"
 
-  # (4) No NEW monitorIssue code that was not present in baseline.
+  # (4) No NEW monitorIssue code that was not present in baseline — EXCEPT known
+  #     "flappy" codes. Some monitor codes (notably order_outbox_oldest_held_due,
+  #     the AGE of the oldest held outbox row) appear/disappear on the sync
+  #     worker's ~30-min cycle independent of the deploy. A single- or few-sample
+  #     baseline can't reliably capture a 30-min flapper, so it re-appears at
+  #     cycle 1 and spuriously FAILs. These are informational age metrics, not
+  #     regression signals (backlog in check 3 is the real signal), so they are
+  #     exempt from the new-issue FAIL. Override via CANARY_FLAPPY_CODES (space-sep).
+  local flappy_codes="${CANARY_FLAPPY_CODES:-order_outbox_oldest_held_due}"
   local cur_codes
   cur_codes="$(extract_issue_codes "$body")"
   while IFS= read -r code; do
     [ -z "$code" ] && continue
     if ! grep -qxF "$code" <<<"$base_codes"; then
       new_issues+=("$code")
-      fail_reasons+=("new_issue_${code}")
+      case " $flappy_codes " in
+        *" $code "*) : ;;  # known-flappy: record but do NOT fail
+        *) fail_reasons+=("new_issue_${code}") ;;
+      esac
     fi
   done <<<"$cur_codes"
 

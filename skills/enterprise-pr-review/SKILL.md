@@ -5,30 +5,6 @@ description: "End-to-end PR conversation closer and advisory review harvester fo
 
 # Enterprise PR Review
 
-## Helpdesk Overlay Bootstrap
-
-When the current git root is a Helpdesk worktree, make the repo-local overlays
-available before PR review work:
-
-```bash
-node /Users/ben/.codex/skills/enterprise-pr-review/scripts/ensure-helpdesk-overlays.cjs
-```
-
-This creates or refreshes `.codex/repo-skills/helpdesk-enterprise-pr-review`,
-`.codex/repo-skills/helpdesk-enterprise-stack-review`, and the Helpdesk enterprise
-manifest in whichever branch or worktree is active. After it runs, prefer the
-repo-local `helpdesk-enterprise-pr-review` overlay for Helpdesk-specific rules.
-
-## Global Precheck
-
-Before reading further, writing artifacts, delegating, or changing files, run:
-
-```bash
-enterprise-precheck --skill enterprise-pr-review
-```
-
-If it exits non-zero, stop and report stderr verbatim. Do not hand-craft packet files or evidence markers to bypass it.
-
 ## Overview
 
 This skill turns PR review feedback into a closed, verified engineering loop. It is not a comment-cleanup skill. Treat every unresolved blocking thread as a possible production bug until current code, tests, CI, and review evidence prove otherwise. Treat non-blocking Copilot/advisory comments as valuable review signal to harvest, classify, and learn from without making them default merge blockers.
@@ -58,7 +34,7 @@ Escalate any advisory comment to `blocking-closeout` or an immediate hotfix if i
 Do not make every PR draft by default. Use this policy:
 
 - `normal`: open PR and keep it open until required gates, async review checks, review-thread state, and any repo-specific pre-merge sweep pass. Do not enable auto-merge by default.
-- `high-risk`: draft PR until enterprise review/forge/verify/harness have passed and Copilot has either reviewed the current head or an explicit advisory-harvest follow-up is recorded.
+- `high-risk`: draft PR until enterprise review (incl. adversarial pass and proof-scope verdict) has passed and Copilot has either reviewed the current head or an explicit advisory-harvest follow-up is recorded.
 - `draft-default`: only use draft for all PRs if the repo is confirmed to run Copilot review on draft PRs. If that setting is unknown or disabled, draft-by-default can hide the PR from useful review and slow delivery.
 
 High-risk means schema/query/data-sensitive work, tenant/security, money, orders, invoices, inventory, external integrations, destructive writes, authentication, or UI/PDF/file workflows that affect real operators.
@@ -67,7 +43,7 @@ If a PR is already open and later becomes high-risk, do not churn the PR state m
 
 ## Universal Enterprise Hardening Baseline
 
-- Use the GPT-5.5 fresh baseline: outcome, success criteria, constraints, evidence, and stop rules come before legacy prompt ceremony.
+- Use a fresh baseline: outcome, success criteria, constraints, evidence, and stop rules come first.
 - Green checks are not enough for blocking-closeout. Async review comments can arrive after checks pass, so live blocking thread state is the merge blocker source of truth.
 - Non-blocking Copilot/advisory comments are not default merge blockers, but they are not disposable. Harvest them into fixes, follow-ups, traps, gates, contract/plan rules, or evals.
 - Never resolve a review thread just because it is outdated, annoying, or probably fine. Reply with evidence first, then resolve only after proof.
@@ -86,25 +62,22 @@ If a PR is already open and later becomes high-risk, do not churn the PR state m
   intent, update the Intent Continuity Ledger and recycle before claiming the PR
   is ready.
 - All verification must be headless. Manual browser or GitHub UI observation is supporting context only.
-- If any code, contract, docs, or gate changes are made after review/forge/verify evidence, prior evidence for affected files expires.
+- If any code, contract, docs, or gate changes are made after review-stage evidence, prior evidence for affected files expires.
 - Keep PR review orchestration inside the current harness. Do not route enterprise PR review through external bridge roles.
 
 ## Entry Gate
 
-Before doing PR work, the global precheck above must already have passed.
-
 ### PR Requirements Snapshot
 
-Before deep work, read `.codex/enterprise-state/hook-ledger/latest-route-card.json`
-and state the current PR target in one compact snapshot. Use the route card for
-required PR body sections and PR/merge gate names; use live GitHub for the PR
-facts:
+Before deep work, state the current PR target in one compact snapshot. Use
+`skills/go/GATES.md` for the required PR body sections and PR/merge gate names; use
+live GitHub for the PR facts:
 
 - PR number/URL, target repository, base branch, head branch, and head SHA.
 - Draft policy: `normal`, `high-risk`, or `draft-default`, with the reason.
-- Required PR body sections from `route_card.required_pr_body_sections`.
-- Async review/thread policy from `route_card.required_pr_gates`, plus required checks, review-ai/Copilot/Claude wait, live unresolved-thread query, and pre-merge sweep.
-- Enterprise status: whether review, forge, verify, and `pr-readiness` or merge gate are already satisfied for the current head, or still required.
+- Required PR body sections (per `GATES.md`).
+- Async review/thread policy (per `GATES.md`), plus required checks, review-ai/Copilot/Claude wait, live unresolved-thread query, and pre-merge sweep.
+- Enterprise status: whether review and verification are already satisfied for the current head, or still required.
 
 Then collect the current PR facts:
 
@@ -257,20 +230,16 @@ When the user asks to learn why PRs fail, update enterprise skills, or harvest r
 - identify the branch/head window and PR set, such as the last 150 commits on `dev`
 - count review comments by reviewer and PR, and classify failure classes rather than pasting raw comments
 - include CI/check failures from the same window, especially false-green or preflight failures after review/proof refresh commits
-- extract prevention targets: plan questions, contract postconditions, build ratchets, review checks, forge lenses, verify/harness commands, repo gates, or skill evals
+- extract prevention targets: plan questions, contract postconditions, build ratchets, review checks, review lenses, release-proof checks, repo gates, or skill evals
 - prove each accepted trap has a prevention target; `fixed in the PR` is not enough unless a ratchet or upstream rule now catches the class earlier
 
 For Helpdesk-like evidence, seed the trap bank with stale UI/read-model rehydration, config/env/outage semantics, proof-lane selector misses, stale proof-subject/preflight failures, weak assertions, DB/query ownership gaps, integration side-effect/idempotency faults, redaction/diagnostic leaks, and SRP/domain-boundary drift.
 
 ### 5.5 Pre-Merge Async Review Sweep
 
-Immediately before any merge command, run the executable sweep from the current repo:
-
-```bash
-node /Users/ben/.codex/skills/enterprise-pr-review/scripts/pre-merge-review-sweep.cjs <PR>
-```
-
-This is a hard stop, especially after green checks. Do not merge if it reports:
+Immediately before any merge command, run the pre-merge convergence check per
+`skills/go/GATES.md` (copilot-review-wait convergence protocol). This is a hard stop,
+especially after green checks. Do not merge if it reports:
 
 - any pending/running check
 - any failed check
@@ -279,6 +248,13 @@ This is a hard stop, especially after green checks. Do not merge if it reports:
 - any unresolved review thread, including outdated-looking threads
 
 If the sweep blocks, return to the conversation matrix. Reply with evidence and resolve only after the current-head fix or proof is green, then rerun the sweep.
+
+Treadmill mechanics (per GATES.md — follow exactly): bots re-review on EVERY push and resolving
+threads does NOT re-trigger them — batch ALL code fixes first, minimise pushes, then resolve
+remaining threads reply-only. Reply-required threads need a substantive (≥40 char) human reply
+as the LAST comment; when a bot re-acks after your reply, reply once more so the human has the
+last word. copilot-review-wait gives up early while base checks run — after base goes green,
+re-fire it with `gh run rerun <runid> --failed`.
 
 ### 6. Reply And Resolve
 
@@ -302,7 +278,7 @@ Never resolve without a reply unless the user explicitly asks for administrative
 
 Before saying a blocking-closeout PR is clean:
 
-- `pre-merge-review-sweep.cjs <PR>` passed after the latest push
+- the pre-merge convergence check (GATES.md) passed after the latest push
 - live unresolved blocking thread count is 0
 - latest head SHA matches the verified local head or verified remote head
 - all required checks are passing
@@ -311,7 +287,7 @@ Before saying a blocking-closeout PR is clean:
 - PR body gate requirements are satisfied
 - no unrelated dirty changes were included
 
-If merge is requested, use the repository's allowed merge strategy. If squash and merge commits are disallowed, try rebase merge. Never push directly to protected `main`.
+If merge is requested, use the repository's allowed merge strategy. If squash and merge commits are disallowed, try rebase merge. Never push directly to protected `main`. Operator authorization per GATES.md: dev merges are autonomous once green; merges to `main` (or any prod-facing promote) require Ben's explicit go-ahead for that specific PR — green checks and zero GitHub approvals do NOT constitute authorization.
 
 For advisory-harvest, final readiness means every harvested advisory comment is classified and routed. The report must not claim advisory threads are resolved unless they actually were; it should say `advisory harvested` and list any follow-ups opened or recommended.
 
@@ -324,7 +300,7 @@ After the PR is clean or merged, capture what the review taught:
 - root cause
 - fix pattern
 - regression proof
-- whether the trap should become a contract, plan, forge, verify, or deterministic gate check
+- whether the trap should become a plan-lock, review-lens, release-proof, or deterministic gate check
 - whether the miss was an intent-continuity, touched-file SRP/refactor, or
   DB/query ownership failure that should become a skill eval or gate
 
@@ -334,7 +310,7 @@ For advisory-harvest, compound is the main output. The run is incomplete until e
 
 ## Review Feedback Harvester Hard Gate
 
-For blocking-closeout, the run is also incomplete until every accepted P1/P2/P3 finding has exactly one prevention target: plan question, contract postcondition, build authority scan, review check, forge lens, verify command, CI/gate recommendation, repo trap, or skill eval. Do not treat "fixed in this PR" as prevention unless the upstream rule or deterministic proof path was also updated or explicitly tracked.
+For blocking-closeout, the run is also incomplete until every accepted P1/P2/P3 finding has exactly one prevention target: plan question, contract postcondition, build authority scan, review check, review lens, release-proof check, CI/gate recommendation, repo trap, or skill eval. Do not treat "fixed in this PR" as prevention unless the upstream rule or deterministic proof path was also updated or explicitly tracked.
 
 For branch-window retrospectives, the run is incomplete until the trap bank has both an old-skill/baseline verdict and a new-skill verdict for the accepted eval cases, or a clear blocker explaining why model-based A/B could not be run and what deterministic proof was used instead.
 

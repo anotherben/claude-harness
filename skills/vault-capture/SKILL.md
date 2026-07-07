@@ -7,9 +7,18 @@ description: Instant smart-routing capture of bugs, ideas, tasks, and notes into
 
 Quick-capture items into the Obsidian vault with smart routing.
 
+After capture, offer to route the item straight into `/go` (capture → classify → dispatch) rather
+than letting it sit in the vault queue — e.g. "Captured. Want me to run this through /go now?"
+
 ## Vault Path
 
 `{{VAULT_PATH}}`
+
+## Graceful degradation
+
+If the `mcp__vault-index` MCP is unavailable, capture still works: write the file directly with
+Write/Edit and skip Step 2 (duplicate detection) and Step 6 (re-index) — they become best-effort,
+not blocking. Note in the confirmation line that dedupe/index were skipped.
 
 ## Controller Contract
 

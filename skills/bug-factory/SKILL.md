@@ -18,8 +18,13 @@ metadata:
 
 A standard, repeatable, **separation-of-duties** pipeline for bugs/build tasks. The orchestrator (main loop) **only** sweeps, sets up isolation, runs deterministic gates, integrates verified results, babysits CI, and escalates the `main` merge. Every unit of real work is a **separate single-job agent**.
 
+This pipeline's SHIP phase (step 7 below) is the universal SHIP stage that `/go` routes every
+depth (except ANSWER) to — see `skills/go/SKILL.md`. Canonical gate reference:
+`skills/go/GATES.md` — the gate mechanics embedded below are kept in this pass but GATES.md is the
+source of truth if they diverge.
+
 ## THE ONE RULE
-**One agent, one job.** The jobs are: *confirm, plan, zoom-out, blast-radius, build (one per file), test, review, verify*. No agent ever performs two of these. No agent works on two different bugs. A builder never tests or reviews its own build. A planner never approves its own plan. Always fresh eyes.
+**One agent, one job.** The jobs are: *confirm, plan, zoom-out, blast-radius, build (one per file), test, review, verify*. (The standalone `zoom-out` and `patch-or-fix` skills are now modes of `/diagnose` — its system-mapping phase and post-fix verification mode; the job names below are unchanged, run them via `/diagnose`.) No agent ever performs two of these. No agent works on two different bugs. A builder never tests or reviews its own build. A planner never approves its own plan. Always fresh eyes.
 
 ## Engage
 Triggered by: `/bug-factory`, or the user saying a task "must be workflowed" / "workflow this" / "run the bug factory" / "process the open bugs". Also the standing pipeline for any build/bug task the user flags for workflowing.
@@ -70,7 +75,7 @@ Proof must be explicit & demonstrative, e.g.:
 0. **VERIFY-PROOF GATE (HARD — runs before the dev PR exists).** The Verify phase (step 6) must have written `docs/verify/<slug>-browser-proof.md`. Run:
    `node ~/.claude/skills/bug-factory/verify-proof-gate.cjs --proof docs/verify/<slug>-browser-proof.md --diff-base origin/dev --repo <worktree>`
    If it exits non-zero → **STOP, do NOT create the dev PR.** It blocks when the proof is missing, thin, non-demonstrative ("seems to work"), or — for `apps/admin/**`/`apps/api/src/routes/**` diffs — lacks a real browser-run (Playwright/Chrome on localhost:5173). This closes the "rely on the orchestrator to remember" hole. (Optional team-wide: add this to `scripts/review/pre-push-gate.cjs` so it gates *every* contributor's dev PR — but that's a repo-wide change; do it only on explicit request.)
-1. **PR → dev** — narrow diff (only the fix), correct **5-header body** (`## What changed` / `## Regression check` / `## Blast radius` / `## Edge cases` / `## Conversations addressed`), substance receipt generated, all gates green. Never `--no-verify`.
+1. **PR → dev** — narrow diff (only the fix), correct **6-section body** per `skills/go/GATES.md` (`## What changed` / `## Regression check` / `## Blast radius` / `## Edge cases` / `## AI / Copilot review routing` / `## Conversations addressed`), substance receipt generated, all gates green. Never `--no-verify`.
    **CI gates are satisfied UP FRONT, not discovered (learned 2026-06-09/10, ~5 wasted cycles):**
    - **No new mocked-DB tests** for schema-coupled files (`ensureNoNewMockTests.cjs` push-block) → live `.live.test.js` from the RED phase.
    - **Live-proof registry**: every DB-backed source file changed needs a `scripts/review/live-proof-registry.cjs` REGISTRY entry (pattern + live-proof command) or required `review-hard` fails ("Live DB proof registry gap"). The registry `command` must require `TEST_DATABASE_URL` and **never promote `DATABASE_URL`** into it (mutable-DDL safety — bots flag the promotion P1); CI sets `TEST_DATABASE_URL` directly, so copy a sibling entry's `test -n "$TEST_DATABASE_URL"` fail-closed shape. The `pattern` must match EVERY file the proof covers (incl. the test files), else a PR touching only those silently skips the lane.

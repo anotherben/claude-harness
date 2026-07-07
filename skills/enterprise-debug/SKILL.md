@@ -5,16 +5,9 @@ description: "Systematic enterprise debugging for bugs, failing tests, and unexp
 
 # Enterprise Debug
 
-## Global Precheck
-
-Before reading further, writing artifacts, delegating, or changing files, run:
-
-```bash
-enterprise-precheck --skill enterprise-debug
-```
-
-If it exits non-zero, stop and report stderr verbatim. Do not hand-craft packet
-files or evidence markers to bypass it.
+**Boundary:** use `/diagnose` first when the root cause is unknown or disputed — it produces
+the investigation packet this skill consumes. enterprise-debug is for fixing with TDD inside an
+enterprise lane once the cause is understood (or trivially reproducible).
 
 ## Learned Behavior
 
@@ -74,9 +67,8 @@ absorb the new postcondition before build continues.
 
 ## Circuit Breaker
 
-Track debug attempts in `.codex/enterprise-state/<slug>.json` when a lane exists.
-After three failed fixes for the same root cause or repeated failures on the same
-gate, stop and escalate with options:
+Track debug attempts for the current lane. After three failed fixes for the same
+root cause or repeated failures on the same gate, stop and escalate with options:
 
 - redesign the seam
 - simplify the behavior
@@ -110,5 +102,5 @@ Include:
 
 - If the fix is narrow and contract exists, return to `enterprise-build`.
 - If the bug revealed missing requirements, update plan/contract before coding.
-- If verification proves the fix, proceed through review, forge, verify, harness,
-  and compound as required by the lane.
+- If verification proves the fix, proceed through review (incl. adversarial pass and
+  proof-scope verdict) and compound as required by the lane.

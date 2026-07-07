@@ -48,7 +48,7 @@ Run through ALL of these before writing integration code:
   JOIN suppliers ON suppliers.id::text = products.supplier_id::text
   ```
 
-- [ ] **REX SKU field mapping** (recall: `search_vault(query="REX SKU field mapping")`):
+- [ ] **REX SKU field mapping** (recall: if vault-index MCP is unavailable, grep the vault folder instead — `search_vault(query="REX SKU field mapping")`):
   - `supplier_sku` → maps to our `sku`
   - `supplier_sku2` → maps to our `sku2`
   - Top-level `sku` in REX response is usually NULL — don't use it
@@ -85,6 +85,11 @@ Run through ALL of these before writing integration code:
 - [ ] **rex_incomplete SOAP call** — Wrap in try/catch, it fails silently on cancelled POs
 - [ ] **Order source tracking** — use `order_source` column consistently
 - [ ] **Fulfillment status** — reconcile between REX shipment status and Shopify fulfillment
+- [ ] **Unmapped external values must fail loudly** — an unmapped/unresolved external payment,
+  tender, or enum value must NEVER be silently skipped while still counting toward a downstream
+  expected-total or replay-safety baseline (bug #3618: an unmapped Shopify gift card `continue`
+  poisoned every later payment on the order). Post as a generic tender or fail loudly — and
+  record a durable ledger row either way.
 
 ### 7. PO (Purchase Order) Specifics
 

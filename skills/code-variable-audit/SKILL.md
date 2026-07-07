@@ -13,7 +13,7 @@ Use this skill for audit-only review of variable and member usage. It is designe
 - Do not claim semantic correctness from syntax alone. Treat the script as a coverage and suspicion generator, then review findings against source truth.
 - Scan every changed JavaScript, TypeScript, JSX, TSX, MJS, CJS, MTS, and CTS file. Record skipped files in the coverage ledger.
 - Fail closed on unreadable changed files and parser failures. For PR and publication modes, also fail closed on unresolved GitHub state.
-- Use the full skill body and bundled scripts from the invoked skill directory.
+- Use the bundled scripts from the canonical install `~/.claude/skills/` (examples below are absolute for that reason; the launchd daily job runs the synced `~/.codex` copy).
   Keep the Codex and Claude copies in sync; do not replace either copy with a
   redirect-only wrapper.
 - Default to dry-run. Add `--publish` only when the user explicitly authorizes GitHub publication. Publication may create the missing `needs-investigation` repo label so the issue can be tagged correctly.
@@ -24,32 +24,32 @@ Use this skill for audit-only review of variable and member usage. It is designe
 2. Run the collector. For a GitHub PR:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --output /tmp/code-variable-audit-123.md
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --output /tmp/code-variable-audit-123.md
 ```
 
 For batch/evaluation runs, write JSON to a file. When `--json --output` are both set,
 stdout is a compact receipt and the full JSON is written only to the output file:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --fail-on never --json --output /tmp/code-variable-audit-123.json
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --dry-run --fail-on never --json --output /tmp/code-variable-audit-123.json
 ```
 
 3. For local changes:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --base origin/dev --head HEAD --dry-run --output /tmp/code-variable-audit-local.md
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --base origin/dev --head HEAD --dry-run --output /tmp/code-variable-audit-local.md
 ```
 
 4. For a focused file or file list:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --file apps/api/src/services/example.js --dry-run --output /tmp/code-variable-audit-file.md
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --file apps/api/src/services/example.js --dry-run --output /tmp/code-variable-audit-file.md
 ```
 
 5. If publication was authorized:
 
 ```bash
-/Users/ben/.codex/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --publish --output /tmp/code-variable-audit-123.md --handoff-output /tmp/code-variable-audit-123-issue-to-green-pr.json
+~/.claude/skills/code-variable-audit/scripts/code-variable-audit.cjs --repo anotherben/helpdesk --pr 123 --publish --output /tmp/code-variable-audit-123.md --handoff-output /tmp/code-variable-audit-123-issue-to-green-pr.json
 ```
 
 6. If the report includes an `Issue-To-Green-PR Handoff` section or `issueToGreenPrHandoff` JSON, immediately invoke `$issue-to-green-pr` with the emitted issue URL. Pass only the explicit target issue; do not copy or restate the downstream workflow.

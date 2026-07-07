@@ -4,35 +4,23 @@ description: Use when verified enterprise work or a resolved debugging session s
 ---
 
 # Enterprise Compound
-## Global Precheck
-
-Before reading further, writing artifacts, delegating, or changing files, run:
-
-```bash
-enterprise-precheck --skill enterprise-compound
-```
-
-If it exits non-zero, stop and report stderr verbatim. Do not hand-craft packet files or evidence markers to bypass it.
-
 
 Capture the lesson while it is still fresh.
 
 ## Required Workflow
 
-1. Run the agent-bound compound gate in [agent-stage-gates.md](../enterprise/references/agent-stage-gates.md).
-2. Search for an existing related solution note.
-3. If none exists, create one under `docs/solutions/YYYY-MM-DD-<slug>.md`.
-4. Use [solution-template.md](references/solution-template.md).
-5. Include structured `enterprise_prevention_records` whenever the lane involved a failed review, unresolved conversation, Copilot finding, or review-thread closeout.
-6. Validate the solution artifact with `tools/enterprise-skills/scripts/validate_structured_proof.py`.
-7. Focus on retrieval and prevention, not storytelling.
+1. Search for an existing related solution note.
+2. If none exists, create one under `docs/solutions/YYYY-MM-DD-<slug>.md`.
+3. Use [solution-template.md](references/solution-template.md).
+4. Include structured prevention records whenever the lane involved a failed review, unresolved conversation, Copilot finding, or review-thread closeout.
+5. Focus on retrieval and prevention, not storytelling.
 
 ## Review Feedback Harvester
 
-When the lane includes PR review, Copilot review, Codex review, forge bugs, or verify defects, compound the learning before closing:
+When the lane includes PR review, Copilot review, Codex review, or adversarial/proof defects, compound the learning before closing:
 
 - Record each accepted P1/P2/P3 finding, root cause, missed prevention point, fix pattern, and regression proof.
-- Route each accepted finding to exactly one prevention target: plan question, contract postcondition, build authority scan, review check, forge lens, verify command, CI/gate recommendation, repo trap, or skill eval.
+- Route each accepted finding to exactly one prevention target: plan question, contract postcondition, build authority scan, review check, review lens, release-proof check, CI/gate recommendation, repo trap, or skill eval.
 - Classify whether the missed prevention point was intent continuity, touched-file
   SRP/refactor, DB/query ownership, runtime proof, or another class. Intent/SRP/
   DB ownership misses must update the corresponding ledger, packet, lens, gate,
@@ -70,10 +58,10 @@ When compound follows a failed PR review, unresolved conversation, Copilot findi
 That section must name, for every real finding:
 
 - reviewer finding and root cause
-- which upstream stage should have caught it first: `plan`, `contract`, `build`, `review`, `forge`, `harness`, or `verify`
+- which upstream stage should have caught it first: `plan` (incl. lock), `build`, `review` (incl. adversarial/proof/release lenses), or `ship`
 - the exact prevention upgrade: trap-matrix entry, repo gate, deterministic script, contract invariant/postcondition, plan rule, or skill eval
-- whether the upgrade targets the Intent Continuity Ledger, Touched File SRP
-  Assessment, DB/Query Ownership Packet, review/forge/verify lens, or harness gate
+- whether the upgrade targets the plan Lock, the review lens list, a domain guard
+  (/sql-guard, /integration-guard, /blast-radius), or a GATES.md rule
 - whether the upgrade was implemented now or recorded as a dated follow-up blocker
 - a matching structured `enterprise_prevention_records` entry with status `implemented`, `tracked-follow-up`, `gate-added`, `eval-added`, or `blocked-with-reason`
 

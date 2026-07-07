@@ -1,19 +1,15 @@
 {
-  "checked_at": "2026-06-16T21:51:19Z",
-  "cycle": 1,
+  "checked_at": "2026-07-03T11:39:53Z",
+  "cycle": 6,
   "http_code": 503,
   "status": "unhealthy",
   "database": "connected",
-  "total_backlog": 825,
-  "baseline": 826,
-  "threshold": 1016,
-  "delta_pct": -0.1,
+  "total_backlog": 672,
+  "baseline": 672,
+  "threshold": 831,
+  "delta_pct": 0,
   "backlog_ok": true,
-  "new_issues": [
-    "order_outbox_oldest_due"
-  ],
-  "fail_reasons": [
-    "new_issue_order_outbox_oldest_due"
-  ],
-  "verdict": "FAIL"
+  "new_issues": [],
+  "fail_reasons": [],
+  "verdict": "PASS"
 }
