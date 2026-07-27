@@ -12,7 +12,8 @@ usage() {
   cat <<'EOF'
 Usage: scripts/install-codex-overhead-savings.sh [options]
 
-Installs the portable GPT-5.6 Codex scope-alignment bundle into CODEX_HOME.
+Installs the portable GPT-5.6 Codex scope-alignment bundle and guarded GitHub
+PR wrappers into CODEX_HOME.
 
 Options:
   --codex-home <path>          Install into this Codex home instead of ~/.codex
@@ -223,6 +224,9 @@ preflight_targets() {
   refuse_symlink_target "$CODEX_HOME/.ignore"
   refuse_symlink_target "$CODEX_HOME/config.toml"
   refuse_symlink_target "$CODEX_HOME/hooks.json"
+  refuse_symlink_target "$CODEX_HOME/bin/codex-github-lib.sh"
+  refuse_symlink_target "$CODEX_HOME/bin/git-push-codex"
+  refuse_symlink_target "$CODEX_HOME/bin/codex-pr-create"
 }
 
 preflight_dependencies() {
@@ -236,6 +240,14 @@ preflight_dependencies() {
   }
   python3 -c 'import tomllib' >/dev/null 2>&1 || {
     echo "Python 3.11 or newer with tomllib is required for safe Codex config merging." >&2
+    return 1
+  }
+  command -v git >/dev/null 2>&1 || {
+    echo "Git is required by the installed Codex PR wrappers." >&2
+    return 1
+  }
+  command -v gh >/dev/null 2>&1 || {
+    echo "GitHub CLI (gh) is required by the installed Codex PR wrappers." >&2
     return 1
   }
 }
@@ -360,6 +372,9 @@ main() {
   preflight_targets
   install_file "$ROOT_DIR/codex/hooks/enterprise-context-hook.cjs" "$CODEX_HOME/hooks/enterprise-context-hook.cjs" 0755
   install_file "$ROOT_DIR/codex/hooks/codex-write-guard.cjs" "$CODEX_HOME/hooks/codex-write-guard.cjs" 0755
+  install_file "$ROOT_DIR/codex/bin/codex-github-lib.sh" "$CODEX_HOME/bin/codex-github-lib.sh" 0755
+  install_file "$ROOT_DIR/codex/bin/git-push-codex" "$CODEX_HOME/bin/git-push-codex" 0755
+  install_file "$ROOT_DIR/codex/bin/codex-pr-create" "$CODEX_HOME/bin/codex-pr-create" 0755
   if [[ "$PRESERVE_AGENTS" == true && -f "$CODEX_HOME/AGENTS.md" ]]; then
     echo "preserved: $CODEX_HOME/AGENTS.md"
   else

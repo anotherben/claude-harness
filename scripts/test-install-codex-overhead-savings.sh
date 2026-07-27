@@ -113,6 +113,73 @@ HOME="$USER_HOME" "$ROOT_DIR/scripts/install-codex-overhead-savings.sh" \
 assert_contains "$CODEX_HOME/AGENTS.md" "For explicitly self-contained tasks"
 assert_contains "$CODEX_HOME/AGENTS.md" 'Ordinary verbs such as "diagnose", "review", or "fix"'
 
+for wrapper in codex-github-lib.sh git-push-codex codex-pr-create; do
+  assert_file "$CODEX_HOME/bin/$wrapper"
+  [[ -x "$CODEX_HOME/bin/$wrapper" ]] || fail "wrapper is not executable: $CODEX_HOME/bin/$wrapper"
+  bash -n "$CODEX_HOME/bin/$wrapper"
+done
+"$CODEX_HOME/bin/codex-pr-create" --help > "$TMP_ROOT/codex-pr-create-help.out"
+"$CODEX_HOME/bin/git-push-codex" --help > "$TMP_ROOT/git-push-codex-help.out"
+assert_contains "$TMP_ROOT/codex-pr-create-help.out" "Usage: codex-pr-create"
+assert_contains "$TMP_ROOT/git-push-codex-help.out" "Usage: git-push-codex"
+
+MOCK_BIN="$TMP_ROOT/mock-bin"
+MOCK_REPO="$TMP_ROOT/mock-repo"
+MOCK_GIT_LOG="$TMP_ROOT/mock-git.log"
+MOCK_GH_LOG="$TMP_ROOT/mock-gh.log"
+mkdir -p "$MOCK_BIN" "$MOCK_REPO"
+cat > "$MOCK_BIN/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >> "$MOCK_GH_LOG"
+case "${1:-} ${2:-}" in
+  "api user")
+    printf '%s\n' "codex-test-bot"
+    ;;
+  "pr create")
+    printf '%s\n' "https://github.example/pr/123"
+    ;;
+  "pr view")
+    printf '%s\n' "codex-test-bot"
+    ;;
+  *)
+    echo "unexpected mocked gh command: $*" >&2
+    exit 70
+    ;;
+esac
+EOF
+cat > "$MOCK_BIN/git" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == "symbolic-ref" ]]; then
+  printf '%s\n' "codex/test-wrapper-install"
+  exit 0
+fi
+if [[ "${1:-}" == "-c" && "${3:-}" == "push" ]]; then
+  printf '%s\n' "$*" >> "$MOCK_GIT_LOG"
+  exit 0
+fi
+echo "unexpected mocked git command: $*" >&2
+exit 70
+EOF
+chmod 0755 "$MOCK_BIN/gh" "$MOCK_BIN/git"
+(
+  cd "$MOCK_REPO"
+  PATH="$MOCK_BIN:$PATH" \
+    MOCK_GIT_LOG="$MOCK_GIT_LOG" \
+    MOCK_GH_LOG="$MOCK_GH_LOG" \
+    CODEX_PR_GITHUB_TOKEN="test-token" \
+    CODEX_GITHUB_LOGIN="codex-test-bot" \
+    CODEX_REVIEW_GATEKIT_ROOT="$TMP_ROOT/missing-gatekit" \
+    "$CODEX_HOME/bin/codex-pr-create" \
+      --base dev \
+      --title "test portable PR wrapper" > "$TMP_ROOT/mock-pr.out"
+)
+assert_contains "$TMP_ROOT/mock-pr.out" "https://github.example/pr/123"
+assert_contains "$MOCK_GIT_LOG" "push -u origin HEAD:codex/test-wrapper-install"
+assert_contains "$MOCK_GH_LOG" "pr create --base dev --title test portable PR wrapper --head codex/test-wrapper-install"
+assert_contains "$MOCK_GH_LOG" "pr view https://github.example/pr/123 --json author --jq .author.login"
+
 for agent in bounded_builder critical_reviewer diagnostic_scout research_scout runtime_prover; do
   assert_file "$CODEX_HOME/agents/$agent.toml"
 done
@@ -127,7 +194,7 @@ assert_file "$CODEX_HOME/skills/nested-agent-control/SKILL.md"
 assert_contains "$CODEX_HOME/skills/diagnose/SKILL.md" "Explicit \$diagnose workflow"
 assert_contains "$CODEX_HOME/skills/diagnose/SKILL.md" "$USER_HOME/.agent-platform/skills/diagnose/SKILL.md"
 assert_contains "$CODEX_HOME/skills/patch-or-fix/SKILL.md" "Explicit \$patch-or-fix review"
-if grep -R -Fq '/Users/ben/' "$CODEX_HOME/AGENTS.md" "$CODEX_HOME/agents" "$CODEX_HOME/skills" "$USER_HOME/.agent-platform/skills"; then
+if grep -R -Fq '/Users/ben/' "$CODEX_HOME/AGENTS.md" "$CODEX_HOME/agents" "$CODEX_HOME/bin" "$CODEX_HOME/skills" "$USER_HOME/.agent-platform/skills"; then
   fail "installed portable surfaces contain a source-machine home path"
 fi
 assert_contains "$CODEX_HOME/skills/diagnostic-cohort/SKILL.md" "$CODEX_HOME/skills/nested-agent-control/SKILL.md"
@@ -209,6 +276,20 @@ symlink_after="$(tree_digest "$SYMLINK_EXTERNAL")"
 [[ "$symlink_before" == "$symlink_after" ]] || fail "installer modified a symlink target"
 [[ ! -e "$SYMLINK_HOME/.codex/hooks" ]] || fail "symlink preflight allowed a partial install"
 assert_contains "$TMP_ROOT/symlink.out" "Refusing to patch symlink target"
+
+BIN_SYMLINK_HOME="$TMP_ROOT/bin-symlink-user"
+BIN_SYMLINK_EXTERNAL="$TMP_ROOT/bin-symlink-external"
+mkdir -p "$BIN_SYMLINK_HOME/.codex/bin" "$BIN_SYMLINK_EXTERNAL"
+printf '%s\n' "external wrapper" > "$BIN_SYMLINK_EXTERNAL/codex-pr-create"
+ln -s "$BIN_SYMLINK_EXTERNAL/codex-pr-create" "$BIN_SYMLINK_HOME/.codex/bin/codex-pr-create"
+bin_symlink_before="$(tree_digest "$BIN_SYMLINK_EXTERNAL")"
+if HOME="$BIN_SYMLINK_HOME" "$ROOT_DIR/scripts/install-codex-overhead-savings.sh" > "$TMP_ROOT/bin-symlink.out" 2>&1; then
+  fail "installer accepted a symlinked PR wrapper target"
+fi
+bin_symlink_after="$(tree_digest "$BIN_SYMLINK_EXTERNAL")"
+[[ "$bin_symlink_before" == "$bin_symlink_after" ]] || fail "installer modified a symlinked PR wrapper target"
+[[ ! -e "$BIN_SYMLINK_HOME/.codex/hooks" ]] || fail "wrapper symlink preflight allowed a partial install"
+assert_contains "$TMP_ROOT/bin-symlink.out" "Refusing to patch symlink target"
 
 SPACE_HOME="$TMP_ROOT/Test User"
 HOME="$SPACE_HOME" "$ROOT_DIR/scripts/install-codex-overhead-savings.sh" > "$TMP_ROOT/space-install.out"

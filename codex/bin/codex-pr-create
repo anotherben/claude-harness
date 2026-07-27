@@ -1,0 +1,415 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CODEX_BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+CODEX_HOME_DIR="${CODEX_HOME_DIR:-$(cd "${CODEX_BIN_DIR}/.." && pwd -P)}"
+
+usage() {
+  cat <<'EOF'
+Usage: codex-pr-create --base <branch> [--head <branch>] --title <title> [gh pr create args...]
+
+Pushes HEAD to the PR branch with the separate Codex GitHub identity, then
+creates the PR with that same identity. Refuses to run if the configured token
+belongs to anotherben.
+
+Before pushing or creating the PR, runs the local Codex AI reviewer as advisory
+evidence by default. Set CODEX_PR_CREATE_REQUIRE_LOCAL_REVIEW=1 to fail closed
+unless the review verdict is PASS.
+
+Before pushing or creating the PR, also runs the local gatekit
+preflight-codex-pr-create receipt when the gatekit command is available. Set
+CODEX_PR_CREATE_REQUIRE_GATEKIT_PREFLIGHT=1 to fail closed unless the preflight
+returns CODEX_PR_CREATE_PREFLIGHT_READY. Repositories can also require it with
+.codex/require-gatekit-pr-create-preflight or
+work/local-coderabbit-review/require-codex-pr-create-preflight.
+
+When the current repo has a structured PR body generator or required PR
+template sections, missing PR bodies are generated and provided PR bodies are
+validated before the PR is opened.
+EOF
+}
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  usage
+  exit 0
+fi
+
+source "${CODEX_BIN_DIR}/codex-github-lib.sh"
+codex_github_load_token
+codex_github_verify_token
+
+codex_pr_required_sections=(
+  "What changed"
+  "Regression check"
+  "Blast radius"
+  "Edge cases"
+  "Conversations addressed"
+)
+
+codex_repo_requires_structured_pr_body() {
+  [[ -f ".github/pull_request_template.md" ]] || return 1
+  grep -qiE '^##[[:space:]]+Regression check[[:space:]]*$' ".github/pull_request_template.md" \
+    && grep -qiE '^##[[:space:]]+Blast radius[[:space:]]*$' ".github/pull_request_template.md" \
+    && grep -qiE '^##[[:space:]]+Edge cases[[:space:]]*$' ".github/pull_request_template.md" \
+    && grep -qiE '^##[[:space:]]+Conversations addressed[[:space:]]*$' ".github/pull_request_template.md"
+}
+
+codex_pr_template_has_section() {
+  local section="$1"
+  [[ -f ".github/pull_request_template.md" ]] || return 1
+  grep -qiE "^##[[:space:]]+${section}[[:space:]]*$" ".github/pull_request_template.md"
+}
+
+codex_pr_missing_sections() {
+  local body="$1"
+  local section sections
+  sections=("${codex_pr_required_sections[@]}")
+  if codex_pr_template_has_section "AI / Copilot review routing"; then
+    sections+=("AI / Copilot review routing")
+  fi
+  for section in "${sections[@]}"; do
+    if ! printf '%s\n' "${body}" | grep -qiE "^##[[:space:]]+${section}[[:space:]]*$"; then
+      printf '%s\n' "${section}"
+    fi
+  done
+}
+
+codex_pr_fallback_body() {
+  local title="$1"
+  local base="$2"
+  local head="$3"
+  local stat=""
+
+  if [[ -n "${base}" && -n "${head}" ]]; then
+    stat="$(git diff --stat --no-color "${base}...${head}" 2>/dev/null || true)"
+  fi
+  if [[ -z "${stat}" && -n "${base}" ]]; then
+    stat="$(git diff --stat --no-color "${base}...HEAD" 2>/dev/null || true)"
+  fi
+  if [[ -z "${stat}" ]]; then
+    stat="$(git diff --stat --no-color HEAD 2>/dev/null || true)"
+  fi
+  if [[ -z "${stat}" ]]; then
+    stat="$(git diff --stat --no-color --cached 2>/dev/null || true)"
+  fi
+  if [[ -z "${stat}" ]]; then
+    stat="$(git diff --stat --no-color 2>/dev/null || true)"
+  fi
+  if [[ -z "${stat}" ]]; then
+    stat="$(git diff --stat --no-color HEAD~1...HEAD 2>/dev/null || true)"
+  fi
+  if [[ -z "${stat}" ]]; then
+    stat="No diff stat available from codex-pr-create."
+  fi
+
+  cat <<EOF
+## What changed
+${title:-Codex PR}
+
+Changed files:
+${stat}
+
+## Regression check
+- TODO: real DB/schema proof: \`<command>\` - PASS/FAIL (\`<test DB/profile>\`), or \`Not applicable - no DB/query/schema behavior touched\`.
+- TODO: focused regression: \`<command>\` - PASS/FAIL.
+- TODO: local canary: \`npm run local:canary\` - PASS/FAIL/Not run with reason before PRs to \`dev\`.
+- Mock-only evidence is invalid for DB/query/schema behavior.
+
+## Blast radius
+- TODO: touched: files/routes/services/tables/UI/workflows.
+- TODO: callers/consumers: direct list, or \`none - <grep/diff evidence>\`.
+- TODO: not touched: schema/auth/tenant/external writes/queues/app runtime, as applicable.
+
+## Edge cases
+- TODO: relevant null/empty/malformed/concurrent/boundary/stale-state/retry cases tested or not applicable.
+- TODO: DB/query/schema edge cases use real test/dev schema, not mocks.
+
+## AI / Copilot review routing
+TODO: required/skipped/manual: \`<tier>/<reason>\` - one-line rationale.
+
+## Conversations addressed
+None yet - will be updated as review arrives.
+EOF
+}
+
+codex_pr_local_review_gate() {
+  local base="$1"
+  local review_base="${base:-origin/dev}"
+  local require_local_review="${CODEX_PR_CREATE_REQUIRE_LOCAL_REVIEW:-0}"
+  local gatekit_root="${CODEX_REVIEW_GATEKIT_ROOT:-${CODEX_USER_HOME_DIR}/Documents/Codex/2026-06-25/how-ca/codex-review-gatekit}"
+  local packet_script="${CODEX_PR_CREATE_LOCAL_REVIEW_PACKET:-${gatekit_root}/work/local-coderabbit-review/scripts/local_review_packet.mjs}"
+  local configured_out_dir="${CODEX_PR_CREATE_LOCAL_REVIEW_OUT_DIR:-work/local-coderabbit-review/codex-pr-create-preflight}"
+  local git_dir
+  local out_dir
+  local current_head
+  local current_base
+  local status_file
+  local metadata_file
+  local cached_state
+
+  if [[ ! -f "${packet_script}" ]]; then
+    if [[ "${require_local_review}" == "1" ]]; then
+      echo "Refusing to create PR: local Codex review packet script is missing: ${packet_script}" >&2
+      exit 66
+    fi
+    echo "codex-pr-create: local Codex review packet script is missing; continuing because local review is advisory: ${packet_script}" >&2
+    return
+  fi
+
+  if [[ "${review_base}" != origin/* ]] && git rev-parse --verify "origin/${review_base}" >/dev/null 2>&1; then
+    review_base="origin/${review_base}"
+  fi
+
+  if ! git rev-parse --verify "${review_base}" >/dev/null 2>&1; then
+    echo "Refusing to create PR: review base cannot be resolved: ${review_base}" >&2
+    exit 66
+  fi
+
+  git_dir="$(git rev-parse --git-dir)"
+  if [[ "${git_dir}" != /* ]]; then
+    git_dir="$(pwd -P)/${git_dir}"
+  fi
+  if [[ "${configured_out_dir}" == /* ]]; then
+    out_dir="${configured_out_dir}"
+  else
+    out_dir="${git_dir}/${configured_out_dir}"
+  fi
+  status_file="${out_dir}/review-status.json"
+  metadata_file="${out_dir}/metadata.json"
+  current_head="$(git rev-parse HEAD)"
+  current_base="$(git rev-parse "${review_base}")"
+
+  if [[ "${CODEX_PR_CREATE_ACCEPT_LOCAL_REVIEW:-}" == "1" && -f "${status_file}" && -f "${metadata_file}" ]]; then
+    cached_state="$(node -e '
+const fs = require("fs");
+const status = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+const metadata = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+const head = process.argv[3];
+const base = process.argv[4];
+if (status.verdict === "REVIEW" && metadata.expectedHead === head && metadata.expectedBase === base) {
+  process.stdout.write("accepted-review");
+}
+' "${status_file}" "${metadata_file}" "${current_head}" "${current_base}" 2>/dev/null || true)"
+    if [[ "${cached_state}" == "accepted-review" ]]; then
+      echo "codex-pr-create: continuing with explicitly accepted local REVIEW verdict for ${review_base}...HEAD" >&2
+      return
+    fi
+  fi
+
+  echo "codex-pr-create: running local Codex AI review before push/PR create (${review_base}...HEAD)" >&2
+  node "${packet_script}" \
+    --repo-root "$(pwd -P)" \
+    --base "${review_base}" \
+    --expected-head "${current_head}" \
+    --expected-base "${current_base}" \
+    --out-dir "${out_dir}" >/dev/null
+
+  if ! LOCAL_CODERABBIT_REVIEW_SKIP=1 "${out_dir}/run-codex-review.sh"; then
+    if [[ "${CODEX_PR_CREATE_ACCEPT_LOCAL_REVIEW:-}" == "1" ]]; then
+      local verdict
+      verdict="$(node -e 'const fs=require("fs"); const s=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(s.verdict || "");' "${status_file}" 2>/dev/null || true)"
+      if [[ "${verdict}" == "REVIEW" ]]; then
+        echo "codex-pr-create: continuing with explicitly accepted local REVIEW verdict for ${review_base}...HEAD" >&2
+        return
+      fi
+    fi
+    if [[ "${require_local_review}" != "1" ]]; then
+      echo "codex-pr-create: local Codex review did not pass; continuing because local review is advisory by default." >&2
+      echo "codex-pr-create: set CODEX_PR_CREATE_REQUIRE_LOCAL_REVIEW=1 to make this a hard gate." >&2
+      return
+    fi
+    exit 66
+  fi
+}
+
+codex_pr_gatekit_preflight() {
+  local base="$1"
+  local review_base="${base:-origin/dev}"
+  local marker_required="0"
+  if [[ -f ".codex/require-gatekit-pr-create-preflight" || -f "work/local-coderabbit-review/require-codex-pr-create-preflight" ]]; then
+    marker_required="1"
+  fi
+  local require_preflight="${CODEX_PR_CREATE_REQUIRE_GATEKIT_PREFLIGHT:-${marker_required}}"
+  local gatekit_root="${CODEX_REVIEW_GATEKIT_ROOT:-${CODEX_USER_HOME_DIR}/Documents/Codex/2026-06-25/how-ca/codex-review-gatekit}"
+  local gatekit_bin="${CODEX_PR_CREATE_GATEKIT_BIN:-${gatekit_root}/bin/codex-review-gatekit.mjs}"
+  local permit_path="${CODEX_PR_CREATE_GATEKIT_PERMIT:-work/local-coderabbit-review/pr-action-permit/pr-action-permit.json}"
+  local out_dir="${CODEX_PR_CREATE_GATEKIT_PREFLIGHT_OUT_DIR:-work/local-coderabbit-review/codex-pr-create-preflight}"
+
+  if [[ ! -f "${gatekit_bin}" ]]; then
+    if [[ "${require_preflight}" == "1" ]]; then
+      echo "Refusing to create PR: gatekit preflight command is missing: ${gatekit_bin}" >&2
+      exit 66
+    fi
+    echo "codex-pr-create: gatekit preflight command is missing; continuing because gatekit preflight is advisory: ${gatekit_bin}" >&2
+    return
+  fi
+
+  if [[ "${review_base}" != origin/* ]] && git rev-parse --verify "origin/${review_base}" >/dev/null 2>&1; then
+    review_base="origin/${review_base}"
+  fi
+
+  echo "codex-pr-create: running gatekit preflight before push/PR create (${review_base}...HEAD)" >&2
+  if ! node "${gatekit_bin}" preflight-codex-pr-create \
+    --repo-root "$(pwd -P)" \
+    --permit "${permit_path}" \
+    --base-ref "${review_base}" \
+    --out-dir "${out_dir}" >/dev/null; then
+    if [[ "${require_preflight}" == "1" ]]; then
+      echo "Refusing to create PR: gatekit preflight did not return CODEX_PR_CREATE_PREFLIGHT_READY." >&2
+      echo "Expected receipt: ${out_dir}/codex-pr-create-preflight.json" >&2
+      exit 66
+    fi
+    echo "codex-pr-create: gatekit preflight did not pass; continuing because gatekit preflight is advisory by default." >&2
+    echo "codex-pr-create: set CODEX_PR_CREATE_REQUIRE_GATEKIT_PREFLIGHT=1 to make this a hard gate." >&2
+    return
+  fi
+}
+
+codex_pr_prepare_body_args() {
+  local title="$1"
+  local base="$2"
+  local head="$3"
+  local body="$4"
+  local body_file="$5"
+  local has_body="$6"
+  local generated_file missing
+
+  if [[ "${has_body}" -eq 1 ]]; then
+    if [[ -n "${body_file}" ]]; then
+      if [[ ! -f "${body_file}" ]]; then
+        echo "PR body file does not exist: ${body_file}" >&2
+        exit 64
+      fi
+      body="$(<"${body_file}")"
+    fi
+
+    if codex_repo_requires_structured_pr_body; then
+      missing="$(codex_pr_missing_sections "${body}")"
+      if [[ -n "${missing}" ]]; then
+        echo "Refusing to open PR with missing required body sections:" >&2
+        while IFS= read -r section; do
+          [[ -n "${section}" ]] && printf ' - ## %s\n' "${section}" >&2
+        done <<< "${missing}"
+        echo "Use scripts/pr/create-pr-body.cjs, scripts/pr/create-enterprise-pr-body.cjs, or .github/pull_request_template.md." >&2
+        exit 64
+      fi
+    fi
+    return
+  fi
+
+  if [[ -x "scripts/pr/create-pr-body.cjs" || -f "scripts/pr/create-pr-body.cjs" ]]; then
+    generated_file="$(mktemp)"
+    node "scripts/pr/create-pr-body.cjs" \
+      --title "${title}" \
+      --base "${base}" \
+      --head "${head}" > "${generated_file}"
+    args+=(--body-file "${generated_file}")
+    CODEX_PR_BODY_TEMP="${generated_file}"
+    return
+  fi
+
+  if [[ -x "scripts/pr/create-enterprise-pr-body.cjs" || -f "scripts/pr/create-enterprise-pr-body.cjs" ]]; then
+    generated_file="$(mktemp)"
+    node "scripts/pr/create-enterprise-pr-body.cjs" \
+      --title "${title}" \
+      --base "${base}" \
+      --head "${head}" > "${generated_file}"
+    args+=(--body-file "${generated_file}")
+    CODEX_PR_BODY_TEMP="${generated_file}"
+    return
+  fi
+
+  if codex_repo_requires_structured_pr_body; then
+    generated_file="$(mktemp)"
+    codex_pr_fallback_body "${title}" "${base}" "${head}" > "${generated_file}"
+    args+=(--body-file "${generated_file}")
+    CODEX_PR_BODY_TEMP="${generated_file}"
+  fi
+}
+
+head_branch=""
+base_branch=""
+title=""
+body=""
+body_file=""
+has_head_arg=0
+has_body_arg=0
+args=("$@")
+
+for ((i = 0; i < ${#args[@]}; i++)); do
+  case "${args[$i]}" in
+    --base)
+      base_branch="${args[$((i + 1))]:-}"
+      ;;
+    --base=*)
+      base_branch="${args[$i]#--base=}"
+      ;;
+    --title)
+      title="${args[$((i + 1))]:-}"
+      ;;
+    --title=*)
+      title="${args[$i]#--title=}"
+      ;;
+    --body)
+      has_body_arg=1
+      body="${args[$((i + 1))]:-}"
+      ;;
+    --body=*)
+      has_body_arg=1
+      body="${args[$i]#--body=}"
+      ;;
+    --body-file)
+      has_body_arg=1
+      body_file="${args[$((i + 1))]:-}"
+      ;;
+    --body-file=*)
+      has_body_arg=1
+      body_file="${args[$i]#--body-file=}"
+      ;;
+    --head)
+      has_head_arg=1
+      head_branch="${args[$((i + 1))]:-}"
+      ;;
+    --head=*)
+      has_head_arg=1
+      head_branch="${args[$i]#--head=}"
+      ;;
+  esac
+done
+
+if [[ -z "${head_branch}" ]]; then
+  head_branch="$(git symbolic-ref --quiet --short HEAD || true)"
+fi
+
+if [[ -z "${head_branch}" ]]; then
+  echo "No PR head branch found. Pass --head <branch>." >&2
+  exit 64
+fi
+
+if [[ "${head_branch}" == *:* ]]; then
+  echo "codex-pr-create expects a same-repo branch name, not owner:branch: ${head_branch}" >&2
+  exit 64
+fi
+
+CODEX_PR_BODY_TEMP=""
+trap '[[ -n "${CODEX_PR_BODY_TEMP:-}" ]] && rm -f "${CODEX_PR_BODY_TEMP}"' EXIT
+codex_pr_prepare_body_args "${title}" "${base_branch}" "${head_branch}" "${body}" "${body_file}" "${has_body_arg}"
+
+codex_pr_local_review_gate "${base_branch}"
+codex_pr_gatekit_preflight "${base_branch}"
+
+"${CODEX_BIN_DIR}/git-push-codex" -u origin "HEAD:${head_branch}"
+
+if [[ "${has_head_arg}" -eq 0 ]]; then
+  args+=(--head "${head_branch}")
+fi
+
+url="$(GH_TOKEN="${CODEX_GH_TOKEN_VALUE}" gh pr create "${args[@]}")"
+author="$(GH_TOKEN="${CODEX_GH_TOKEN_VALUE}" gh pr view "${url}" --json author --jq .author.login)"
+
+if [[ "${author}" != "${CODEX_GH_LOGIN}" ]]; then
+  echo "PR was created by ${author}, expected ${CODEX_GH_LOGIN}." >&2
+  exit 65
+fi
+
+printf '%s\n' "${url}"

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CODEX_BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+CODEX_HOME_DIR="${CODEX_HOME_DIR:-$(cd "${CODEX_BIN_DIR}/.." && pwd -P)}"
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" || "$#" -eq 0 ]]; then
+  cat <<'EOF'
+Usage: git-push-codex <remote> <refspec...>
+
+Pushes with the separate Codex GitHub identity. Refuses to run if the
+configured token belongs to anotherben.
+EOF
+  exit 0
+fi
+
+source "${CODEX_BIN_DIR}/codex-github-lib.sh"
+codex_github_load_token
+codex_github_verify_token
+
+askpass="$(mktemp)"
+trap 'rm -f "${askpass}"' EXIT
+cat >"${askpass}" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  *Username*) printf '%s\n' x-access-token ;;
+  *Password*) printf '%s\n' "${CODEX_GH_TOKEN_VALUE}" ;;
+  *) printf '\n' ;;
+esac
+EOF
+chmod 700 "${askpass}"
+
+GIT_TERMINAL_PROMPT=0 \
+GIT_ASKPASS="${askpass}" \
+CODEX_GH_TOKEN_VALUE="${CODEX_GH_TOKEN_VALUE}" \
+  git -c credential.helper= push "$@"
